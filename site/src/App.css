@@ -1,0 +1,314 @@
+/* Reset default Vite styles */
+.reset-btn {
+  width: 100%;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  /* overflow: hidden;  <-- REMOVED */
+}
+
+/* Responsive Layout */
+
+.sidebar {
+  width: 250px;
+  background-color: #1e1e2e;
+  color: #fff;
+  padding: 20px;
+  box-sizing: border-box;
+  /* Fix for width: 100% + padding */
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #333;
+  position: fixed;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  overflow-y: auto;
+  transition: transform 0.3s ease;
+}
+
+.main-content {
+  margin-left: 250px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: margin-left 0.3s ease;
+}
+
+/* Main Content Container Padding */
+.step-container {
+  padding: 40px 10%;
+}
+
+/* Mobile: < 768px */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 40vh;
+    /* Limit height so it doesn't take over screen */
+    position: relative;
+    border-right: none;
+    border-bottom: 1px solid #333;
+    flex-direction: column;
+    /* Stack vertically as requested */
+    overflow-x: hidden;
+    overflow-y: auto;
+    flex-wrap: nowrap;
+    padding: 15px;
+    align-items: stretch;
+    /* Full width items */
+    gap: 15px;
+    background-color: #1e1e2e;
+  }
+
+  /* Make the header logo row compact */
+  .sidebar>div:first-child {
+    margin-bottom: 0 !important;
+    justify-content: center;
+  }
+
+  /* Make steps container wrap/grid instead of scroll */
+  /* Make steps container linear and compact */
+  .sidebar>div:nth-child(2) {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    /* No wrapping, keep it in one line */
+    overflow-x: auto;
+    /* Allow scroll if it somehow overflows small screens, but aim for fit */
+    padding-bottom: 5px;
+    gap: 8px;
+    /* Tighter gap */
+    justify-content: space-between;
+    /* Spread evenly */
+  }
+
+  /* Step Item Styles */
+  .sidebar-step-item {
+    flex: 0 0 auto;
+    width: auto;
+    padding: 8px !important;
+    /* Reduced padding (removed side padding mostly) */
+    justify-content: center;
+  }
+
+  .sidebar-step-item.active {
+    flex: 0 0 auto;
+    /* Active one takes necessary space */
+    padding: 8px 12px !important;
+    /* More padding for active */
+  }
+
+  /* Step Label Hiding Logic */
+  .sidebar-step-label {
+    display: none;
+  }
+
+  .sidebar-step-item.active .sidebar-step-label {
+    display: block;
+    margin-left: 0;
+    /* Already has margin on icon */
+    white-space: nowrap;
+  }
+
+  /* Icon adjustments */
+  .sidebar-step-item>div:first-child {
+    margin-right: 0 !important;
+    /* Remove margin when stand-alone */
+  }
+
+  .sidebar-step-item.active>div:first-child {
+    margin-right: 10px !important;
+    /* Restore margin when label is visible */
+  }
+
+  /* Ensure footer actions are visible */
+  .sidebar>div:nth-child(3) {
+    margin-bottom: 0 !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    /* Center the buttons */
+  }
+
+  /* Hide the footer links on mobile to save space */
+  .sidebar>div:last-child {
+    display: none;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  /* Responsive Reset Button */
+  .reset-btn {
+    width: auto !important;
+    max-width: 150px;
+    flex-grow: 0;
+  }
+
+  /* Responsive Logic Grid */
+  /* We will control cell size via JS, but let's ensure containers don't overflow */
+  .logic-grid-container {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  /* Mobile Step Container Padding */
+  .step-container {
+    padding: 20px 5% !important;
+  }
+}
+
+/* Print Styles for PDF Export */
+@media print {
+
+  /* Hide UI Elements & Non-Essential Areas */
+  .sidebar,
+  button,
+  .clue-scrubber-controls,
+  input[type="range"],
+  input[type="checkbox"],
+  select,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Global Ink Saving Overrides */
+  * {
+    background-color: white !important;
+    background: white !important;
+    color: black !important;
+    border-color: #000 !important;
+    text-shadow: none !important;
+    /* box-shadow: none !important;  <-- Removed to allow custom print shadows */
+  }
+
+  /* Explicitly remove box-shadow for everything else if needed, or just let specific overrides win */
+  /* But safer to just remove the global nuke if we use shadows for target highlight */
+  *:not(.grid-cell) {
+    box-shadow: none !important;
+  }
+
+  /* Layout Resets */
+  body,
+  #root,
+  .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+  }
+
+  /* Hiding Configuration Steps */
+  .step-structure,
+  .step-story,
+  .step-goal,
+  .step-generate {
+    display: none !important;
+  }
+
+  /* Solution View Formatting */
+  .step-solution {
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    /* Removed padding to close gap */
+  }
+
+  /* Hide the "3. Clues Generated" title but keep target */
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Ensure all clues are visible/dark in print */
+  .clue-row {
+    opacity: 1 !important;
+    color: black !important;
+    padding: 6px 10px !important;
+    /* Reduced padding */
+    font-size: 0.85rem !important;
+    /* Smaller text */
+    border-bottom: 1px solid #ccc !important;
+    /* Clean separator */
+    break-inside: avoid !important;
+    /* Prevent split across columns/pages */
+    page-break-inside: avoid !important;
+  }
+
+  /* Two-column layout for clues */
+  .clue-list {
+    column-count: 2;
+    column-gap: 40px;
+    width: 100%;
+  }
+
+  /* Hide the Reroll button container if it shows */
+  .step-solution>div:last-child {
+    display: none !important;
+  }
+
+  /* Grid & Table Specifics */
+  .grid-cell {
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .comparison-grid {
+    background-color: #000 !important;
+    gap: 1px !important;
+    border: 2px solid #000 !important;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Force exact colors (backgrounds etc) */
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Clue List improvements for print */
+  div[style*="border-bottom"] {
+    border-bottom: 1px solid #ccc !important;
+  }
+
+  /* Highlighted Step - just bold, no background */
+  div[style*="background-color: #333"] {
+    background-color: transparent !important;
+    font-weight: bold;
+    border: 1px solid #000 !important;
+  }
+
+  /* Titles */
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: #000 !important;
+    font-weight: bold !important;
+  }
+
+  /* Remove any fixed positioning */
+  .main-content>div:first-child {
+    position: static !important;
+    border: none !important;
+  }
+
+  /* Page Break control */
+  .main-content>div:first-child {
+    page-break-after: auto;
+  }
+}
