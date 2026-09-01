@@ -25,6 +25,11 @@ The core engine is located under `src/`:
 | [`src/engine/Clue.ts`](./src/engine/Clue.ts) | Class hierarchy for all clue variants (Binary, Ordinal, Superlative, Unary, Between, Adjacency, Cross-Ordinal, Disjunction, Arithmetic). |
 | [`src/engine/determinism.ts`](./src/engine/determinism.ts) | Seeded PRNG helpers, engine-agnostic stable sort, and Fisher-Yates shuffle. |
 | [`src/index.ts`](./src/index.ts) | Public package export barrel. |
+| [`src/germanBooklet.ts`](./src/germanBooklet.ts) | Configurable German booklet generator (themes, difficulty, seeds, palette) with per-puzzle verification. |
+| [`src/german.ts`](./src/german.ts) | German clue formatter driven by a `GermanClueLanguage` wording object. |
+| [`tools/generate_german_pdf.py`](./tools/generate_german_pdf.py) | ReportLab renderer for the printable booklet (dynamic grid, dynamic solution table, palette from JSON). |
+| [`server/index.ts`](./server/index.ts) | Dependency-free HTTP server: static web app plus `/api/options`, `/api/booklet`, `/api/pdf`. |
+| [`webapp/`](./webapp) | Vanilla HTML/CSS/JS front end (start → settings → preview/PDF). |
 
 ---
 

@@ -22,6 +22,8 @@
     "start": "node dist/examples/cli.js",
     "benchmark": "tsc && node dist/examples/benchmark.js",
     "generate:german-booklet": "npm run build && node dist/examples/generate-german-booklet.js",
+    "web": "npm run build && node dist/server/index.js",
+    "web:serve": "node dist/server/index.js",
     "release": "standard-version",
     "prepare": "husky"
   },

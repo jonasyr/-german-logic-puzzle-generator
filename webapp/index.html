@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Logicals – Rätselhefte erstellen</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=&apos;http://www.w3.org/2000/svg&apos; viewBox=&apos;0 0 32 32&apos;%3E%3Crect width=&apos;32&apos; height=&apos;32&apos; rx=&apos;7&apos; fill=&apos;%23172033&apos;/%3E%3Cpath d=&apos;M8 8h5v11h6v5H8z&apos; fill=&apos;%23fff&apos;/%3E%3Ccircle cx=&apos;23&apos; cy=&apos;11&apos; r=&apos;4&apos; fill=&apos;%23C6492D&apos;/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<main id="app">
+    <!-- 1. Startbildschirm -->
+    <section class="screen screen--start is-active" id="screen-start">
+        <div class="start-card">
+            <p class="start-kicker">Deutsche Logikrätsel</p>
+            <h1 class="start-title">LOGICALS</h1>
+            <p class="start-sub">Rätselheft mit Hinweisen, Logikgitter und automatisch geprüften Lösungen – als druckfertiges PDF.</p>
+            <button class="btn btn--primary btn--large" id="start-button" type="button">Erstellen</button>
+        </div>
+    </section>
+
+    <!-- 2. Einstellungen -->
+    <section class="screen screen--config" id="screen-config">
+        <header class="bar">
+            <button class="btn btn--ghost" type="button" data-goto="screen-start">← Zurück</button>
+            <h2>Einstellungen</h2>
+        </header>
+
+        <form id="config-form" class="form">
+            <fieldset class="group">
+                <legend>Rätsel</legend>
+                <label class="field">
+                    <span>Anzahl der Rätsel</span>
+                    <select name="puzzleCount" id="field-puzzleCount"></select>
+                </label>
+                <label class="field">
+                    <span>Anzahl Kategorien</span>
+                    <select name="categoryCount" id="field-categoryCount"></select>
+                </label>
+                <label class="field">
+                    <span>Werte pro Kategorie</span>
+                    <select name="valuesPerCategory" id="field-valuesPerCategory"></select>
+                </label>
+                <label class="field">
+                    <span>Theme</span>
+                    <select name="themeId" id="field-themeId"></select>
+                </label>
+                <label class="field">
+                    <span>Schwierigkeit</span>
+                    <select name="difficulty" id="field-difficulty">
+                        <option value="leicht">leicht</option>
+                        <option value="mittel">mittel</option>
+                        <option value="schwer" selected>schwer</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span>Zielfrage</span>
+                    <select name="targetCategoryIndex" id="field-targetCategoryIndex"></select>
+                    <small>Auf welche Kategorie die Schlussfrage zielt.</small>
+                </label>
+                <label class="field">
+                    <span>Seed</span>
+                    <span class="field-row">
+                        <input type="number" name="seed" id="field-seed" min="0" step="1" value="100" />
+                        <button class="btn btn--ghost btn--small" type="button" id="seed-random">Würfeln</button>
+                    </span>
+                    <small>Gleicher Seed + gleiche Einstellungen = gleiches Heft.</small>
+                </label>
+            </fieldset>
+
+            <fieldset class="group">
+                <legend>PDF</legend>
+                <label class="field field--wide">
+                    <span>Titel</span>
+                    <input type="text" name="title" id="field-title" maxlength="80" placeholder="Logik unter Hochdruck" />
+                </label>
+                <label class="field field--wide">
+                    <span>Untertitel</span>
+                    <input type="text" name="subtitle" id="field-subtitle" maxlength="120" placeholder="wird automatisch erzeugt" />
+                </label>
+                <label class="field">
+                    <span>Farbschema</span>
+                    <select id="field-palette"></select>
+                </label>
+                <label class="field">
+                    <span>Akzentfarbe</span>
+                    <input type="color" name="accent" id="field-accent" value="#C6492D" />
+                </label>
+                <label class="field">
+                    <span>Zweitfarbe</span>
+                    <input type="color" name="secondary" id="field-secondary" value="#227C78" />
+                </label>
+                <label class="field">
+                    <span>Textfarbe</span>
+                    <input type="color" name="ink" id="field-ink" value="#172033" />
+                </label>
+            </fieldset>
+
+            <div class="actions">
+                <button class="btn btn--primary btn--large" type="submit" id="generate-button">Rätsel erzeugen</button>
+                <p class="hint" id="config-hint"></p>
+            </div>
+        </form>
+    </section>
+
+    <!-- 3. Ergebnis -->
+    <section class="screen screen--result" id="screen-result">
+        <header class="bar">
+            <button class="btn btn--ghost" type="button" data-goto="screen-config">← Einstellungen</button>
+            <h2 id="result-title">Heft</h2>
+        </header>
+
+        <div class="result-head">
+            <p id="result-subtitle" class="result-sub"></p>
+            <ul class="meta" id="result-meta"></ul>
+            <div class="actions actions--row">
+                <button class="btn btn--primary" type="button" id="pdf-button">PDF herunterladen</button>
+                <button class="btn btn--ghost" type="button" id="reroll-button">Anderer Seed</button>
+            </div>
+            <p class="hint" id="result-hint"></p>
+        </div>
+
+        <div id="puzzle-list" class="puzzles"></div>
+    </section>
+
+    <div class="overlay" id="overlay" hidden>
+        <div class="spinner"></div>
+        <p id="overlay-text">Rätsel werden erzeugt …</p>
+    </div>
+</main>
+<script src="./app.js"></script>
+</body>
+</html>

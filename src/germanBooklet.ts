@@ -5,7 +5,6 @@ import { formatClueGerman, GermanCategoryWording, GermanClueLanguage, GermanOrdi
 import { CategoryConfig, CategoryType, ClueType, ValueLabel } from './types';
 
 const CATEGORY_IDS = ['Person', 'KategorieB', 'KategorieC', 'KategorieD', 'Reihenfolge'] as const;
-const SEEDS = [100, 101, 102, 103, 104, 105, 106, 107, 108, 109] as const;
 const ALLOWED_TYPES = [
     ClueType.BINARY,
     ClueType.ORDINAL,
@@ -65,10 +64,23 @@ export interface GermanBookletPuzzle {
     };
 }
 
+export interface GermanBookletColors {
+    ink: string;
+    accent: string;
+    secondary: string;
+    pale: string;
+    muted: string;
+    line: string;
+}
+
 export interface GermanLogicBooklet {
     title: string;
     subtitle: string;
     generatedAt: string;
+    /** Palette handed to the PDF renderer. */
+    colors: GermanBookletColors;
+    /** The effective configuration this booklet was generated with. */
+    config: ResolvedBookletConfig;
     puzzles: GermanBookletPuzzle[];
 }
 
@@ -270,18 +282,167 @@ const themes: GermanPuzzleTheme[] = [
     },
 ];
 
-function engineCategories(theme: GermanPuzzleTheme): CategoryConfig[] {
-    return CATEGORY_IDS.map(id => ({
-        id,
-        type: id === 'Reihenfolge' ? CategoryType.ORDINAL : CategoryType.NOMINAL,
-        values: [...theme.categories[id].values],
+export type GermanDifficulty = 'leicht' | 'mittel' | 'schwer';
+
+interface DifficultyProfile {
+    allowedClueTypes: ClueType[];
+    complexRatio: number;
+    minDistinctClueTypes: number;
+}
+
+const DIFFICULTY_PROFILES: Record<GermanDifficulty, DifficultyProfile> = {
+    leicht: {
+        allowedClueTypes: [ClueType.BINARY, ClueType.ORDINAL, ClueType.SUPERLATIVE],
+        complexRatio: 0,
+        minDistinctClueTypes: 2,
+    },
+    mittel: {
+        allowedClueTypes: [ClueType.BINARY, ClueType.ORDINAL, ClueType.SUPERLATIVE, ClueType.BETWEEN, ClueType.ADJACENCY],
+        complexRatio: 0.2,
+        minDistinctClueTypes: 3,
+    },
+    schwer: {
+        allowedClueTypes: ALLOWED_TYPES,
+        complexRatio: 0.3,
+        minDistinctClueTypes: 3,
+    },
+};
+
+export const DEFAULT_BOOKLET_COLORS: GermanBookletColors = {
+    ink: '#172033',
+    accent: '#C6492D',
+    secondary: '#227C78',
+    pale: '#F3F0EA',
+    muted: '#5B6475',
+    line: '#C9CDD5',
+};
+
+/** Themes are ordered; 'standard' rotates through all of them. */
+export const STANDARD_THEME_ID = 'standard';
+
+const DIFFICULTY_ADJECTIVES: Record<GermanDifficulty, string> = {
+    leicht: 'leichte',
+    mittel: 'mittelschwere',
+    schwer: 'schwere',
+};
+
+const MIDDLE_CATEGORY_IDS = ['KategorieB', 'KategorieC', 'KategorieD'] as const;
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+const MAX_BUILD_ATTEMPTS = 16;
+/** After this many failed attempts only the hard requirement (unique solution) is enforced. */
+const RELAX_AFTER_ATTEMPTS = 10;
+
+export const BOOKLET_LIMITS = {
+    puzzleCount: { min: 1, max: themes.length },
+    categoryCount: { min: 3, max: CATEGORY_IDS.length },
+    valuesPerCategory: { min: 4, max: 5 },
+} as const;
+
+export interface GermanBookletOptions {
+    /** Number of puzzles in the booklet (1 … 10). Default: 10. */
+    puzzleCount?: number;
+    /** Categories per puzzle (3 … 5), always Person + middle categories + ordinal category. Default: 5. */
+    categoryCount?: number;
+    /** Values (rows) per category (4 … 5). Default: 5. */
+    valuesPerCategory?: number;
+    /** A theme id, or 'standard' to rotate through all themes. Default: 'standard'. */
+    themeId?: string;
+    /** Controls allowed clue types and the quality gate. Default: 'schwer'. */
+    difficulty?: GermanDifficulty;
+    /** Which middle category the final question asks about (1-based). Default: 1. */
+    targetCategoryIndex?: number;
+    /** Base seed; puzzle N uses seed + N. Default: 100. */
+    seed?: number;
+    title?: string;
+    subtitle?: string;
+    generatedAt?: string;
+    colors?: Partial<GermanBookletColors>;
+}
+
+export interface ResolvedBookletConfig {
+    puzzleCount: number;
+    categoryCount: number;
+    valuesPerCategory: number;
+    themeId: string;
+    difficulty: GermanDifficulty;
+    targetCategoryIndex: number;
+    seed: number;
+}
+
+export interface GermanThemeSummary {
+    id: string;
+    title: string;
+    story: string;
+    categories: string[];
+}
+
+/** Lists every built-in theme, e.g. to populate a theme picker. */
+export function listGermanThemes(): GermanThemeSummary[] {
+    return themes.map(theme => ({
+        id: theme.id,
+        title: theme.title,
+        story: theme.story,
+        categories: CATEGORY_IDS.map(id => theme.categories[id].label),
     }));
 }
 
-function languageFor(theme: GermanPuzzleTheme): GermanClueLanguage {
-    const categories = Object.fromEntries(
-        CATEGORY_IDS.map(id => [id, theme.categories[id].wording]),
+function clampInt(value: unknown, min: number, max: number, fallback: number): number {
+    const parsed = Math.round(Number(value));
+    if (!Number.isFinite(parsed)) return fallback;
+    return Math.min(max, Math.max(min, parsed));
+}
+
+function resolveColors(colors?: Partial<GermanBookletColors>): GermanBookletColors {
+    const resolved = { ...DEFAULT_BOOKLET_COLORS };
+    for (const key of Object.keys(DEFAULT_BOOKLET_COLORS) as (keyof GermanBookletColors)[]) {
+        const value = colors?.[key];
+        if (typeof value === 'string' && HEX_COLOR.test(value)) {
+            resolved[key] = value.toUpperCase();
+        }
+    }
+    return resolved;
+}
+
+function resolveConfig(options: GermanBookletOptions): ResolvedBookletConfig {
+    const categoryCount = clampInt(
+        options.categoryCount, BOOKLET_LIMITS.categoryCount.min, BOOKLET_LIMITS.categoryCount.max, CATEGORY_IDS.length,
     );
+    const difficulty: GermanDifficulty =
+        options.difficulty && options.difficulty in DIFFICULTY_PROFILES ? options.difficulty : 'schwer';
+    const themeId = options.themeId && themes.some(theme => theme.id === options.themeId)
+        ? options.themeId
+        : STANDARD_THEME_ID;
+
+    return {
+        puzzleCount: clampInt(options.puzzleCount, BOOKLET_LIMITS.puzzleCount.min, BOOKLET_LIMITS.puzzleCount.max, themes.length),
+        categoryCount,
+        valuesPerCategory: clampInt(
+            options.valuesPerCategory, BOOKLET_LIMITS.valuesPerCategory.min, BOOKLET_LIMITS.valuesPerCategory.max, 5,
+        ),
+        themeId,
+        difficulty,
+        targetCategoryIndex: clampInt(options.targetCategoryIndex, 1, categoryCount - 2, 1),
+        seed: clampInt(options.seed, 0, Number.MAX_SAFE_INTEGER, 100),
+    };
+}
+
+type CategoryId = (typeof CATEGORY_IDS)[number];
+
+/** Person + as many middle categories as requested + the ordinal category, in booklet order. */
+function selectedCategoryIds(categoryCount: number): CategoryId[] {
+    return ['Person', ...MIDDLE_CATEGORY_IDS.slice(0, categoryCount - 2), 'Reihenfolge'];
+}
+
+function engineCategories(theme: GermanPuzzleTheme, ids: CategoryId[], valueCount: number): CategoryConfig[] {
+    return ids.map(id => ({
+        id,
+        type: id === 'Reihenfolge' ? CategoryType.ORDINAL : CategoryType.NOMINAL,
+        values: theme.categories[id].values.slice(0, valueCount),
+    }));
+}
+
+function languageFor(theme: GermanPuzzleTheme, ids: CategoryId[]): GermanClueLanguage {
+    const categories = Object.fromEntries(ids.map(id => [id, theme.categories[id].wording]));
     return {
         baseCategoryId: 'Person',
         categories,
@@ -289,23 +450,33 @@ function languageFor(theme: GermanPuzzleTheme): GermanClueLanguage {
     };
 }
 
-function displayValue(theme: GermanPuzzleTheme, categoryId: (typeof CATEGORY_IDS)[number], value: ValueLabel): string {
+function displayValue(theme: GermanPuzzleTheme, categoryId: CategoryId, value: ValueLabel): string {
     const formatter = theme.categories[categoryId].display;
     return formatter ? formatter(value) : String(value);
 }
 
-function buildPuzzle(theme: GermanPuzzleTheme, number: number, seed: number): GermanBookletPuzzle {
-    const categories = engineCategories(theme);
-    const language = languageFor(theme);
+function buildPuzzle(
+    theme: GermanPuzzleTheme,
+    number: number,
+    seed: number,
+    config: ResolvedBookletConfig,
+    relaxed: boolean,
+): GermanBookletPuzzle {
+    const ids = selectedCategoryIds(config.categoryCount);
+    const categories = engineCategories(theme, ids, config.valuesPerCategory);
+    const language = languageFor(theme, ids);
+    const profile = DIFFICULTY_PROFILES[config.difficulty];
+    const personValues = categories[0].values;
+    const targetCategoryId = MIDDLE_CATEGORY_IDS[config.targetCategoryIndex - 1];
     const target = {
         category1Id: 'Person',
-        value1: categories[0].values[4],
-        category2Id: 'KategorieB',
+        value1: personValues[personValues.length - 1],
+        category2Id: targetCategoryId,
     };
     const generated = new Generator(seed).generatePuzzle(categories, target, {
         maxCandidates: 100,
         timeoutMs: 30_000,
-        constraints: { allowedClueTypes: ALLOWED_TYPES },
+        constraints: { allowedClueTypes: profile.allowedClueTypes },
     });
 
     const replayGrid = new LogicGrid(categories);
@@ -322,13 +493,25 @@ function buildPuzzle(theme: GermanPuzzleTheme, number: number, seed: number): Ge
     const clueTypes = generated.validClues.map(clue => clue.type);
     const complexClueCount = clueTypes.filter(type => COMPLEX_TYPES.has(type)).length;
     const distinctClueTypes = new Set(clueTypes).size;
-    if (!fullGridSolved || generated.validClues.length < 10 || distinctClueTypes < 3 || complexClueCount < 3) {
+
+    // The quality gate scales with the grid size: a 3x4 puzzle simply needs fewer clues than a 5x5 one.
+    const minClues = Math.max(4, Math.round((categories.length - 1) * config.valuesPerCategory * 0.5));
+    const minComplexClues = Math.round(minClues * profile.complexRatio);
+
+    if (!fullGridSolved) {
+        throw new Error(`Seed ${seed}: Das Gitter ist nicht eindeutig lösbar.`);
+    }
+    if (!relaxed && (
+        generated.validClues.length < minClues
+        || distinctClueTypes < profile.minDistinctClueTypes
+        || complexClueCount < minComplexClues
+    )) {
         throw new Error(`Seed ${seed} erfüllt die Schwierigkeitskriterien nicht.`);
     }
 
-    const solutionRows = categories[0].values.map(person => {
+    const solutionRows = personValues.map(person => {
         const row: Record<string, string> = {};
-        for (const id of CATEGORY_IDS) {
+        for (const id of ids) {
             const rawValue = id === 'Person' ? person : generated.solution[id][String(person)];
             row[theme.categories[id].label] = displayValue(theme, id, rawValue);
         }
@@ -342,16 +525,16 @@ function buildPuzzle(theme: GermanPuzzleTheme, number: number, seed: number): Ge
         title: theme.title,
         story: theme.story,
         instructions: 'Ordne jeder Person genau einen Wert aus jeder Kategorie zu. Alle Hinweise sind wahr; bei Oder-Hinweisen können auch beide Teilaussagen stimmen.',
-        categories: CATEGORY_IDS.map(id => ({
+        categories: ids.map(id => ({
             id,
             label: theme.categories[id].label,
-            values: theme.categories[id].values.map(value => displayValue(theme, id, value)),
+            values: theme.categories[id].values.slice(0, config.valuesPerCategory).map(value => displayValue(theme, id, value)),
             ordinal: id === 'Reihenfolge',
         })),
         clues: generated.validClues.map(clue => formatClueGerman(clue, language)),
         clueTypes,
         complexClueCount,
-        targetQuestion: `Welche Zuordnung der Kategorie „${theme.categories.KategorieB.label}“ gehört zu ${target.value1}?`,
+        targetQuestion: `Welche Zuordnung der Kategorie „${theme.categories[targetCategoryId].label}“ gehört zu ${target.value1}?`,
         solutionRows,
         verification: {
             fullGridSolved,
@@ -361,11 +544,54 @@ function buildPuzzle(theme: GermanPuzzleTheme, number: number, seed: number): Ge
     };
 }
 
-export function generateGermanLogicBooklet(): GermanLogicBooklet {
+/**
+ * Builds one puzzle, retrying with derived seeds when the quality gate rejects a candidate.
+ * Attempt 0 uses the requested seed, so a given configuration stays reproducible.
+ */
+function buildPuzzleWithRetries(
+    theme: GermanPuzzleTheme,
+    number: number,
+    baseSeed: number,
+    config: ResolvedBookletConfig,
+): GermanBookletPuzzle {
+    let lastError: unknown;
+    for (let attempt = 0; attempt < MAX_BUILD_ATTEMPTS; attempt++) {
+        try {
+            return buildPuzzle(theme, number, baseSeed + attempt * 1000, config, attempt >= RELAX_AFTER_ATTEMPTS);
+        } catch (error) {
+            lastError = error;
+        }
+    }
+    throw new Error(
+        `Rätsel ${number} („${theme.title}“) konnte mit dieser Konfiguration nicht erzeugt werden: `
+        + `${lastError instanceof Error ? lastError.message : String(lastError)}`,
+    );
+}
+
+/**
+ * Generates a printable German logic-puzzle booklet.
+ * Called without options it reproduces the original ten hard 5x5 puzzles (seeds 100-109).
+ */
+export function generateGermanLogicBooklet(options: GermanBookletOptions = {}): GermanLogicBooklet {
+    const config = resolveConfig(options);
+    const colors = resolveColors(options.colors);
+    const selectedThemes = config.themeId === STANDARD_THEME_ID
+        ? themes
+        : [themes.find(theme => theme.id === config.themeId)!];
+
+    const puzzles: GermanBookletPuzzle[] = [];
+    for (let index = 0; index < config.puzzleCount; index++) {
+        const theme = selectedThemes[index % selectedThemes.length];
+        puzzles.push(buildPuzzleWithRetries(theme, index + 1, config.seed + index, config));
+    }
+
     return {
-        title: 'Logik unter Hochdruck',
-        subtitle: '10 schwere deutsche Logicals mit vollständigen Lösungen',
-        generatedAt: '2026-09-01',
-        puzzles: themes.map((theme, index) => buildPuzzle(theme, index + 1, SEEDS[index])),
+        title: options.title?.trim() || 'Logik unter Hochdruck',
+        subtitle: options.subtitle?.trim()
+            || `${config.puzzleCount} ${DIFFICULTY_ADJECTIVES[config.difficulty]} deutsche Logicals mit vollständigen Lösungen`,
+        generatedAt: options.generatedAt ?? new Date().toISOString().slice(0, 10),
+        colors,
+        config,
+        puzzles,
     };
 }

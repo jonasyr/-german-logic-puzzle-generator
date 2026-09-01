@@ -3,7 +3,12 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-describe('German PDF booklet CLI', () => {
+import { pdfInspectionAvailable, pdfRendererAvailable } from './pdfEnvironment';
+
+// python3 + reportlab (renderer) and poppler-utils + pdfplumber (assertions) are optional tooling.
+const maybeDescribe = pdfRendererAvailable() && pdfInspectionAvailable() ? describe : describe.skip;
+
+maybeDescribe('German PDF booklet CLI', () => {
     test('exposes a usable command-line interface', () => {
         const script = path.join(process.cwd(), 'tools', 'generate_german_pdf.py');
 
