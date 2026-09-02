@@ -112,7 +112,9 @@ async function bookletFor(options: GermanBookletOptions): Promise<GermanLogicBoo
     const key = cacheKey(options);
     const cached = bookletCache.get(key);
     if (cached) return cached;
-    const booklet = await withGenerationSlot(() => generateBooklet(options));
+    // The library default is a pinned date for reproducibility; a live app wants the real one.
+    const today = new Date().toISOString().slice(0, 10);
+    const booklet = await withGenerationSlot(() => generateBooklet({ generatedAt: today, ...options }));
     rememberBooklet(key, booklet);
     return booklet;
 }

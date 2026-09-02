@@ -1,6 +1,7 @@
 import {
     BOOKLET_LIMITS,
     DEFAULT_BOOKLET_COLORS,
+    DEFAULT_GENERATED_AT,
     generateGermanLogicBooklet,
     listGermanThemes,
 } from '../src';
@@ -79,6 +80,35 @@ describe('German booklet configuration', () => {
         expect(booklet.colors.accent).toBe('#7C3AED');
         expect(booklet.colors.secondary).toBe(DEFAULT_BOOKLET_COLORS.secondary);
     }, 60_000);
+
+    test('keeps the generation date deterministic unless one is supplied', () => {
+        const first = generateGermanLogicBooklet({ puzzleCount: 1, categoryCount: 3, difficulty: 'leicht' });
+        const second = generateGermanLogicBooklet({ puzzleCount: 1, categoryCount: 3, difficulty: 'leicht' });
+        const stamped = generateGermanLogicBooklet({ puzzleCount: 1, categoryCount: 3, difficulty: 'leicht', generatedAt: '2030-01-01' });
+
+        expect(first.generatedAt).toBe(DEFAULT_GENERATED_AT);
+        expect(second.generatedAt).toBe(first.generatedAt);
+        expect(stamped.generatedAt).toBe('2030-01-01');
+    }, 60_000);
+
+    test('describes the actual grid when the layout is reduced', () => {
+        const full = generateGermanLogicBooklet({ puzzleCount: 1, themeId: 'streetfood' });
+        const reduced = generateGermanLogicBooklet({
+            puzzleCount: 1, themeId: 'streetfood', categoryCount: 3, valuesPerCategory: 4, difficulty: 'leicht',
+        });
+
+        // The handwritten story survives for the layout it was written for.
+        expect(full.puzzles[0].story).toContain('Fünf Freunde');
+
+        // The reduced layout must not promise five people or categories that were dropped.
+        const story = reduced.puzzles[0].story;
+        expect(story).toContain('Vier Personen');
+        expect(story).not.toContain('Fünf');
+        expect(story).toContain('„Gericht“');
+        expect(story).toContain('„Ankunft“');
+        expect(story).not.toContain('Getränk');
+        expect(story).not.toContain('Stand');
+    }, 90_000);
 
     test('lists all built-in themes for a theme picker', () => {
         const themes = listGermanThemes();

@@ -320,6 +320,13 @@ export const DEFAULT_BOOKLET_COLORS: GermanBookletColors = {
 /** Themes are ordered; 'standard' rotates through all of them. */
 export const STANDARD_THEME_ID = 'standard';
 
+/**
+ * Pinned so that identical options always produce an identical booklet, as the engine's
+ * determinism guarantee requires. Callers that want a real timestamp (such as the web app)
+ * pass `generatedAt` explicitly.
+ */
+export const DEFAULT_GENERATED_AT = '2026-09-01';
+
 const DIFFICULTY_ADJECTIVES: Record<GermanDifficulty, string> = {
     leicht: 'leichte',
     mittel: 'mittelschwere',
@@ -450,6 +457,28 @@ function languageFor(theme: GermanPuzzleTheme, ids: CategoryId[]): GermanClueLan
     };
 }
 
+const COUNT_WORDS: Record<number, string> = { 3: 'Drei', 4: 'Vier', 5: 'Fünf' };
+
+/**
+ * The handwritten stories describe the full 5x5 layout. For reduced configurations they would
+ * name categories and participants that no longer exist, so those get a generated description
+ * of the actual grid instead.
+ */
+function storyFor(theme: GermanPuzzleTheme, ids: CategoryId[], valueCount: number): string {
+    const isFullLayout = ids.length === CATEGORY_IDS.length
+        && valueCount === theme.categories.Person.values.length;
+    if (isFullLayout) return theme.story;
+
+    const labels = ids.filter(id => id !== 'Person').map(id => `„${theme.categories[id].label}“`);
+    const categoryPhrase = labels.length === 1
+        ? `der Kategorie ${labels[0]}`
+        : `den Kategorien ${labels.slice(0, -1).join(', ')} und ${labels[labels.length - 1]}`;
+    const count = COUNT_WORDS[valueCount] ?? String(valueCount);
+
+    return `${count} Personen nehmen teil. Jede Person hat genau einen Wert aus ${categoryPhrase}`
+        + ' – kein Wert kommt doppelt vor.';
+}
+
 function displayValue(theme: GermanPuzzleTheme, categoryId: CategoryId, value: ValueLabel): string {
     const formatter = theme.categories[categoryId].display;
     return formatter ? formatter(value) : String(value);
@@ -523,7 +552,7 @@ function buildPuzzle(
         number,
         seed,
         title: theme.title,
-        story: theme.story,
+        story: storyFor(theme, ids, config.valuesPerCategory),
         instructions: 'Ordne jeder Person genau einen Wert aus jeder Kategorie zu. Alle Hinweise sind wahr; bei Oder-Hinweisen können auch beide Teilaussagen stimmen.',
         categories: ids.map(id => ({
             id,
@@ -589,7 +618,7 @@ export function generateGermanLogicBooklet(options: GermanBookletOptions = {}): 
         title: options.title?.trim() || 'Logik unter Hochdruck',
         subtitle: options.subtitle?.trim()
             || `${config.puzzleCount} ${DIFFICULTY_ADJECTIVES[config.difficulty]} deutsche Logicals mit vollständigen Lösungen`,
-        generatedAt: options.generatedAt ?? new Date().toISOString().slice(0, 10),
+        generatedAt: options.generatedAt ?? DEFAULT_GENERATED_AT,
         colors,
         config,
         puzzles,

@@ -62,6 +62,14 @@ describe('Logicals web server', () => {
         expect(json.booklet.puzzles[0].verification.fullGridSolved).toBe(true);
     }, 60_000);
 
+    test('stamps the real date, unlike the deterministic library default', async () => {
+        const { json } = await request(server, '/api/booklet', {
+            puzzleCount: 1, categoryCount: 3, valuesPerCategory: 4, difficulty: 'leicht', seed: 12,
+        });
+
+        expect(json.booklet.generatedAt).toBe(new Date().toISOString().slice(0, 10));
+    }, 60_000);
+
     test('rejects malformed payloads and unknown paths', async () => {
         const invalid = await request(server, '/api/booklet', ['not', 'an', 'object']);
         expect(invalid.status).toBe(400);
