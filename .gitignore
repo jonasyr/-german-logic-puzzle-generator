@@ -119,3 +119,7 @@ dist
 # Brain
 .gemini
 .DS_Store
+
+# Python bytecode from the PDF renderer
+__pycache__/
+*.pyc

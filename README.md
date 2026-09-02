@@ -90,6 +90,72 @@ console.log(JSON.stringify(puzzle.proofChain[0], null, 2));
 // }
 ```
 
+## German Puzzle Booklets & Web App
+
+The repository also ships a ready-made German ("Logicals") booklet pipeline and a small web app on top of it.
+
+### Run the web app
+
+```bash
+npm install
+pip install reportlab          # only needed for the PDF export
+npm run web                    # builds and serves http://127.0.0.1:4173
+```
+
+Three screens: **start → settings → preview**. The preview lists every generated puzzle with its clues,
+target question and (collapsible) solution; one click renders the printable PDF (cover, clue pages,
+empty logic grids, solution pages).
+
+### Configurable options
+
+`generateGermanLogicBooklet(options?)` (and the `POST /api/booklet` route) accepts:
+
+| Option | Range | Default |
+| :--- | :--- | :--- |
+| `puzzleCount` | 1 … 10 | 10 |
+| `categoryCount` | 3 … 5 | 5 |
+| `valuesPerCategory` | 4 … 5 | 5 |
+| `themeId` | `'standard'` or one of the ten built-in themes (`listGermanThemes()`) | `'standard'` |
+| `difficulty` | `'leicht' | 'mittel' | 'schwer'` (selects clue types and the quality gate) | `'schwer'` |
+| `targetCategoryIndex` | 1 … `categoryCount - 2` (which category the final question asks about) | 1 |
+| `seed` | any integer; puzzle *n* uses `seed + n` | 100 |
+| `title`, `subtitle` | free text | generated |
+| `colors` | `ink`, `accent`, `secondary`, `pale`, `muted`, `line` as `#RRGGBB` | print palette |
+
+Out-of-range values are clamped, invalid colors are ignored, and every puzzle is verified to be
+uniquely solvable before it is returned. Calling the function without options reproduces the original
+ten hard 5x5 puzzles (seeds 100-109) byte for byte.
+
+### Headless pipeline
+
+```bash
+npm run generate:german-booklet tmp/booklet.json
+python3 tools/generate_german_pdf.py tmp/booklet.json out/booklet.pdf
+```
+
+### Self-hosting
+
+`Dockerfile` builds a single image containing the compiled server and a system ReportLab
+(~335 MB on disk, ~12 MiB RAM idle, ~55 MiB peak). Generation runs in a worker thread, so
+health checks and other visitors stay responsive while a booklet is being built.
+
+```bash
+docker build -t logicals .
+docker run -d -p 3070:4173 --name logicals logicals
+```
+
+[`deploy/homelab/`](./deploy/homelab) contains a ready-made Docker Compose stack, an
+auto-deploy script, a systemd timer and the measured resource figures.
+
+### HTTP API
+
+| Route | Purpose |
+| :--- | :--- |
+| `GET /api/options` | themes, limits, difficulties, default palette, PDF availability |
+| `POST /api/booklet` | booklet JSON for the posted options |
+| `POST /api/pdf` | printable PDF for the posted options |
+| `GET /healthz` | liveness probe for container health checks |
+
 ## Core Concepts
 
 ### Categories
