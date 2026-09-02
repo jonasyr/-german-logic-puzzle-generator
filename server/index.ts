@@ -9,6 +9,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync 
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { dirname, extname, join, normalize, resolve, sep } from 'path';
+import { Worker } from 'worker_threads';
 
 import {
     BOOKLET_LIMITS,
@@ -65,11 +66,53 @@ function rememberBooklet(key: string, booklet: GermanLogicBooklet): void {
     }
 }
 
-function bookletFor(options: GermanBookletOptions): GermanLogicBooklet {
+const WORKER_FILE = join(__dirname, 'bookletWorker.js');
+const MAX_CONCURRENT_GENERATIONS = Math.max(1, Number(process.env.LOGICALS_MAX_CONCURRENCY ?? 2));
+let activeGenerations = 0;
+const waiting: (() => void)[] = [];
+
+/** Limits how many puzzle generations run at once so a small host stays responsive. */
+async function withGenerationSlot<T>(task: () => Promise<T>): Promise<T> {
+    if (activeGenerations >= MAX_CONCURRENT_GENERATIONS) {
+        await new Promise<void>(release => waiting.push(release));
+    }
+    activeGenerations++;
+    try {
+        return await task();
+    } finally {
+        activeGenerations--;
+        waiting.shift()?.();
+    }
+}
+
+/**
+ * Generation is CPU-bound and takes seconds for a full booklet, so it runs in a worker
+ * thread. When the compiled worker is unavailable (ts-node, tests) it falls back to
+ * generating inline.
+ */
+function generateBooklet(options: GermanBookletOptions): Promise<GermanLogicBooklet> {
+    if (!existsSync(WORKER_FILE)) {
+        return Promise.resolve(generateGermanLogicBooklet(options));
+    }
+    return new Promise((resolvePromise, reject) => {
+        const worker = new Worker(WORKER_FILE, { workerData: options });
+        let settled = false;
+        worker.once('message', (booklet: GermanLogicBooklet) => {
+            settled = true;
+            resolvePromise(booklet);
+        });
+        worker.once('error', reject);
+        worker.once('exit', code => {
+            if (!settled) reject(new Error(`Generierung abgebrochen (Exit-Code ${code}).`));
+        });
+    });
+}
+
+async function bookletFor(options: GermanBookletOptions): Promise<GermanLogicBooklet> {
     const key = cacheKey(options);
     const cached = bookletCache.get(key);
     if (cached) return cached;
-    const booklet = generateGermanLogicBooklet(options);
+    const booklet = await withGenerationSlot(() => generateBooklet(options));
     rememberBooklet(key, booklet);
     return booklet;
 }
@@ -139,9 +182,14 @@ function runPython(args: string[]): Promise<{ code: number; stderr: string }> {
     });
 }
 
-async function pdfToolAvailable(): Promise<boolean> {
-    const { code } = await runPython(['-c', 'import reportlab']);
-    return code === 0;
+let pdfAvailability: Promise<boolean> | null = null;
+
+/** Probed once per process: spawning python on every request would be wasteful. */
+function pdfToolAvailable(): Promise<boolean> {
+    if (!pdfAvailability) {
+        pdfAvailability = runPython(['-c', 'import reportlab']).then(({ code }) => code === 0);
+    }
+    return pdfAvailability;
 }
 
 function fileNameFor(booklet: GermanLogicBooklet): string {
@@ -173,6 +221,11 @@ async function renderPdf(booklet: GermanLogicBooklet): Promise<Buffer> {
 async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
 
+    if (req.method === 'GET' && url.pathname === '/healthz') {
+        sendJson(res, 200, { status: 'ok' });
+        return;
+    }
+
     if (req.method === 'GET' && url.pathname === '/api/options') {
         sendJson(res, 200, {
             themes: [{ id: STANDARD_THEME_ID, title: 'Standard (alle Themen abwechselnd)' }, ...listGermanThemes()],
@@ -187,14 +240,14 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     if (req.method === 'POST' && url.pathname === '/api/booklet') {
         const options = await readOptions(req);
         const startedAt = Date.now();
-        const booklet = bookletFor(options);
+        const booklet = await bookletFor(options);
         sendJson(res, 200, { booklet, durationMs: Date.now() - startedAt });
         return;
     }
 
     if (req.method === 'POST' && url.pathname === '/api/pdf') {
         const options = await readOptions(req);
-        const booklet = bookletFor(options);
+        const booklet = await bookletFor(options);
         const pdf = await renderPdf(booklet);
         res.writeHead(200, {
             'Content-Type': 'application/pdf',

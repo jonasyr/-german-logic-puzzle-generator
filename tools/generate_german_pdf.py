@@ -16,6 +16,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.pdfmetrics import Font, registerFontFamily
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Paragraph, Table, TableStyle
@@ -58,15 +59,33 @@ def apply_palette(palette: dict[str, Any] | None) -> None:
     LINE = colors.HexColor(resolved['line'])
 
 
+FONT_DIRECTORIES = (
+    '/usr/share/fonts/truetype/dejavu',   # Debian/Ubuntu
+    '/usr/share/fonts/dejavu',            # Alpine, Fedora
+    '/usr/share/fonts/TTF',               # Arch
+    '/usr/local/share/fonts/dejavu',
+)
+
+
 def register_fonts() -> None:
-    regular = Path('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf')
-    bold = Path('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf')
-    if regular.exists() and bold.exists():
-        pdfmetrics.registerFont(TTFont('BookSans', str(regular)))
-        pdfmetrics.registerFont(TTFont('BookSans-Bold', str(bold)))
-    else:
-        pdfmetrics.registerFont(TTFont('BookSans', 'Helvetica'))
-        pdfmetrics.registerFont(TTFont('BookSans-Bold', 'Helvetica-Bold'))
+    """Registers DejaVu when available and otherwise aliases the built-in Helvetica."""
+    for directory in FONT_DIRECTORIES:
+        regular = Path(directory) / 'DejaVuSans.ttf'
+        bold = Path(directory) / 'DejaVuSans-Bold.ttf'
+        if regular.exists() and bold.exists():
+            pdfmetrics.registerFont(TTFont('BookSans', str(regular)))
+            pdfmetrics.registerFont(TTFont('BookSans-Bold', str(bold)))
+            register_font_family()
+            return
+    pdfmetrics.registerFont(Font('BookSans', 'Helvetica', 'WinAnsiEncoding'))
+    pdfmetrics.registerFont(Font('BookSans-Bold', 'Helvetica-Bold', 'WinAnsiEncoding'))
+    register_font_family()
+
+
+def register_font_family() -> None:
+    """Maps <b> markup inside paragraphs onto the bold face."""
+    registerFontFamily('BookSans', normal='BookSans', bold='BookSans-Bold',
+                       italic='BookSans', boldItalic='BookSans-Bold')
 
 
 def paragraph_style(name: str, size: float, leading: float, color: colors.Color | None = None, alignment: int = TA_LEFT, font: str = 'BookSans') -> ParagraphStyle:

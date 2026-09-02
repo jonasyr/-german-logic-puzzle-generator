@@ -34,6 +34,13 @@ describe('Logicals web server', () => {
         expect(await response.text()).toContain('LOGICALS');
     });
 
+    test('answers the health check without doing any work', async () => {
+        const { status, json } = await request(server, '/healthz');
+
+        expect(status).toBe(200);
+        expect(json).toEqual({ status: 'ok' });
+    });
+
     test('exposes themes, limits and renderer availability', async () => {
         const { status, json } = await request(server, '/api/options');
 

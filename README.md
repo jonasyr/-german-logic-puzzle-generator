@@ -133,6 +133,20 @@ npm run generate:german-booklet tmp/booklet.json
 python3 tools/generate_german_pdf.py tmp/booklet.json out/booklet.pdf
 ```
 
+### Self-hosting
+
+`Dockerfile` builds a single image containing the compiled server and a system ReportLab
+(~335 MB on disk, ~12 MiB RAM idle, ~55 MiB peak). Generation runs in a worker thread, so
+health checks and other visitors stay responsive while a booklet is being built.
+
+```bash
+docker build -t logicals .
+docker run -d -p 3070:4173 --name logicals logicals
+```
+
+[`deploy/homelab/`](./deploy/homelab) contains a ready-made Docker Compose stack, an
+auto-deploy script, a systemd timer and the measured resource figures.
+
 ### HTTP API
 
 | Route | Purpose |
@@ -140,6 +154,7 @@ python3 tools/generate_german_pdf.py tmp/booklet.json out/booklet.pdf
 | `GET /api/options` | themes, limits, difficulties, default palette, PDF availability |
 | `POST /api/booklet` | booklet JSON for the posted options |
 | `POST /api/pdf` | printable PDF for the posted options |
+| `GET /healthz` | liveness probe for container health checks |
 
 ## Core Concepts
 
