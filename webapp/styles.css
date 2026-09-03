@@ -125,10 +125,10 @@ input[type="color"] { width: 100%; height: 44px; padding: 4px; border: 1px solid
 .clues { margin: 0; padding-left: 22px; display: grid; gap: 6px; font-size: 15px; }
 details { margin-top: 14px; }
 summary { cursor: pointer; font-weight: 600; color: var(--teal); }
-table { border-collapse: collapse; width: 100%; margin-top: 12px; font-size: 14px; }
-th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; }
-th { background: var(--teal); color: #fff; }
-tbody tr:nth-child(even) { background: var(--pale); }
+.data-table { border-collapse: collapse; width: 100%; margin-top: 12px; font-size: 14px; }
+.data-table th, .data-table td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; }
+.data-table th { background: var(--teal); color: #fff; }
+.data-table tbody tr:nth-child(even) { background: var(--pale); }
 
 /* --- Overlay --- */
 .overlay {
@@ -148,3 +148,76 @@ tbody tr:nth-child(even) { background: var(--pale); }
 @media (prefers-reduced-motion: reduce) {
     .screen.is-active, .spinner { animation: none; }
 }
+
+/* --- Spielmodus --- */
+/* A 5x5 grid needs more room than the reading-width layout; without :has()
+   support the grid simply scrolls inside its container. */
+#app:has(#screen-play.is-active) { max-width: 1340px; }
+
+.play-head { border: 1px solid var(--line); border-radius: var(--radius); background: #fff; padding: 18px 20px; display: grid; gap: 12px; }
+.play-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.timer {
+    font-variant-numeric: tabular-nums;
+    font-size: 22px; font-weight: 700;
+    background: var(--ink); color: #fff;
+    border-radius: 10px; padding: 4px 14px; min-width: 84px; text-align: center;
+}
+.timer.is-paused { background: var(--muted); }
+
+.play-body { display: grid; grid-template-columns: minmax(0, auto) minmax(280px, 1fr); gap: 18px; margin-top: 18px; align-items: start; }
+@media (max-width: 900px) { .play-body { grid-template-columns: minmax(0, 1fr); } }
+
+.play-grid-wrap, .play-clues { border: 1px solid var(--line); border-radius: var(--radius); background: #fff; padding: 18px 20px; }
+.play-grid-wrap { overflow-x: auto; }
+.play-clues h3 { margin: 0 0 10px; font-size: 16px; }
+.legend { margin: 14px 0 0; color: var(--muted); font-size: 13px; }
+
+.grid-table { border-collapse: collapse; }
+.grid-table th, .grid-table td { padding: 0; }
+.grid-table .cat-head {
+    font-size: 12px; font-weight: 700; color: var(--teal);
+    text-align: center; padding: 0 0 6px; white-space: nowrap;
+}
+.grid-table .cat-side {
+    font-size: 12px; font-weight: 700; color: var(--teal);
+    writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; padding-right: 6px;
+}
+.grid-table .val-head {
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    font-size: 12px; font-weight: 500; text-align: left;
+    padding: 6px 0; height: 108px; vertical-align: bottom; white-space: nowrap;
+}
+.grid-table .val-side {
+    font-size: 12px; text-align: right; padding-right: 8px; white-space: nowrap; max-width: 150px;
+    overflow: hidden; text-overflow: ellipsis;
+}
+.grid-table .block-start { border-left: 2px solid var(--ink); }
+.grid-table .block-end { border-right: 2px solid var(--ink); }
+.grid-table .row-start { border-top: 2px solid var(--ink); }
+.grid-table .row-end { border-bottom: 2px solid var(--ink); }
+.grid-table .void { border: none !important; }
+
+.cell {
+    width: 34px; height: 34px; padding: 0; margin: 0;
+    border: 1px solid var(--line); background: #fff;
+    font: inherit; font-size: 17px; line-height: 1; color: var(--ink);
+    cursor: pointer; display: block;
+}
+.cell:hover { background: var(--pale); }
+.cell:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
+.cell.is-yes { color: var(--teal); font-weight: 700; }
+.cell.is-no { color: var(--muted); }
+.cell.is-wrong { background: #fbe3dd; border-color: var(--accent); color: var(--accent); font-weight: 700; }
+
+.status-good { color: var(--teal); font-weight: 600; }
+
+/* Paused: the grid is locked and veiled so nothing can be solved off the clock. */
+#play-grid.is-locked { position: relative; }
+#play-grid.is-locked .grid-table { opacity: .3; filter: blur(3px); }
+#play-grid.is-locked::after {
+    content: 'Pausiert';
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    font-size: 18px; font-weight: 700; color: var(--muted);
+}
+.cell:disabled { cursor: default; }

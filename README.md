@@ -102,9 +102,15 @@ pip install reportlab          # only needed for the PDF export
 npm run web                    # builds and serves http://127.0.0.1:4173
 ```
 
-Three screens: **start → settings → preview**. The preview lists every generated puzzle with its clues,
-target question and (collapsible) solution; one click renders the printable PDF (cover, clue pages,
-empty logic grids, solution pages).
+Four screens: **start → settings → preview → play**. The preview lists every generated puzzle with its
+clues, target question and (collapsible) solution; one click renders the printable PDF (cover, clue
+pages, empty logic grids, solution pages).
+
+**Play mode** opens an interactive logic grid for a puzzle: click a cell to cycle empty → ✗ → ○, with a
+running timer that can be paused. Mistakes are never pointed out on their own — the grid only marks
+them after you press *Prüfen*, and the highlight disappears as soon as you keep playing. Solving the
+grid stops the timer. Progress and elapsed time survive a reload via `localStorage`. The scoring rules
+live in `webapp/playLogic.js` and are covered by `test/PlayLogic.test.ts`.
 
 ### Configurable options
 

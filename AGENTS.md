@@ -29,7 +29,8 @@ The core engine is located under `src/`:
 | [`src/german.ts`](./src/german.ts) | German clue formatter driven by a `GermanClueLanguage` wording object. |
 | [`tools/generate_german_pdf.py`](./tools/generate_german_pdf.py) | ReportLab renderer for the printable booklet (dynamic grid, dynamic solution table, palette from JSON). |
 | [`server/index.ts`](./server/index.ts) | Dependency-free HTTP server: static web app plus `/api/options`, `/api/booklet`, `/api/pdf`. |
-| [`webapp/`](./webapp) | Vanilla HTML/CSS/JS front end (start → settings → preview/PDF). |
+| [`webapp/`](./webapp) | Vanilla HTML/CSS/JS front end (start → settings → preview/PDF → play). |
+| [`webapp/playLogic.js`](./webapp/playLogic.js) | Pure scoring rules of the interactive grid, shared with the test suite. |
 
 ---
 

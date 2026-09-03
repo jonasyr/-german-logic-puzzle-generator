@@ -123,11 +123,47 @@
         <div id="puzzle-list" class="puzzles"></div>
     </section>
 
+    <!-- 4. Spielen -->
+    <section class="screen screen--play" id="screen-play">
+        <header class="bar">
+            <button class="btn btn--ghost" type="button" data-goto="screen-result">← Übersicht</button>
+            <h2 id="play-title">Rätsel</h2>
+        </header>
+
+        <div class="play-head">
+            <p class="result-sub" id="play-story"></p>
+            <p class="goal" id="play-goal"></p>
+            <div class="play-toolbar">
+                <span class="timer" id="play-timer" aria-live="off">0:00</span>
+                <button class="btn btn--ghost btn--small" type="button" id="play-pause">Pause</button>
+                <button class="btn btn--primary btn--small" type="button" id="play-check">Prüfen</button>
+                <button class="btn btn--ghost btn--small" type="button" id="play-clear">Markierungen löschen</button>
+            </div>
+            <p class="hint" id="play-status" role="status"></p>
+        </div>
+
+        <div class="play-body">
+            <div class="play-grid-wrap">
+                <div id="play-grid"></div>
+                <p class="legend">Klick auf ein Feld: leer → <b>×</b> (ausgeschlossen) → <b>○</b> (sicher) → leer.</p>
+            </div>
+            <div class="play-clues">
+                <h3>Hinweise</h3>
+                <ol class="clues" id="play-clue-list"></ol>
+                <details id="play-solution">
+                    <summary>Lösung anzeigen</summary>
+                    <div id="play-solution-table"></div>
+                </details>
+            </div>
+        </div>
+    </section>
+
     <div class="overlay" id="overlay" hidden>
         <div class="spinner"></div>
         <p id="overlay-text">Rätsel werden erzeugt …</p>
     </div>
 </main>
+<script src="./playLogic.js"></script>
 <script src="./app.js"></script>
 </body>
 </html>
