@@ -210,3 +210,14 @@ summary { cursor: pointer; font-weight: 600; color: var(--teal); }
 .cell.is-wrong { background: #fbe3dd; border-color: var(--accent); color: var(--accent); font-weight: 700; }
 
 .status-good { color: var(--teal); font-weight: 600; }
+
+/* Paused: the grid is locked and veiled so nothing can be solved off the clock. */
+#play-grid.is-locked { position: relative; }
+#play-grid.is-locked .grid-table { opacity: .3; filter: blur(3px); }
+#play-grid.is-locked::after {
+    content: 'Pausiert';
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    font-size: 18px; font-weight: 700; color: var(--muted);
+}
+.cell:disabled { cursor: default; }

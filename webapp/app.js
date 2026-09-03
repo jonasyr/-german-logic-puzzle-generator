@@ -327,6 +327,16 @@
         timer.textContent = formatTime(play.seconds);
         timer.classList.toggle('is-paused', play.paused);
         el('play-pause').textContent = play.paused ? 'Weiter' : 'Pause';
+        renderPauseState();
+    }
+
+    /** While paused the grid is locked and veiled, so no progress is made off the clock. */
+    function renderPauseState() {
+        const locked = play.paused;
+        el('play-grid').classList.toggle('is-locked', locked);
+        el('play-check').disabled = locked;
+        el('play-clear').disabled = locked;
+        play.cells.forEach(button => { button.disabled = locked; });
     }
 
     function storageKeyFor(puzzle) {
@@ -397,7 +407,8 @@
     }
 
     function cycleMark(key) {
-        if (play.solved) return;
+        // A paused timer must also pause the puzzle, otherwise the recorded time is wrong.
+        if (play.solved || play.paused) return;
         const current = play.marks.get(key);
         if (current === undefined) play.marks.set(key, 'no');
         else if (current === 'no') play.marks.set(key, 'yes');
