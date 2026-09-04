@@ -36,12 +36,30 @@ export function createCluesSheet({ sheet, handle, header, toggle, list, backdrop
     /* --- Geometry --------------------------------------------------------- */
 
     /**
+     * Height from the top of the sheet to the bottom of the header.
+     *
+     * Measured against the sheet's own box rather than by summing the two
+     * children, so the sheet's top border - and any future margin - is included.
+     * Summing offsetHeights missed the 1px border and clipped the header off the
+     * bottom of the screen in landscape, where there is no slack to absorb it.
+     * Kept fractional: rounding it leaves the CSS resting position and the
+     * measured chrome a sub-pixel apart, which shows as a hairline of the clue
+     * list or a hair of the header hanging past the bottom edge.
+     */
+    function chromeHeight() {
+        return header.getBoundingClientRect().bottom - sheet.getBoundingClientRect().top;
+    }
+
+    /**
      * Keeps --sheet-peek equal to the actual chrome height, so the peek state
      * shows the grabber and the header and nothing of the list. A hard-coded
      * value drifts as soon as the text size or the safe-area inset changes.
      */
+    /** Cached so the drag clamp never forces a layout on every pointermove. */
+    let chrome = 0;
+
     function measurePeek() {
-        const chrome = handle.offsetHeight + header.offsetHeight;
+        chrome = chromeHeight();
         sheet.style.setProperty('--sheet-chrome', `${chrome}px`);
     }
 
@@ -58,7 +76,7 @@ export function createCluesSheet({ sheet, handle, header, toggle, list, backdrop
         const height = sheet.offsetHeight;
         // The header already carries the safe-area inset, so the peek is exactly
         // the chrome height and no part of the list shows through.
-        if (name === 'peek') return Math.max(0, height - handle.offsetHeight - header.offsetHeight);
+        if (name === 'peek') return Math.max(0, height - chrome);
         return height * DETENT_FRACTION[name];
     }
 

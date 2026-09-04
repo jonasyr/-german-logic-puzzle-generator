@@ -455,12 +455,23 @@
 }
 
 /* --- Phone landscape ------------------------------------------------------ */
-/* Short viewports cannot spare 60px for a peeking sheet plus two sticky bars. */
+/*
+ * A short viewport cannot spare much for the peeking sheet, so the chrome itself
+ * is made smaller. --sheet-peek is never overridden here: it is derived from the
+ * measured chrome, and hard-coding a smaller value would clip the header and put
+ * the CSS resting position out of step with the offset the drag clamps to.
+ */
 
 @media (max-width: 899px) and (max-height: 520px) {
     .play-bar, .play-toolbar { position: static; }
     .grid-scroll { max-height: 62vh; max-height: 62svh; }
-    .clues-sheet { height: 92vh; height: 92svh; --sheet-peek: calc(48px + var(--safe-bottom)); }
+    .clues-sheet { height: 92vh; height: 92svh; }
+    .sheet-handle { padding: var(--space-1) 0 0; }
+    /* min-height stays at the 44pt floor: the header is a button. */
+    .sheet-header {
+        padding-top: 0;
+        padding-bottom: calc(var(--space-2) + var(--safe-bottom));
+    }
     .play-stage { padding-bottom: calc(60px + var(--safe-bottom)); }
     .play-head .result-sub { display: none; }
 }
