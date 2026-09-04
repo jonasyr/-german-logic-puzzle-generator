@@ -238,9 +238,14 @@ input[type="number"] {
     gap: var(--space-2);
     /* margin-top:auto drops it to the bottom when the page is short; sticky
        keeps it there once the page is long enough to scroll. The negative side
-       and bottom margins make it full-bleed against the app padding. */
-    margin: auto calc(var(--pad-left) * -1) calc(var(--space-5) * -1) calc(var(--pad-right) * -1);
+       and bottom margins make it full-bleed against the app padding.
+       Each side negates its OWN padding: in landscape on a notched phone the
+       left and right insets differ, so crossing them over would push the bar
+       toward the unsafe edge. */
     margin-top: auto;
+    margin-right: calc(var(--pad-right) * -1);
+    margin-bottom: calc(var(--space-5) * -1);
+    margin-left: calc(var(--pad-left) * -1);
     padding: var(--space-3) var(--pad-left) calc(var(--space-3) + var(--safe-bottom));
     background: var(--paper);
     background: color-mix(in srgb, var(--paper) 88%, transparent);
