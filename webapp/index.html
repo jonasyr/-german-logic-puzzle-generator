@@ -202,19 +202,17 @@
         </div>
         <div class="sheet-backdrop" id="sheet-backdrop"></div>
 
-        <!-- "Prüfen" marks wrong cells red, which can give a solution away. It
-             sits in a toolbar next to four other buttons, so it is gated behind
-             a confirmation rather than firing on a mis-tap. -->
-        <dialog class="confirm" id="check-confirm" aria-labelledby="check-confirm-title">
-            <h3 class="confirm__title" id="check-confirm-title">Markierungen prüfen?</h3>
-            <p class="confirm__text">
-                Falsche Markierungen werden rot hervorgehoben. Das kann dir Lösungswege verraten.
-            </p>
+        <!-- Shared guard for the two toolbar actions a mis-tap must not trigger:
+             "Prüfen" reveals wrong cells (a spoiler) and "Löschen" wipes every
+             mark. Both sit between three other buttons. Title, body and the
+             confirm label are filled in per action. -->
+        <dialog class="confirm" id="confirm-dialog" aria-labelledby="confirm-title">
+            <h3 class="confirm__title" id="confirm-title"></h3>
+            <p class="confirm__text" id="confirm-text"></p>
             <form method="dialog" class="confirm__actions">
-                <!-- autofocus sits on the safe action, so Enter dismisses rather
-                     than reveals. -->
-                <button class="btn btn--ghost" type="submit" value="cancel" autofocus>Abbrechen</button>
-                <button class="btn btn--primary" type="submit" value="check" id="check-confirm-ok">Fehler anzeigen</button>
+                <!-- autofocus sits on the safe action, so Enter dismisses. -->
+                <button class="btn btn--ghost" type="submit" value="cancel" id="confirm-cancel" autofocus>Abbrechen</button>
+                <button class="btn btn--primary" type="submit" value="ok" id="confirm-ok">Bestätigen</button>
             </form>
         </dialog>
     </section>

@@ -131,10 +131,42 @@ function handleSolved() {
     persist();
 }
 
+/* --- Confirmation guard --------------------------------------------------- */
+
+/** Runs only if the user presses the confirm button; cleared by every other exit. */
+let pendingConfirm = null;
+
+/**
+ * <dialog> only reached Safari in 15.4; before that the element parses as an
+ * unknown element with no close()/showModal(). Every call site is guarded so an
+ * older browser degrades instead of throwing.
+ */
+function closeConfirm() {
+    pendingConfirm = null;
+    const dialog = el('confirm-dialog');
+    if (typeof dialog.close === 'function' && dialog.open) dialog.close();
+}
+
+function askConfirm({ title, text, confirmLabel, destructive, onConfirm }) {
+    const dialog = el('confirm-dialog');
+    // No dialog support: fall back to acting directly rather than blocking use.
+    if (typeof dialog.showModal !== 'function') { onConfirm(); return; }
+
+    el('confirm-title').textContent = title;
+    el('confirm-text').textContent = text;
+    const ok = el('confirm-ok');
+    ok.textContent = confirmLabel;
+    ok.classList.toggle('btn--danger', Boolean(destructive));
+
+    pendingConfirm = onConfirm;
+    dialog.returnValue = '';
+    dialog.showModal();
+}
+
 /**
  * Gate in front of checkNow. Revealing wrong marks can give a solution away, so
- * an accidental tap on "Prüfen" - which sits between four other toolbar buttons -
- * must not spoil the puzzle.
+ * an accidental tap on "Prüfen" - which sits between three other toolbar
+ * buttons - must not spoil the puzzle.
  */
 function requestCheck() {
     if (!state.puzzle || paused) return;
@@ -142,10 +174,30 @@ function requestCheck() {
     // Nothing is marked yet, so there is nothing to give away.
     if (state.marks.size === 0) { checkNow(); return; }
 
-    const dialog = el('check-confirm');
-    if (typeof dialog.showModal !== 'function') { checkNow(); return; }
-    dialog.returnValue = '';
-    dialog.showModal();
+    askConfirm({
+        title: 'Markierungen prüfen?',
+        text: 'Falsche Markierungen werden rot hervorgehoben. Das kann dir Lösungswege verraten.',
+        confirmLabel: 'Fehler anzeigen',
+        onConfirm: checkNow,
+    });
+}
+
+/** Gate in front of onClear, which throws away the whole grid and the undo history. */
+function requestClear() {
+    if (!state.puzzle || paused) return;
+
+    // An empty grid has nothing to lose.
+    if (state.marks.size === 0 && state.undo.length === 0) { onClear(); return; }
+
+    const count = state.marks.size;
+    askConfirm({
+        title: 'Alle Markierungen löschen?',
+        text: `${count} ${count === 1 ? 'Markierung wird' : 'Markierungen werden'} entfernt. `
+            + 'Das lässt sich nicht rückgängig machen.',
+        confirmLabel: 'Löschen',
+        destructive: true,
+        onConfirm: onClear,
+    });
 }
 
 function checkNow() {
@@ -268,7 +320,7 @@ export function openPlay(puzzle) {
 
     sheet.render(puzzle.clues, state.usedClues, persist);
     sheet.collapse();
-    el('check-confirm').close();
+    closeConfirm();
     el('play-solution').open = false;
     renderSolutionTable(puzzle);
 
@@ -307,14 +359,20 @@ export function initPlay() {
 
     el('play-check').addEventListener('click', requestCheck);
 
-    // Only this button reveals anything. "Abbrechen", Esc and a programmatic
-    // close all do nothing, because none of them run this handler. The dialog
-    // closes by itself (form method="dialog"); acting on the click rather than
-    // on the dialog's asynchronously dispatched "close" event keeps the reveal
-    // tied to the deliberate press.
-    el('check-confirm-ok').addEventListener('click', checkNow);
+    // Only this button runs the pending action. "Abbrechen", Esc and a
+    // programmatic close all clear it instead. The dialog closes by itself
+    // (form method="dialog"); acting on the click rather than on the dialog's
+    // asynchronously dispatched "close" event keeps the action tied to the
+    // deliberate press.
+    el('confirm-ok').addEventListener('click', () => {
+        const action = pendingConfirm;
+        pendingConfirm = null;
+        action?.();
+    });
+    el('confirm-cancel').addEventListener('click', () => { pendingConfirm = null; });
+    el('confirm-dialog').addEventListener('cancel', () => { pendingConfirm = null; });
     el('play-undo').addEventListener('click', onUndo);
-    el('play-clear').addEventListener('click', onClear);
+    el('play-clear').addEventListener('click', requestClear);
     el('play-pause').addEventListener('click', togglePause);
     el('play-view').addEventListener('click', toggleView);
 
@@ -324,7 +382,7 @@ export function initPlay() {
         timer.stop();
         persist();
         sheet.collapse();
-        el('check-confirm').close();
+        closeConfirm();
     });
 
     // iOS suspends timers when the tab is hidden; re-derive from timestamps on

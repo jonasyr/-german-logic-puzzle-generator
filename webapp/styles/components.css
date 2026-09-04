@@ -30,6 +30,10 @@
 
 .btn--fill { background: var(--surface-sunken); color: var(--text); }
 
+/* Destructive confirmations only. */
+.btn--danger { background: var(--danger-fg); color: var(--on-accent); }
+.btn--danger:hover:not(:disabled) { filter: brightness(.92); }
+
 .btn--large { padding: 0 34px; min-height: 52px; font-size: 17px; }
 /* "small" is visual only - the tap target stays at --tap-min. */
 .btn--small { padding: 0 14px; font-size: 15px; }
