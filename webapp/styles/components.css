@@ -1,0 +1,255 @@
+/* Reusable controls. Every interactive element here clears --tap-min. */
+
+/* --- Buttons -------------------------------------------------------------- */
+
+.btn {
+    font: inherit;
+    font-weight: 500;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    padding: 0 20px;
+    min-height: var(--tap-min);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-xs);
+    cursor: pointer;
+    transition: background var(--dur-fast) var(--ease-out),
+                border-color var(--dur-fast) var(--ease-out),
+                opacity var(--dur-fast) var(--ease-out),
+                transform var(--dur-fast) var(--ease-out);
+}
+.btn:active:not(:disabled) { transform: scale(.97); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.btn--primary { background: var(--accent); color: var(--on-accent); }
+.btn--primary:hover:not(:disabled) { background: var(--accent-strong); }
+
+.btn--ghost { background: transparent; border-color: var(--line); color: var(--text); }
+.btn--ghost:hover:not(:disabled) { border-color: var(--text); }
+
+.btn--fill { background: var(--surface-sunken); color: var(--text); }
+
+/* Destructive confirmations only. */
+.btn--danger { background: var(--danger-fg); color: var(--on-accent); }
+.btn--danger:hover:not(:disabled) { filter: brightness(.92); }
+
+.btn--large { padding: 0 34px; min-height: 52px; font-size: 17px; }
+/* "small" is visual only - the tap target stays at --tap-min. */
+.btn--small { padding: 0 14px; font-size: 15px; }
+.btn--icon { padding: 0; width: var(--tap-min); }
+
+/* --- Bars ----------------------------------------------------------------- */
+
+.bar {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-md);
+    margin-bottom: var(--gap-lg);
+    min-height: var(--tap-min);
+}
+.bar h2 { margin: 0; font-size: 22px; line-height: 1.2; }
+
+/* --- Cards ---------------------------------------------------------------- */
+
+.card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    padding: 18px 20px;
+}
+
+/* --- Form ----------------------------------------------------------------- */
+
+.form { display: grid; gap: var(--gap-lg); }
+
+.group {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 20px 22px 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px 20px;
+}
+.group legend {
+    padding: 0 8px;
+    font-weight: 600;
+    color: var(--teal);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    font-size: 12px;
+}
+
+.field { display: grid; gap: var(--gap-xs); align-content: start; }
+.field--wide { grid-column: 1 / -1; }
+.field > span { font-size: 14px; font-weight: 600; }
+.field small { color: var(--muted); font-size: 13px; }
+.field-row { display: flex; gap: 8px; align-items: stretch; }
+.field-row input { flex: 1; min-width: 0; }
+
+select,
+input[type="text"],
+input[type="number"] {
+    font: inherit;
+    font-size: max(16px, 1rem);
+    padding: 0 12px;
+    min-height: var(--tap-min);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: inherit;
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+}
+select {
+    /* Restore an affordance after removing the native appearance. */
+    background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                      linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 34px;
+}
+input[type="color"] {
+    width: 100%;
+    height: var(--tap-min);
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.actions { display: grid; gap: var(--gap-sm); justify-items: start; }
+.actions--row { display: flex; flex-wrap: wrap; gap: var(--gap-sm); }
+
+.hint { margin: 0; color: var(--muted); font-size: 14px; min-height: 1.2em; }
+.hint.is-error { color: var(--danger-fg); font-weight: 600; }
+.status-good { color: var(--good); font-weight: 600; }
+
+/* --- Chips / meta --------------------------------------------------------- */
+
+.meta { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; }
+.meta li { background: var(--surface-sunken); border-radius: var(--radius-pill); padding: 5px 12px; font-size: 13px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 var(--gap-md); padding: 0; list-style: none; }
+.chip { border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 13px; }
+.chip b { color: var(--teal); }
+
+/* --- Segmented control ---------------------------------------------------- */
+
+.segmented {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--surface-sunken);
+    border-radius: var(--radius-pill);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+}
+.segmented::-webkit-scrollbar { display: none; }
+
+.segmented__item {
+    flex: 0 0 auto;
+    min-height: var(--tap-min);
+    padding: 0 14px;
+    border-radius: var(--radius-pill);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.segmented__item[aria-selected="true"] {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow-card);
+}
+.segmented__item.is-complete::after {
+    content: "\2713";
+    color: var(--good);
+    font-weight: 700;
+}
+
+/* --- Tables --------------------------------------------------------------- */
+
+.data-table { border-collapse: collapse; width: 100%; margin-top: 12px; font-size: 14px; }
+.data-table th, .data-table td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; }
+.data-table th { background: var(--teal); color: #fff; }
+.data-table tbody tr:nth-child(even) { background: var(--surface-sunken); }
+
+details { margin-top: var(--gap-md); }
+summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--teal);
+    min-height: var(--tap-min);
+    display: flex;
+    align-items: center;
+}
+
+/* --- Confirmation dialog -------------------------------------------------- */
+/* <dialog> gives the focus trap, Esc-to-dismiss and inert background for free. */
+
+.confirm {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    color: var(--text);
+    padding: 24px 22px 20px;
+    width: min(400px, calc(100vw - 40px));
+    box-shadow: 0 24px 60px rgba(23, 32, 51, .28);
+    /* Sit a little above centre so the buttons land under the thumb. */
+    margin: auto auto max(24px, calc(18vh + var(--safe-bottom)));
+}
+.confirm::backdrop {
+    background: rgba(0, 0, 0, .42);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+}
+
+.confirm__title { margin: 0 0 8px; font-size: 18px; font-weight: 600; }
+.confirm__text { margin: 0 0 20px; color: var(--muted); font-size: 15px; }
+.confirm__actions { display: flex; gap: var(--gap-sm); justify-content: flex-end; flex-wrap: wrap; }
+.confirm__actions .btn { flex: 1 1 auto; }
+
+@media (min-width: 900px) {
+    .confirm { margin: auto; }
+    .confirm__actions .btn { flex: 0 0 auto; }
+}
+
+/* --- Overlay -------------------------------------------------------------- */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: var(--gap-md);
+    padding: var(--gap-lg);
+    background: var(--paper);   /* fallback before Safari 16.2 gained color-mix */
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    z-index: 60;
+}
+/* display:grid above would otherwise beat the user-agent [hidden] rule. */
+.overlay[hidden] { display: none; }
+.overlay p { margin: 0; color: var(--muted); text-align: center; }
+
+.spinner {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    border: 4px solid var(--surface-sunken);
+    border-top-color: var(--accent);
+    animation: spin .9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
