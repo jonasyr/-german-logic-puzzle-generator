@@ -1,0 +1,115 @@
+/*
+ * Reset plus the iOS/Safari hardening layer.
+ *
+ * The rules in "Touch behaviour" below are what make the app usable on an
+ * iPhone. Read the comments before changing any of them.
+ */
+
+* { box-sizing: border-box; }
+
+html {
+    /* Safari inflates text on rotation without this. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--text);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter",
+        "Segoe UI", system-ui, sans-serif;
+    /* Stop a scroll that reaches the end of the page from turning into
+       pull-to-refresh, which would reload and interrupt a puzzle. */
+    overscroll-behavior-y: contain;
+}
+
+/* --- Touch behaviour ------------------------------------------------------
+ *
+ * touch-action: manipulation removes Safari's double-tap-zoom recognition and
+ * the ~300ms tap delay that comes with it. This is the fix for "tapping a cell
+ * twice zooms instead of marking it".
+ *
+ * It deliberately does NOT disable pinch-zoom, and we deliberately do not put
+ * user-scalable=no / maximum-scale=1 in the viewport meta: Safari has ignored
+ * that since iOS 10 and it is a WCAG 1.4.4 failure. Pinch-zoom keeps working.
+ */
+button,
+summary,
+[role="button"],
+.cell,
+.tappable {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;  /* no grey flash on tap */
+    -webkit-touch-callout: none;               /* no long-press callout */
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Safari force-zooms the page when a focused field is under 16px. Never allow
+   a control below that, whatever the local type scale says. */
+input,
+select,
+textarea {
+    font-size: max(16px, 1rem);
+}
+
+/* Text the user may genuinely want to select stays selectable. */
+p, li, h1, h2, h3, td, th, .selectable {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+img { max-width: 100%; }
+
+/* --- App shell ------------------------------------------------------------ */
+
+#app {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding-top: calc(var(--gap-lg) + var(--safe-top));
+    padding-left: var(--pad-left);
+    padding-right: var(--pad-right);
+    padding-bottom: calc(80px + var(--safe-bottom));
+}
+
+.screen { display: none; }
+.screen.is-active { display: block; animation: fade var(--dur-fast) var(--ease-out); }
+
+@keyframes fade {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

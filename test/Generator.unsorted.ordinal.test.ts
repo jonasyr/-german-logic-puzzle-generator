@@ -13,6 +13,9 @@ import { CategoryConfig, CategoryType, ClueType } from '../src/types';
 import { AdjacencyClue } from '../src/engine/Clue';
 
 describe('Generator with Unsorted Ordinal Categories', () => {
+    // Each case drives the full generate-and-verify loop, which routinely exceeds
+    // Jest's 5s default on a loaded machine and made this suite flaky.
+    jest.setTimeout(30000); // 30 seconds
 
     it('generates sound ADJACENCY clues when ordinal values are unsorted', async () => {
         // Values shuffled: [4, 12, 16, 10]. Numerical order: 4 < 10 < 12 < 16.

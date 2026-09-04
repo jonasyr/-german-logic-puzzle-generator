@@ -2,10 +2,33 @@
 <html lang="de">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- viewport-fit=cover opts into the full screen on notched devices; every
+         edge is then paid back with env(safe-area-inset-*) in the CSS.
+         user-scalable is deliberately left alone: Safari ignores it since iOS 10
+         and disabling zoom fails WCAG 1.4.4. Double-tap zoom is handled per
+         element with touch-action: manipulation instead. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#fbfaf7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)" />
+    <meta name="description" content="Deutsche Logikrätsel als druckfertiges Heft – mit Hinweisen, Logikgitter und geprüften Lösungen." />
+
     <title>Logicals – Rätselhefte erstellen</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=&apos;http://www.w3.org/2000/svg&apos; viewBox=&apos;0 0 32 32&apos;%3E%3Crect width=&apos;32&apos; height=&apos;32&apos; rx=&apos;7&apos; fill=&apos;%23172033&apos;/%3E%3Cpath d=&apos;M8 8h5v11h6v5H8z&apos; fill=&apos;%23fff&apos;/%3E%3Ccircle cx=&apos;23&apos; cy=&apos;11&apos; r=&apos;4&apos; fill=&apos;%23C6492D&apos;/%3E%3C/svg%3E" />
-    <link rel="stylesheet" href="./styles.css" />
+
+    <!-- Home Screen web app -->
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Logicals" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <link rel="icon" href="./icons/favicon.svg" type="image/svg+xml" />
+
+    <link rel="stylesheet" href="./styles/tokens.css" />
+    <link rel="stylesheet" href="./styles/base.css" />
+    <link rel="stylesheet" href="./styles/components.css" />
+    <link rel="stylesheet" href="./styles/screens.css" />
+    <link rel="stylesheet" href="./styles/play.css" />
 </head>
 <body>
 <main id="app">
@@ -61,7 +84,7 @@
                 <label class="field">
                     <span>Seed</span>
                     <span class="field-row">
-                        <input type="number" name="seed" id="field-seed" min="0" step="1" value="100" />
+                        <input type="number" name="seed" id="field-seed" min="0" step="1" value="100" inputmode="numeric" />
                         <button class="btn btn--ghost btn--small" type="button" id="seed-random">Würfeln</button>
                     </span>
                     <small>Gleicher Seed + gleiche Einstellungen = gleiches Heft.</small>
@@ -124,38 +147,76 @@
     </section>
 
     <!-- 4. Spielen -->
-    <section class="screen screen--play" id="screen-play">
-        <header class="bar">
-            <button class="btn btn--ghost" type="button" data-goto="screen-result">← Übersicht</button>
+    <section class="screen screen--play" id="screen-play" data-view="pager">
+        <header class="bar play-bar">
+            <button class="btn btn--ghost btn--small" type="button" data-goto="screen-result" aria-label="Zurück zur Übersicht">← Übersicht</button>
             <h2 id="play-title">Rätsel</h2>
+            <span class="timer" id="play-timer" aria-live="off" aria-label="Verstrichene Zeit">0:00</span>
         </header>
+
+        <div class="play-toolbar">
+            <button class="btn btn--primary btn--small" type="button" id="play-check">Prüfen</button>
+            <button class="btn btn--ghost btn--small btn--icon" type="button" id="play-undo" disabled aria-label="Letzte Markierung zurücknehmen">↶</button>
+            <button class="btn btn--ghost btn--small" type="button" id="play-pause">Pause</button>
+            <button class="btn btn--ghost btn--small view-toggle" type="button" id="play-view">Gesamt</button>
+            <button class="btn btn--ghost btn--small" type="button" id="play-clear">Löschen</button>
+        </div>
 
         <div class="play-head">
             <p class="result-sub" id="play-story"></p>
             <p class="goal" id="play-goal"></p>
-            <div class="play-toolbar">
-                <span class="timer" id="play-timer" aria-live="off">0:00</span>
-                <button class="btn btn--ghost btn--small" type="button" id="play-pause">Pause</button>
-                <button class="btn btn--primary btn--small" type="button" id="play-check">Prüfen</button>
-                <button class="btn btn--ghost btn--small" type="button" id="play-clear">Markierungen löschen</button>
-            </div>
-            <p class="hint" id="play-status" role="status"></p>
+            <p class="hint" id="play-status" role="status" aria-live="polite"></p>
         </div>
 
-        <div class="play-body">
-            <div class="play-grid-wrap">
-                <div id="play-grid"></div>
-                <p class="legend">Klick auf ein Feld: leer → <b>×</b> (ausgeschlossen) → <b>○</b> (sicher) → leer.</p>
+        <div class="play-stage" id="play-stage">
+            <div class="play-pager" id="play-pager">
+                <div class="segmented" id="pager-nav" role="tablist" aria-label="Kategoriepaare"></div>
+                <div class="pager-track" id="pager-track"></div>
             </div>
-            <div class="play-clues">
-                <h3>Hinweise</h3>
-                <ol class="clues" id="play-clue-list"></ol>
-                <details id="play-solution">
-                    <summary>Lösung anzeigen</summary>
-                    <div id="play-solution-table"></div>
-                </details>
+
+            <div class="play-overview" id="play-overview">
+                <div class="zoom-controls">
+                    <button class="btn btn--ghost btn--small btn--icon" type="button" id="zoom-out" aria-label="Verkleinern">−</button>
+                    <output id="zoom-level" for="zoom-out zoom-in">100%</output>
+                    <button class="btn btn--ghost btn--small btn--icon" type="button" id="zoom-in" aria-label="Vergrößern">+</button>
+                </div>
+                <div class="grid-scroll" id="grid-scroll">
+                    <div class="grid-zoom" id="grid-zoom"></div>
+                </div>
             </div>
+
+            <aside class="clues-sheet" id="clues-sheet" data-detent="peek">
+                <div class="sheet-handle" id="sheet-handle" aria-hidden="true"></div>
+                <button class="sheet-header" type="button" id="sheet-toggle" aria-expanded="false" aria-controls="sheet-body">
+                    <h3>Hinweise <span class="sheet-count" id="clue-count"></span></h3>
+                    <span class="sheet-chevron" aria-hidden="true">▲</span>
+                </button>
+                <div class="sheet-body" id="sheet-body">
+                    <ol class="clues" id="play-clue-list"></ol>
+                    <details id="play-solution">
+                        <summary>Lösung anzeigen</summary>
+                        <div id="play-solution-table"></div>
+                    </details>
+                </div>
+            </aside>
         </div>
+        <div class="sheet-backdrop" id="sheet-backdrop"></div>
+
+        <!-- "Prüfen" marks wrong cells red, which can give a solution away. It
+             sits in a toolbar next to four other buttons, so it is gated behind
+             a confirmation rather than firing on a mis-tap. -->
+        <dialog class="confirm" id="check-confirm" aria-labelledby="check-confirm-title">
+            <h3 class="confirm__title" id="check-confirm-title">Markierungen prüfen?</h3>
+            <p class="confirm__text">
+                Falsche Markierungen werden rot hervorgehoben. Das kann dir Lösungswege verraten.
+            </p>
+            <form method="dialog" class="confirm__actions">
+                <!-- autofocus sits on the safe action, so Enter dismisses rather
+                     than reveals. -->
+                <button class="btn btn--ghost" type="submit" value="cancel" autofocus>Abbrechen</button>
+                <button class="btn btn--primary" type="submit" value="check" id="check-confirm-ok">Fehler anzeigen</button>
+            </form>
+        </dialog>
     </section>
 
     <div class="overlay" id="overlay" hidden>
@@ -163,7 +224,10 @@
         <p id="overlay-text">Rätsel werden erzeugt …</p>
     </div>
 </main>
+
+<!-- Pure play rules, shared verbatim with the Jest suite (test/PlayLogic.test.ts).
+     Loaded as a classic script so it keeps its UMD wrapper and CommonJS export. -->
 <script src="./playLogic.js"></script>
-<script src="./app.js"></script>
+<script type="module" src="./js/main.js"></script>
 </body>
 </html>

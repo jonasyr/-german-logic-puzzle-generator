@@ -1,0 +1,86 @@
+/* Start, settings and result screens. */
+
+/* --- Start ---------------------------------------------------------------- */
+
+.screen--start { display: none; }
+.screen--start.is-active {
+    display: grid;
+    place-items: center;
+    /* svh = the viewport with Safari's toolbars visible, so the card never sits
+       under the address bar on first paint the way 78vh did. */
+    min-height: 78vh;
+    min-height: 78svh;
+}
+
+.start-card {
+    width: min(560px, 100%);
+    background: var(--ink);
+    color: var(--on-ink);
+    border-radius: var(--radius-lg);
+    padding: 56px 32px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.start-card::before,
+.start-card::after { content: ""; position: absolute; border-radius: 50%; }
+.start-card::before { width: 220px; height: 220px; background: var(--accent); top: -110px; right: -70px; }
+.start-card::after { width: 170px; height: 170px; background: var(--teal); bottom: -90px; left: -60px; }
+
+.start-kicker, .start-title, .start-sub, .start-card .btn { position: relative; z-index: 1; }
+.start-kicker {
+    margin: 0;
+    letter-spacing: .22em;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #c9cfdb;   /* fallback before Safari 16.2 gained color-mix */
+    color: color-mix(in srgb, var(--on-ink) 72%, transparent);
+}
+.start-title { margin: 12px 0 16px; font-size: clamp(44px, 9vw, 72px); letter-spacing: .12em; line-height: 1.05; }
+.start-sub {
+    margin: 0 auto var(--gap-xl);
+    max-width: 40ch;
+    color: #dde1ea;
+    color: color-mix(in srgb, var(--on-ink) 84%, transparent);
+    font-size: 15px;
+}
+
+/* --- Result --------------------------------------------------------------- */
+
+.result-head {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 20px 22px;
+    display: grid;
+    gap: 14px;
+}
+.result-sub { margin: 0; color: var(--muted); }
+
+.puzzles { display: grid; gap: 18px; margin-top: 22px; }
+.puzzle {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 20px 22px;
+}
+.puzzle h3 { margin: 0 0 4px; font-size: 19px; }
+.puzzle .story { margin: 0 0 14px; color: var(--muted); font-size: 15px; }
+
+.goal {
+    margin: 0 0 14px;
+    padding: 10px 14px;
+    border-left: 3px solid var(--teal);
+    background: var(--surface-sunken);
+    border-radius: 0 8px 8px 0;
+    font-size: 15px;
+}
+
+.clues { margin: 0; padding-left: 22px; display: grid; gap: 6px; font-size: 15px; }
+
+/* On a phone the settings form is one column; two 220px tracks would overflow. */
+@media (max-width: 520px) {
+    .group { grid-template-columns: 1fr; padding: 18px 16px 20px; }
+    .puzzle, .result-head { padding: 18px 16px; }
+    .start-card { padding: 44px 22px; }
+}
