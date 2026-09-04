@@ -45,83 +45,98 @@
     <!-- 2. Einstellungen -->
     <section class="screen screen--config" id="screen-config">
         <header class="bar">
-            <button class="btn btn--ghost" type="button" data-goto="screen-start">← Zurück</button>
+            <button class="btn btn--ghost btn--back" type="button" data-goto="screen-start" aria-label="Zurück">
+                <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Zurück</span>
+            </button>
             <h2>Einstellungen</h2>
         </header>
 
         <form id="config-form" class="form">
-            <fieldset class="group">
-                <legend>Rätsel</legend>
-                <label class="field">
-                    <span>Anzahl der Rätsel</span>
-                    <select name="puzzleCount" id="field-puzzleCount"></select>
-                </label>
-                <label class="field">
-                    <span>Anzahl Kategorien</span>
-                    <select name="categoryCount" id="field-categoryCount"></select>
-                </label>
-                <label class="field">
-                    <span>Werte pro Kategorie</span>
-                    <select name="valuesPerCategory" id="field-valuesPerCategory"></select>
-                </label>
-                <label class="field">
-                    <span>Theme</span>
-                    <select name="themeId" id="field-themeId"></select>
-                </label>
-                <label class="field">
-                    <span>Schwierigkeit</span>
-                    <select name="difficulty" id="field-difficulty">
-                        <option value="leicht">leicht</option>
-                        <option value="mittel">mittel</option>
-                        <option value="schwer" selected>schwer</option>
-                    </select>
-                </label>
-                <label class="field">
-                    <span>Zielfrage</span>
-                    <select name="targetCategoryIndex" id="field-targetCategoryIndex"></select>
-                    <small>Auf welche Kategorie die Schlussfrage zielt.</small>
-                </label>
-                <label class="field">
-                    <span>Seed</span>
-                    <span class="field-row">
-                        <input type="number" name="seed" id="field-seed" min="0" step="1" value="100" inputmode="numeric" />
-                        <button class="btn btn--ghost btn--small" type="button" id="seed-random">Würfeln</button>
-                    </span>
-                    <small>Gleicher Seed + gleiche Einstellungen = gleiches Heft.</small>
-                </label>
-            </fieldset>
+            <section class="group">
+                <h3 class="group__caption" id="caption-puzzle">Rätsel</h3>
+                <div class="rows" role="group" aria-labelledby="caption-puzzle">
+                    <label class="row">
+                        <span class="row__label">Anzahl der Rätsel</span>
+                        <select class="row__control" name="puzzleCount" id="field-puzzleCount"></select>
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Anzahl Kategorien</span>
+                        <select class="row__control" name="categoryCount" id="field-categoryCount"></select>
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Werte pro Kategorie</span>
+                        <select class="row__control" name="valuesPerCategory" id="field-valuesPerCategory"></select>
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Theme</span>
+                        <select class="row__control" name="themeId" id="field-themeId"></select>
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Schwierigkeit</span>
+                        <select class="row__control" name="difficulty" id="field-difficulty">
+                            <option value="leicht">leicht</option>
+                            <option value="mittel">mittel</option>
+                            <option value="schwer" selected>schwer</option>
+                        </select>
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Zielfrage</span>
+                        <select class="row__control" name="targetCategoryIndex" id="field-targetCategoryIndex"></select>
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Seed</span>
+                        <span class="row__control row__control--split">
+                            <input type="number" name="seed" id="field-seed" min="0" step="1"
+                                   inputmode="numeric" enterkeyhint="done" autocomplete="off" />
+                            <button class="btn btn--fill btn--small" type="button" id="seed-random">Würfeln</button>
+                        </span>
+                    </label>
+                </div>
+                <p class="group__note">
+                    Die Zielfrage bestimmt, auf welche Kategorie die Schlussfrage zielt.
+                    Gleicher Seed und gleiche Einstellungen ergeben dasselbe Heft.
+                </p>
+            </section>
 
-            <fieldset class="group">
-                <legend>PDF</legend>
-                <label class="field field--wide">
-                    <span>Titel</span>
-                    <input type="text" name="title" id="field-title" maxlength="80" placeholder="Logik unter Hochdruck" />
-                </label>
-                <label class="field field--wide">
-                    <span>Untertitel</span>
-                    <input type="text" name="subtitle" id="field-subtitle" maxlength="120" placeholder="wird automatisch erzeugt" />
-                </label>
-                <label class="field">
-                    <span>Farbschema</span>
-                    <select id="field-palette"></select>
-                </label>
-                <label class="field">
-                    <span>Akzentfarbe</span>
-                    <input type="color" name="accent" id="field-accent" value="#C6492D" />
-                </label>
-                <label class="field">
-                    <span>Zweitfarbe</span>
-                    <input type="color" name="secondary" id="field-secondary" value="#227C78" />
-                </label>
-                <label class="field">
-                    <span>Textfarbe</span>
-                    <input type="color" name="ink" id="field-ink" value="#172033" />
-                </label>
-            </fieldset>
+            <section class="group">
+                <h3 class="group__caption" id="caption-pdf">PDF</h3>
+                <div class="rows" role="group" aria-labelledby="caption-pdf">
+                    <label class="row row--stacked">
+                        <span class="row__label">Titel</span>
+                        <input class="row__control" type="text" name="title" id="field-title" maxlength="80"
+                               placeholder="Logik unter Hochdruck" autocomplete="off"
+                               autocapitalize="sentences" enterkeyhint="next" />
+                    </label>
+                    <label class="row row--stacked">
+                        <span class="row__label">Untertitel</span>
+                        <input class="row__control" type="text" name="subtitle" id="field-subtitle" maxlength="120"
+                               placeholder="wird automatisch erzeugt" autocomplete="off"
+                               autocapitalize="sentences" enterkeyhint="done" />
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Farbschema</span>
+                        <select class="row__control" id="field-palette"></select>
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Akzentfarbe</span>
+                        <input class="row__swatch" type="color" name="accent" id="field-accent" value="#C6492D" />
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Zweitfarbe</span>
+                        <input class="row__swatch" type="color" name="secondary" id="field-secondary" value="#227C78" />
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Textfarbe</span>
+                        <input class="row__swatch" type="color" name="ink" id="field-ink" value="#172033" />
+                    </label>
+                </div>
+                <p class="group__note">Titel und Untertitel erscheinen auf dem Deckblatt des PDFs.</p>
+            </section>
 
-            <div class="actions">
-                <button class="btn btn--primary btn--large" type="submit" id="generate-button">Rätsel erzeugen</button>
-                <p class="hint" id="config-hint"></p>
+            <p class="hint" id="config-hint"></p>
+
+            <div class="action-bar">
+                <button class="btn btn--primary btn--block" type="submit" id="generate-button">Rätsel erzeugen</button>
             </div>
         </form>
     </section>
@@ -129,21 +144,24 @@
     <!-- 3. Ergebnis -->
     <section class="screen screen--result" id="screen-result">
         <header class="bar">
-            <button class="btn btn--ghost" type="button" data-goto="screen-config">← Einstellungen</button>
+            <button class="btn btn--ghost btn--back" type="button" data-goto="screen-config" aria-label="Zurück zu den Einstellungen">
+                <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Einstellungen</span>
+            </button>
             <h2 id="result-title">Heft</h2>
         </header>
 
         <div class="result-head">
             <p id="result-subtitle" class="result-sub"></p>
             <ul class="meta" id="result-meta"></ul>
-            <div class="actions actions--row">
-                <button class="btn btn--primary" type="button" id="pdf-button">PDF herunterladen</button>
-                <button class="btn btn--ghost" type="button" id="reroll-button">Anderer Seed</button>
-            </div>
             <p class="hint" id="result-hint"></p>
         </div>
 
         <div id="puzzle-list" class="puzzles"></div>
+
+        <div class="action-bar action-bar--split">
+            <button class="btn btn--ghost" type="button" id="reroll-button">Anderer Seed</button>
+            <button class="btn btn--primary" type="button" id="pdf-button">PDF</button>
+        </div>
     </section>
 
     <!-- 4. Spielen -->
@@ -193,29 +211,30 @@
                 </button>
                 <div class="sheet-body" id="sheet-body">
                     <ol class="clues" id="play-clue-list"></ol>
-                    <details id="play-solution">
-                        <summary>Lösung anzeigen</summary>
+                    <div class="solution">
+                        <button class="btn btn--ghost btn--small" type="button" id="play-solution-button">Lösung anzeigen</button>
                         <div id="play-solution-table"></div>
-                    </details>
+                    </div>
                 </div>
             </aside>
         </div>
         <div class="sheet-backdrop" id="sheet-backdrop"></div>
 
-        <!-- Shared guard for the two toolbar actions a mis-tap must not trigger:
-             "Prüfen" reveals wrong cells (a spoiler) and "Löschen" wipes every
-             mark. Both sit between three other buttons. Title, body and the
-             confirm label are filled in per action. -->
-        <dialog class="confirm" id="confirm-dialog" aria-labelledby="confirm-title">
-            <h3 class="confirm__title" id="confirm-title"></h3>
-            <p class="confirm__text" id="confirm-text"></p>
-            <form method="dialog" class="confirm__actions">
-                <!-- autofocus sits on the safe action, so Enter dismisses. -->
-                <button class="btn btn--ghost" type="submit" value="cancel" id="confirm-cancel" autofocus>Abbrechen</button>
-                <button class="btn btn--primary" type="submit" value="ok" id="confirm-ok">Bestätigen</button>
-            </form>
-        </dialog>
     </section>
+
+    <!-- Shared guard for the two toolbar actions a mis-tap must not trigger:
+         "Prüfen" reveals wrong cells (a spoiler) and "Löschen" wipes every
+         mark. Both sit between three other buttons. Title, body and the
+         confirm label are filled in per action. -->
+    <dialog class="confirm" id="confirm-dialog" aria-labelledby="confirm-title">
+        <h3 class="confirm__title" id="confirm-title"></h3>
+        <p class="confirm__text" id="confirm-text"></p>
+        <form method="dialog" class="confirm__actions">
+            <!-- autofocus sits on the safe action, so Enter dismisses. -->
+            <button class="btn btn--ghost" type="submit" value="cancel" id="confirm-cancel" autofocus>Abbrechen</button>
+            <button class="btn btn--primary" type="submit" value="ok" id="confirm-ok">Bestätigen</button>
+        </form>
+    </dialog>
 
     <div class="overlay" id="overlay" hidden>
         <div class="spinner"></div>

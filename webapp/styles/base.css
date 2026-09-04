@@ -81,14 +81,24 @@ img { max-width: 100%; }
 #app {
     max-width: 1040px;
     margin: 0 auto;
-    padding-top: calc(var(--gap-lg) + var(--safe-top));
+    padding-top: calc(var(--space-5) + var(--safe-top));
     padding-left: var(--pad-left);
     padding-right: var(--pad-right);
-    padding-bottom: calc(80px + var(--safe-bottom));
+    padding-bottom: var(--space-5);
+    /* Full-height column so a screen's action bar can sit at the bottom of the
+       viewport even when its content is short, instead of floating mid-page. */
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
 }
 
 .screen { display: none; }
-.screen.is-active { display: block; animation: fade var(--dur-fast) var(--ease-out); }
+.screen.is-active {
+    display: block;
+    flex: 1 1 auto;
+    animation: fade var(--dur-fast) var(--ease-out);
+}
 
 @keyframes fade {
     from { opacity: 0; transform: translateY(6px); }

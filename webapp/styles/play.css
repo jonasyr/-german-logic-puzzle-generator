@@ -318,8 +318,12 @@
     box-shadow: var(--shadow-sheet);
     transform: translateY(calc(100% - var(--sheet-peek)));
     transition: transform var(--dur-sheet) var(--ease-out);
-    /* Handle (~15px) + a 44pt header, then the home indicator on top of that. */
-    --sheet-peek: calc(72px + var(--safe-bottom));
+    /* --sheet-chrome is measured from the real handle + header by
+       js/play/cluesSheet.js. Deriving the peek from it is what stops a sliver of
+       the first clue showing through; a hard-coded height drifts as soon as the
+       text size or the safe-area inset changes. */
+    --sheet-chrome: 60px;
+    --sheet-peek: var(--sheet-chrome);
 }
 .clues-sheet.is-dragging { transition: none; }
 .clues-sheet[data-detent="half"] { transform: translateY(45%); }
@@ -329,10 +333,11 @@
     flex: 0 0 auto;
     display: grid;
     place-items: center;
-    padding: 8px 0 2px;
-    touch-action: none;   /* the handle drags; it must not scroll the page */
+    padding: var(--space-2) 0 var(--space-1);
+    touch-action: none;   /* this area drags; it must not scroll the page */
     cursor: grab;
 }
+.clues-sheet.is-dragging .sheet-handle { cursor: grabbing; }
 .sheet-handle::before {
     content: "";
     width: 36px; height: 5px;
@@ -345,22 +350,36 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--gap-sm);
-    padding: 4px var(--pad-left) 10px var(--pad-left);
+    gap: var(--space-2);
+    /* The safe-area inset belongs to the chrome, not to the peek height: the
+       peek reveals exactly handle + header, and the header carries the gap that
+       lifts it clear of the home indicator. Adding the inset to the peek instead
+       would expose that many pixels of the clue list. */
+    padding: var(--space-1) var(--pad-left) calc(var(--space-3) + var(--safe-bottom)) var(--pad-left);
     min-height: var(--tap-min);
     width: 100%;
     text-align: left;
+    /* The header is a drag surface as well as a button, so the browser must not
+       claim the gesture for scrolling first. */
+    touch-action: none;
 }
 .sheet-header h3 { margin: 0; font-size: 16px; font-weight: 600; }
 .sheet-header .sheet-count { color: var(--muted); font-size: 14px; font-weight: 400; }
 
+/*
+ * The body only scrolls once the sheet is fully open. At peek and half most of
+ * it sits below the viewport, so scrolling there would move content nobody can
+ * see while overscroll-behavior blocks the gesture from reaching the page -
+ * which is exactly the "I have to keep sliding up and it never comes" trap.
+ */
 .sheet-body {
     flex: 1 1 auto;
-    overflow-y: auto;
+    overflow-y: hidden;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    padding: 0 var(--pad-left) calc(var(--gap-lg) + var(--safe-bottom));
+    padding: 0 var(--pad-left) calc(var(--space-5) + var(--safe-bottom));
 }
+.clues-sheet[data-detent="full"] .sheet-body { overflow-y: auto; }
 
 .clues li { transition: opacity var(--dur-fast) var(--ease-out); }
 .clues li.is-used { opacity: .42; text-decoration: line-through; }
@@ -419,19 +438,40 @@
         background: var(--surface);
     }
     .sheet-handle { display: none; }
-    .sheet-header { padding: 16px 20px 8px; pointer-events: none; }
+    .sheet-header {
+        padding: var(--space-4) var(--space-5) var(--space-2);
+        pointer-events: none;
+        touch-action: auto;
+    }
     .sheet-header .sheet-chevron { display: none; }
-    .sheet-body { overflow: visible; padding: 0 20px 18px; }
+    /* Beats the [data-detent="full"] rule above: on desktop the sheet is a
+       static column and the page does the scrolling. */
+    .clues-sheet .sheet-body,
+    .clues-sheet[data-detent] .sheet-body {
+        overflow: visible;
+        padding: 0 var(--space-5) var(--space-4);
+    }
     .sheet-backdrop { display: none; }
 }
 
 /* --- Phone landscape ------------------------------------------------------ */
-/* Short viewports cannot spare 60px for a peeking sheet plus two sticky bars. */
+/*
+ * A short viewport cannot spare much for the peeking sheet, so the chrome itself
+ * is made smaller. --sheet-peek is never overridden here: it is derived from the
+ * measured chrome, and hard-coding a smaller value would clip the header and put
+ * the CSS resting position out of step with the offset the drag clamps to.
+ */
 
 @media (max-width: 899px) and (max-height: 520px) {
     .play-bar, .play-toolbar { position: static; }
     .grid-scroll { max-height: 62vh; max-height: 62svh; }
-    .clues-sheet { height: 92vh; height: 92svh; --sheet-peek: calc(48px + var(--safe-bottom)); }
+    .clues-sheet { height: 92vh; height: 92svh; }
+    .sheet-handle { padding: var(--space-1) 0 0; }
+    /* min-height stays at the 44pt floor: the header is a button. */
+    .sheet-header {
+        padding-top: 0;
+        padding-bottom: calc(var(--space-2) + var(--safe-bottom));
+    }
     .play-stage { padding-bottom: calc(60px + var(--safe-bottom)); }
     .play-head .result-sub { display: none; }
 }
