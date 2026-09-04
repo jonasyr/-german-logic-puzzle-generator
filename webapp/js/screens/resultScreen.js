@@ -1,12 +1,85 @@
-/** Result screen: booklet summary and one card per puzzle. */
+/**
+ * Result screen: booklet summary and one compact card per puzzle.
+ *
+ * The card is deliberately short. Printing every clue of every puzzle turned a
+ * ten-puzzle booklet into ~13,000px of scrolling and buried "Spielen" below six
+ * clues; the clues and the solution are one disclosure away instead, and they
+ * are all available in the play screen anyway.
+ */
 
 import { el, make, clear, setHint } from '../dom.js';
+import { askConfirm } from '../ui/confirmDialog.js';
+
+function solutionTable(puzzle) {
+    const labels = puzzle.categories.map(category => category.label);
+    const table = make('table', { className: 'data-table' });
+
+    const headRow = make('tr');
+    for (const label of labels) headRow.append(make('th', { text: label }));
+    const thead = make('thead');
+    thead.append(headRow);
+
+    const tbody = make('tbody');
+    for (const row of puzzle.solutionRows) {
+        const tr = make('tr');
+        for (const label of labels) tr.append(make('td', { text: row[label] }));
+        tbody.append(tr);
+    }
+    table.append(thead, tbody);
+    return table;
+}
+
+/**
+ * The solution is a spoiler, so revealing it goes through the same confirmation
+ * as the play screen's "Prüfen" and "Löschen".
+ */
+function buildSolutionBlock(puzzle) {
+    const wrapper = make('div', { className: 'solution' });
+    const button = make('button', {
+        className: 'btn btn--ghost btn--small',
+        text: 'Lösung anzeigen',
+        attrs: { type: 'button' },
+    });
+    const target = make('div');
+
+    button.addEventListener('click', () => {
+        askConfirm({
+            title: 'Lösung anzeigen?',
+            text: 'Du siehst die vollständige Lösung dieses Rätsels.',
+            confirmLabel: 'Anzeigen',
+            onConfirm: () => {
+                clear(target).append(solutionTable(puzzle));
+                button.remove();
+            },
+        });
+    });
+
+    wrapper.append(button, target);
+    return wrapper;
+}
 
 function renderPuzzle(puzzle, onPlay) {
     const article = make('article', { className: 'puzzle' });
 
-    article.append(make('h3', { text: `${puzzle.number}. ${puzzle.title}` }));
-    article.append(make('p', { className: 'story', text: puzzle.story }));
+    article.append(make('h3', { className: 'puzzle__title', text: `${puzzle.number}. ${puzzle.title}` }));
+    article.append(make('p', { className: 'puzzle__story', text: puzzle.story }));
+
+    const size = `${puzzle.categories.length}×${puzzle.categories[0].values.length}`;
+    article.append(make('p', {
+        className: 'puzzle__meta',
+        text: `${size} · ${puzzle.verification.clueCount} Hinweise · Seed ${puzzle.seed}`,
+    }));
+
+    const playButton = make('button', {
+        className: 'btn btn--primary btn--block',
+        text: 'Spielen',
+        attrs: { type: 'button' },
+    });
+    playButton.addEventListener('click', () => onPlay(puzzle));
+    article.append(playButton);
+
+    const details = make('details', { className: 'puzzle__details' });
+    details.append(make('summary', { text: 'Hinweise & Lösung' }));
 
     const chips = make('ul', { className: 'chips' });
     for (const category of puzzle.categories) {
@@ -15,47 +88,21 @@ function renderPuzzle(puzzle, onPlay) {
                     document.createTextNode(category.values.join(', ')));
         chips.append(chip);
     }
-    article.append(chips);
+    details.append(chips);
 
-    article.append(make('p', { className: 'goal', text: `Zielfrage: ${puzzle.targetQuestion}` }));
+    details.append(make('p', { className: 'goal', text: `Zielfrage: ${puzzle.targetQuestion}` }));
 
     const clues = make('ol', { className: 'clues' });
     for (const clue of puzzle.clues) clues.append(make('li', { text: clue }));
-    article.append(clues);
+    details.append(clues);
 
-    const playButton = make('button', {
-        className: 'btn btn--primary', text: 'Spielen', attrs: { type: 'button' },
-    });
-    playButton.addEventListener('click', () => onPlay(puzzle));
-    const actions = make('div', { className: 'actions actions--row' });
-    actions.append(playButton);
-    article.append(actions);
-
-    const details = make('details');
-    details.append(make('summary', { text: 'Lösung anzeigen' }));
-
-    const labels = puzzle.categories.map(category => category.label);
-    const table = make('table', { className: 'data-table' });
-    const headRow = make('tr');
-    for (const label of labels) headRow.append(make('th', { text: label }));
-    const thead = make('thead');
-    thead.append(headRow);
-    const tbody = make('tbody');
-    for (const row of puzzle.solutionRows) {
-        const tr = make('tr');
-        for (const label of labels) tr.append(make('td', { text: row[label] }));
-        tbody.append(tr);
-    }
-    table.append(thead, tbody);
-    details.append(table);
-    article.append(details);
-
-    article.append(make('p', {
-        className: 'hint',
-        text: `Automatisch geprüft · eindeutig lösbar · ${puzzle.verification.clueCount} Hinweise · `
-            + `${puzzle.verification.distinctClueTypes} Hinweisarten · Seed ${puzzle.seed}`,
+    details.append(buildSolutionBlock(puzzle));
+    details.append(make('p', {
+        className: 'puzzle__verification',
+        text: `Automatisch geprüft · eindeutig lösbar · ${puzzle.verification.distinctClueTypes} Hinweisarten`,
     }));
 
+    article.append(details);
     return article;
 }
 
@@ -64,13 +111,13 @@ export function renderBooklet(booklet, durationMs, { pdfAvailable, onPlay }) {
     el('result-subtitle').textContent = booklet.subtitle;
 
     const config = booklet.config;
+    // Generation duration is developer noise, not something a reader acts on.
+    void durationMs;
     const meta = [
         `${booklet.puzzles.length} Rätsel`,
         `${config.categoryCount} × ${config.valuesPerCategory} Gitter`,
-        `Schwierigkeit: ${config.difficulty}`,
-        `Seed: ${config.seed}`,
-        `Theme: ${config.themeId}`,
-        `${(durationMs / 1000).toFixed(1)} s`,
+        config.difficulty,
+        `Seed ${config.seed}`,
     ];
     const list = clear(el('result-meta'));
     for (const entry of meta) list.append(make('li', { text: entry }));

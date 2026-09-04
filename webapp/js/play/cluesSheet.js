@@ -2,18 +2,77 @@
  * Detented bottom sheet for the clue list (phone only; >= 900px it is a static
  * side column and every handler here becomes inert).
  *
- * The clue list used to sit ~930px below the grid, so every clue meant scrolling
- * down to read and back up to mark. The sheet keeps both on screen at once.
+ * The gesture contract, which is what makes it feel native:
+ *
+ *  - The peek height is measured from the real handle+header block, so the clue
+ *    list never shows a sliver through the bottom of the screen.
+ *  - Releasing a drag snaps to the NEAREST detent, with the throw projected from
+ *    the release velocity. One long drag therefore goes peek -> full; you never
+ *    have to drag twice.
+ *  - The body only scrolls at the full detent. Below that its content is mostly
+ *    off-screen, so letting it scroll just moves invisible content and leaves the
+ *    user fighting the overscroll. At full, dragging down from scrollTop 0 hands
+ *    the gesture back to the sheet and collapses it.
  */
 
 import { make, clear } from '../dom.js';
 
 const DETENTS = ['peek', 'half', 'full'];
 
-export function createCluesSheet({ sheet, handle, toggle, list, backdrop, countNode }) {
+/** Fraction of the sheet height translated away at each detent. */
+const DETENT_FRACTION = { peek: null, half: 0.45, full: 0 };
+
+/** A throw is projected this far ahead of the finger before snapping. */
+const PROJECTION_MS = 120;
+
+/** Downward flick past this speed always collapses, however short the drag. */
+const DISMISS_VELOCITY = 0.5; // px/ms
+
+export function createCluesSheet({ sheet, handle, header, toggle, list, backdrop, countNode, body }) {
     let detent = 'peek';
 
     const isSheetMode = () => getComputedStyle(sheet).position === 'fixed';
+
+    /* --- Geometry --------------------------------------------------------- */
+
+    /**
+     * Keeps --sheet-peek equal to the actual chrome height, so the peek state
+     * shows the grabber and the header and nothing of the list. A hard-coded
+     * value drifts as soon as the text size or the safe-area inset changes.
+     */
+    function measurePeek() {
+        const chrome = handle.offsetHeight + header.offsetHeight;
+        sheet.style.setProperty('--sheet-chrome', `${chrome}px`);
+    }
+
+    if ('ResizeObserver' in window) {
+        const observer = new ResizeObserver(measurePeek);
+        observer.observe(handle);
+        observer.observe(header);
+    }
+    window.addEventListener('resize', measurePeek);
+    measurePeek();
+
+    /** translateY in px for a detent, measured against the sheet's own height. */
+    function offsetFor(name) {
+        const height = sheet.offsetHeight;
+        // The header already carries the safe-area inset, so the peek is exactly
+        // the chrome height and no part of the list shows through.
+        if (name === 'peek') return Math.max(0, height - handle.offsetHeight - header.offsetHeight);
+        return height * DETENT_FRACTION[name];
+    }
+
+    function nearestDetent(offset) {
+        let best = DETENTS[0];
+        let bestDistance = Infinity;
+        for (const name of DETENTS) {
+            const distance = Math.abs(offsetFor(name) - offset);
+            if (distance < bestDistance) { bestDistance = distance; best = name; }
+        }
+        return best;
+    }
+
+    /* --- State ------------------------------------------------------------ */
 
     function setDetent(next) {
         detent = next;
@@ -22,68 +81,126 @@ export function createCluesSheet({ sheet, handle, toggle, list, backdrop, countN
         sheet.style.transform = '';
         backdrop.classList.toggle('is-open', next !== 'peek');
         toggle.setAttribute('aria-expanded', next === 'peek' ? 'false' : 'true');
+        // Leaving the full detent must not strand the body mid-scroll, or
+        // reopening starts somewhere arbitrary.
+        if (next !== 'full') body.scrollTop = 0;
     }
 
     function cycle() {
         if (!isSheetMode()) return;
-        setDetent(detent === 'peek' ? 'half' : detent === 'half' ? 'full' : 'peek');
+        setDetent(detent === 'full' ? 'peek' : detent === 'half' ? 'full' : 'half');
     }
 
-    toggle.addEventListener('click', cycle);
+    // The header is both a button and a drag surface, so a drag would otherwise
+    // be followed by a click and move the sheet twice.
+    let suppressClick = false;
+
+    toggle.addEventListener('click', () => {
+        if (suppressClick) { suppressClick = false; return; }
+        cycle();
+    });
     backdrop.addEventListener('click', () => setDetent('peek'));
 
-    // --- Drag ---------------------------------------------------------------
-    let dragging = null;
+    /* --- Drag ------------------------------------------------------------- */
 
-    /** Current translateY in px, read from the settled detent transform. */
+    let drag = null;
+
     function currentOffset() {
-        const matrix = new DOMMatrixReadOnly(getComputedStyle(sheet).transform);
-        return matrix.m42;
+        return new DOMMatrixReadOnly(getComputedStyle(sheet).transform).m42;
     }
 
-    handle.addEventListener('pointerdown', event => {
+    function beginDrag(event, { fromBody = false } = {}) {
         if (!isSheetMode() || !event.isPrimary) return;
-        dragging = { startY: event.clientY, startOffset: currentOffset() };
+        drag = {
+            pointerId: event.pointerId,
+            startY: event.clientY,
+            lastY: event.clientY,
+            lastTime: event.timeStamp,
+            velocity: 0,
+            startOffset: currentOffset(),
+            fromBody,
+        };
         sheet.classList.add('is-dragging');
-        try { handle.setPointerCapture(event.pointerId); } catch { /* best effort */ }
-    });
+    }
 
-    handle.addEventListener('pointermove', event => {
-        if (!dragging) return;
-        const delta = event.clientY - dragging.startY;
-        // Never drag above the fully open position or below fully closed.
+    function moveDrag(event) {
+        if (!drag || drag.pointerId !== event.pointerId) return;
+
+        const elapsed = event.timeStamp - drag.lastTime;
+        if (elapsed > 0) drag.velocity = (event.clientY - drag.lastY) / elapsed;
+        drag.lastY = event.clientY;
+        drag.lastTime = event.timeStamp;
+
         const offset = Math.min(
-            Math.max(dragging.startOffset + delta, 0),
-            sheet.offsetHeight,
+            Math.max(drag.startOffset + (event.clientY - drag.startY), 0),
+            offsetFor('peek'),
         );
         sheet.style.transform = `translateY(${offset}px)`;
-    });
-
-    function endDrag(event) {
-        if (!dragging) return;
-        const delta = event.clientY - dragging.startY;
-        dragging = null;
-        sheet.classList.remove('is-dragging');
-        sheet.style.transform = '';
-
-        // Snap to the neighbouring detent once the drag passes a threshold.
-        const index = DETENTS.indexOf(detent);
-        if (delta < -40) setDetent(DETENTS[Math.min(index + 1, DETENTS.length - 1)]);
-        else if (delta > 40) setDetent(DETENTS[Math.max(index - 1, 0)]);
-        else setDetent(detent);
+        event.preventDefault();
     }
 
-    handle.addEventListener('pointerup', endDrag);
-    handle.addEventListener('pointercancel', () => {
-        dragging = null;
+    function endDrag(event) {
+        if (!drag || drag.pointerId !== event.pointerId) return;
+
+        // Anything past a few pixels was a drag, not a tap on the header.
+        if (Math.abs(event.clientY - drag.startY) > 8) suppressClick = true;
+
+        const offset = Math.min(
+            Math.max(drag.startOffset + (event.clientY - drag.startY), 0),
+            offsetFor('peek'),
+        );
+        const velocity = drag.velocity;
+        drag = null;
         sheet.classList.remove('is-dragging');
-        sheet.style.transform = '';
+
+        // A decisive downward flick collapses whatever the distance.
+        if (velocity > DISMISS_VELOCITY) { setDetent('peek'); return; }
+
+        // Otherwise snap to whichever detent the throw is heading for. Using the
+        // projected position rather than the neighbouring index is what lets a
+        // single long drag travel peek -> full.
+        setDetent(nearestDetent(offset + velocity * PROJECTION_MS));
+    }
+
+    function cancelDrag() {
+        if (!drag) return;
+        drag = null;
+        sheet.classList.remove('is-dragging');
         setDetent(detent);
+    }
+
+    for (const surface of [handle, header]) {
+        surface.addEventListener('pointerdown', event => {
+            beginDrag(event);
+            if (drag) {
+                try { surface.setPointerCapture(event.pointerId); } catch { /* best effort */ }
+            }
+        });
+        surface.addEventListener('pointermove', moveDrag);
+        surface.addEventListener('pointerup', endDrag);
+        surface.addEventListener('pointercancel', cancelDrag);
+    }
+
+    // At the full detent the body scrolls. A downward drag that starts when the
+    // body is already at the top means "close the sheet", not "scroll further
+    // up", so the gesture is handed to the sheet.
+    body.addEventListener('pointerdown', event => {
+        if (detent !== 'full' || body.scrollTop > 0) return;
+        beginDrag(event, { fromBody: true });
     });
+    body.addEventListener('pointermove', event => {
+        if (!drag || !drag.fromBody) return;
+        // An upward drag at the top is a normal scroll; stand down and let it be.
+        if (event.clientY < drag.startY) { cancelDrag(); return; }
+        moveDrag(event);
+    });
+    body.addEventListener('pointerup', event => { if (drag?.fromBody) endDrag(event); });
+    body.addEventListener('pointercancel', () => { if (drag?.fromBody) cancelDrag(); });
 
     return {
         setDetent,
         collapse: () => setDetent('peek'),
+        currentDetent: () => detent,
 
         /** Renders the clue list; tapping a clue dims it as "already used". */
         render(clues, usedClues, onToggleUsed) {
@@ -106,6 +223,7 @@ export function createCluesSheet({ sheet, handle, toggle, list, backdrop, countN
                 list.append(item);
             });
             if (countNode) countNode.textContent = `(${clues.length})`;
+            measurePeek();
         },
     };
 }

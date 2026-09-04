@@ -44,11 +44,32 @@
 .bar {
     display: flex;
     align-items: center;
-    gap: var(--gap-md);
-    margin-bottom: var(--gap-lg);
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
     min-height: var(--tap-min);
 }
-.bar h2 { margin: 0; font-size: 22px; line-height: 1.2; }
+.bar h2 {
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+    font-size: var(--text-title);
+    line-height: var(--leading-title);
+    /* One line, ellipsised: a wrapping title used to collide with the back
+       button on a 375px screen. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Back button: chevron plus label, collapsing to the chevron alone on phones so
+   the title keeps the room it needs. */
+.btn--back { flex: 0 0 auto; padding: 0 var(--space-4); gap: var(--space-1); }
+.btn--back .chevron { font-size: 22px; line-height: 1; margin-top: -2px; }
+
+@media (max-width: 560px) {
+    .btn--back { width: var(--tap-min); padding: 0; }
+    .btn--back .btn__label { display: none; }
+}
 
 /* --- Cards ---------------------------------------------------------------- */
 
@@ -60,70 +81,175 @@
     padding: 18px 20px;
 }
 
-/* --- Form ----------------------------------------------------------------- */
+/* --- Grouped inset list ---------------------------------------------------
+ *
+ * The settings form follows the iOS grouped-list convention: a small caption
+ * above the card, rows of label-left / value-right inside it, hairline dividers
+ * inset to the label's left edge, and explanatory notes below the group rather
+ * than squeezed between rows (which is what broke the vertical rhythm before).
+ */
 
-.form { display: grid; gap: var(--gap-lg); }
+.form { display: grid; gap: var(--space-6); }
 
-.group {
-    border: 1px solid var(--line);
+.group { display: grid; gap: var(--space-2); }
+
+.group__caption {
+    margin: 0 var(--row-pad-x);
+    font-size: var(--text-caption);
+    line-height: var(--leading-caption);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--muted);
+}
+
+.group__note {
+    margin: 0 var(--row-pad-x);
+    font-size: var(--text-caption);
+    line-height: var(--leading-caption);
+    color: var(--muted);
+}
+
+.rows {
+    border: var(--hairline) solid var(--line);
     border-radius: var(--radius);
     background: var(--surface);
-    padding: 20px 22px 24px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 18px 20px;
-}
-.group legend {
-    padding: 0 8px;
-    font-weight: 600;
-    color: var(--teal);
-    text-transform: uppercase;
-    letter-spacing: .1em;
-    font-size: 12px;
+    overflow: hidden;
 }
 
-.field { display: grid; gap: var(--gap-xs); align-content: start; }
-.field--wide { grid-column: 1 / -1; }
-.field > span { font-size: 14px; font-weight: 600; }
-.field small { color: var(--muted); font-size: 13px; }
-.field-row { display: flex; gap: 8px; align-items: stretch; }
-.field-row input { flex: 1; min-width: 0; }
+.row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-height: var(--row-min);
+    padding: var(--space-2) var(--row-pad-x);
+}
+/* Divider between rows only, inset like iOS - never after the last one. */
+.row + .row::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: var(--row-inset);
+    right: 0;
+    height: var(--hairline);
+    background: var(--line);
+}
+
+.row__label {
+    flex: 0 1 auto;
+    font-size: var(--text-body);
+    line-height: var(--leading-body);
+}
+
+.row__control {
+    flex: 0 1 auto;
+    min-width: 0;
+    text-align: right;
+}
+
+/* Free-text fields need the full width, so those rows stack. */
+.row--stacked {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-1);
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-3);
+}
+.row--stacked .row__label {
+    font-size: var(--text-caption);
+    line-height: var(--leading-caption);
+    color: var(--muted);
+}
+.row--stacked .row__control { text-align: left; }
+
+.row__control--split { display: flex; align-items: center; gap: var(--space-2); }
+.row__control--split input { width: 6em; text-align: right; }
+
+/* --- Controls ------------------------------------------------------------- */
 
 select,
 input[type="text"],
 input[type="number"] {
     font: inherit;
     font-size: max(16px, 1rem);
-    padding: 0 12px;
-    min-height: var(--tap-min);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--surface);
     color: inherit;
-    width: 100%;
+    background: none;
+    border: none;
+    padding: 0;
+    min-height: var(--row-min);
     -webkit-appearance: none;
     appearance: none;
 }
-select {
-    /* Restore an affordance after removing the native appearance. */
+
+/* Inside a row the control is chrome-less; the row is the visual container.
+   The real <select> is kept, so iOS still opens its native wheel picker. */
+.row select {
+    /* Stretches across the rest of the row so the tap target is the full row
+       height AND width, not just the few pixels the value happens to occupy. */
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: right;
+    text-align-last: right;
+    color: var(--muted);
+    padding-right: var(--space-4);
+    text-overflow: ellipsis;
     background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
                       linear-gradient(135deg, currentColor 50%, transparent 50%);
-    background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+    background-position: right 4px center, right 0 center;
     background-size: 5px 5px, 5px 5px;
     background-repeat: no-repeat;
-    padding-right: 34px;
 }
-input[type="color"] {
-    width: 100%;
-    height: var(--tap-min);
-    padding: 4px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--surface);
-}
+.row input[type="text"],
+.row input[type="number"] { color: var(--text); }
+.row--stacked input::placeholder { color: var(--muted); }
 
-.actions { display: grid; gap: var(--gap-sm); justify-items: start; }
-.actions--row { display: flex; flex-wrap: wrap; gap: var(--gap-sm); }
+/* Colour rows show a swatch, not a full-width slab. */
+.row__swatch {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: var(--hairline) solid var(--line);
+    border-radius: 50%;
+    background: none;
+    -webkit-appearance: none;
+    appearance: none;
+    overflow: hidden;
+    cursor: pointer;
+}
+.row__swatch::-webkit-color-swatch-wrapper { padding: 0; }
+.row__swatch::-webkit-color-swatch { border: none; border-radius: 50%; }
+.row__swatch::-moz-color-swatch { border: none; border-radius: 50%; }
+/* The 28px circle is the visual; the row itself provides the 44pt target. */
+.row:has(.row__swatch) { cursor: pointer; }
+
+.actions { display: grid; gap: var(--space-2); justify-items: start; }
+.actions--row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+/* --- Sticky action bar ---------------------------------------------------- */
+
+.action-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: grid;
+    gap: var(--space-2);
+    /* margin-top:auto drops it to the bottom when the page is short; sticky
+       keeps it there once the page is long enough to scroll. The negative side
+       and bottom margins make it full-bleed against the app padding. */
+    margin: auto calc(var(--pad-left) * -1) calc(var(--space-5) * -1) calc(var(--pad-right) * -1);
+    margin-top: auto;
+    padding: var(--space-3) var(--pad-left) calc(var(--space-3) + var(--safe-bottom));
+    background: var(--paper);
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    backdrop-filter: saturate(180%) blur(14px);
+    border-top: var(--hairline) solid var(--line);
+}
+.action-bar--split { grid-auto-flow: column; grid-auto-columns: 1fr; }
+.btn--block { width: 100%; }
 
 .hint { margin: 0; color: var(--muted); font-size: 14px; min-height: 1.2em; }
 .hint.is-error { color: var(--danger-fg); font-weight: 600; }

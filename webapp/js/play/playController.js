@@ -8,6 +8,7 @@ import { showScreen, onLeave } from '../router.js';
 import { buildPager, categoryPairs } from './matrixView.js';
 import { buildOverview, createZoom } from './overviewView.js';
 import { createCluesSheet } from './cluesSheet.js';
+import { askConfirm, closeConfirm } from '../ui/confirmDialog.js';
 import { createTimer, formatTime } from './playTimer.js';
 import {
     MARK_SYMBOLS, createPlayState, storageKeyFor,
@@ -131,37 +132,7 @@ function handleSolved() {
     persist();
 }
 
-/* --- Confirmation guard --------------------------------------------------- */
-
-/** Runs only if the user presses the confirm button; cleared by every other exit. */
-let pendingConfirm = null;
-
-/**
- * <dialog> only reached Safari in 15.4; before that the element parses as an
- * unknown element with no close()/showModal(). Every call site is guarded so an
- * older browser degrades instead of throwing.
- */
-function closeConfirm() {
-    pendingConfirm = null;
-    const dialog = el('confirm-dialog');
-    if (typeof dialog.close === 'function' && dialog.open) dialog.close();
-}
-
-function askConfirm({ title, text, confirmLabel, destructive, onConfirm }) {
-    const dialog = el('confirm-dialog');
-    // No dialog support: fall back to acting directly rather than blocking use.
-    if (typeof dialog.showModal !== 'function') { onConfirm(); return; }
-
-    el('confirm-title').textContent = title;
-    el('confirm-text').textContent = text;
-    const ok = el('confirm-ok');
-    ok.textContent = confirmLabel;
-    ok.classList.toggle('btn--danger', Boolean(destructive));
-
-    pendingConfirm = onConfirm;
-    dialog.returnValue = '';
-    dialog.showModal();
-}
+/* --- Confirmation guards -------------------------------------------------- */
 
 /**
  * Gate in front of checkNow. Revealing wrong marks can give a solution away, so
@@ -266,6 +237,20 @@ function toggleView() {
 
 /* --- Solution table ------------------------------------------------------- */
 
+/** Mid-puzzle the solution is the biggest spoiler of all, so it is gated too. */
+function requestSolution() {
+    if (!state.puzzle) return;
+    askConfirm({
+        title: 'Lösung anzeigen?',
+        text: 'Du siehst die vollständige Lösung dieses Rätsels.',
+        confirmLabel: 'Anzeigen',
+        onConfirm: () => {
+            renderSolutionTable(state.puzzle);
+            el('play-solution-button').hidden = true;
+        },
+    });
+}
+
 function renderSolutionTable(puzzle) {
     const labels = puzzle.categories.map(category => category.label);
     const table = make('table', { className: 'data-table' });
@@ -321,8 +306,9 @@ export function openPlay(puzzle) {
     sheet.render(puzzle.clues, state.usedClues, persist);
     sheet.collapse();
     closeConfirm();
-    el('play-solution').open = false;
-    renderSolutionTable(puzzle);
+    // The solution starts hidden behind its confirmation on every open.
+    clear(el('play-solution-table'));
+    el('play-solution-button').hidden = false;
 
     el('screen-play').dataset.view = 'pager';
     el('play-view').textContent = 'Gesamt';
@@ -347,8 +333,10 @@ export function initPlay() {
     sheet = createCluesSheet({
         sheet: el('clues-sheet'),
         handle: el('sheet-handle'),
+        header: el('sheet-toggle'),
         toggle: el('sheet-toggle'),
         list: el('play-clue-list'),
+        body: el('sheet-body'),
         backdrop: el('sheet-backdrop'),
         countNode: el('clue-count'),
     });
@@ -358,23 +346,11 @@ export function initPlay() {
     el('zoom-out').addEventListener('click', () => zoom.out());
 
     el('play-check').addEventListener('click', requestCheck);
-
-    // Only this button runs the pending action. "Abbrechen", Esc and a
-    // programmatic close all clear it instead. The dialog closes by itself
-    // (form method="dialog"); acting on the click rather than on the dialog's
-    // asynchronously dispatched "close" event keeps the action tied to the
-    // deliberate press.
-    el('confirm-ok').addEventListener('click', () => {
-        const action = pendingConfirm;
-        pendingConfirm = null;
-        action?.();
-    });
-    el('confirm-cancel').addEventListener('click', () => { pendingConfirm = null; });
-    el('confirm-dialog').addEventListener('cancel', () => { pendingConfirm = null; });
     el('play-undo').addEventListener('click', onUndo);
     el('play-clear').addEventListener('click', requestClear);
     el('play-pause').addEventListener('click', togglePause);
     el('play-view').addEventListener('click', toggleView);
+    el('play-solution-button').addEventListener('click', requestSolution);
 
     // Leaving the play screen must stop the clock and flush progress.
     onLeave(from => {

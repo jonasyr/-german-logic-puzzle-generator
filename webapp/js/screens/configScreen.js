@@ -27,6 +27,10 @@ export async function loadOptions(state) {
     state.limits = data.limits;
     state.pdfAvailable = data.pdfAvailable;
 
+    // A fresh seed each visit, so the first booklet is not the same one everyone
+    // else gets. Typing a seed back in still reproduces a specific heft.
+    el('field-seed').value = randomSeed();
+
     fillRange(el('field-puzzleCount'), data.limits.puzzleCount.min, data.limits.puzzleCount.max, 5);
     fillRange(el('field-categoryCount'), data.limits.categoryCount.min, data.limits.categoryCount.max, 5);
     fillRange(el('field-valuesPerCategory'), data.limits.valuesPerCategory.min, data.limits.valuesPerCategory.max, 5);
