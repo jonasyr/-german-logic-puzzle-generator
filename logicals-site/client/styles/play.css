@@ -311,11 +311,15 @@
     outline-offset: -2px;
 }
 
-/* Parked in the triangular matrix's structurally empty top-right corner - the
-   only dead space in the layout - and below the column-label gutter so it never
-   covers a header. */
+/*
+ * Bottom right, because that is where the triangle is actually empty.
+ *
+ * A block exists only where colBlock < columnCount - rowBlock, so the filled
+ * half is the UPPER LEFT triangle and the dead space is the lower right. Parked
+ * top right - as it was - the minimap sat squarely on the first row block.
+ */
 .overview-minimap {
-    position: absolute; right: 6px; top: calc(var(--overview-gutter-top, 46px) + 6px);
+    position: absolute; right: 6px; bottom: 6px;
     width: 76px; height: 76px;
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -325,17 +329,29 @@
 }
 .overview-fit { min-height: var(--tap-min); }
 
+/*
+ * Two rows: what is selected, then what to do with it.
+ *
+ * As one row of auto-sized columns the three marks came out at unequal widths,
+ * scattered across the full width, with the fit button sharing a cell with the
+ * first of them. They are one control with three options, so they are grouped
+ * and equally sized; the fit button is about the VIEW rather than about the
+ * cell, so it sits up with the readout instead of among them.
+ */
 .overview-actions {
     display: grid;
-    /* The readout gets a row of its own: squeezed into a column beside four
-       buttons it truncated the very thing it exists to show, the two values the
-       selected cell joins. */
-    grid-template-columns: repeat(4, auto);
-    justify-content: space-between;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 8px;
+    gap: 8px 12px;
 }
-.overview-readout { grid-column: 1 / -1; }
+.overview-readout { grid-column: 1; }
+.overview-fit { grid-column: 2; justify-self: end; }
+.overview-marks {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
 .overview-readout { min-width: 0; }
 .overview-readout__pair {
     margin: 0; font-size: 15px; font-weight: 600;
@@ -347,7 +363,9 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .overview-mark {
-    min-width: 52px; min-height: var(--tap-min);
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
     border: 1px solid var(--line);
     border-radius: 12px;
     background: var(--surface);
@@ -578,10 +596,12 @@
     }
     .overview-viewport { height: 100%; }
     .overview-actions {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr);
         align-content: center;
+        gap: 10px;
     }
-    .overview-actions .overview-readout { grid-column: 1 / -1; }
+    .overview-actions .overview-readout,
+    .overview-actions .overview-fit { grid-column: 1; justify-self: stretch; }
     .overview-minimap { width: 58px; height: 58px; }
     .clues-sheet { height: 92vh; height: 92svh; }
     .sheet-handle { padding: var(--space-1) 0 0; }
