@@ -1,12 +1,14 @@
 /**
  * The overview: one canvas, one world, one gesture owner.
  *
- * Marking is a two-step selection model rather than a direct toggle. That is
- * what lets the complete grid stay on screen: a tap only has to IDENTIFY a cell,
- * and identification survives a 13px cell, whereas hitting a 13px toggle does
- * not. The action bar that applies the mark is a normal 44px control - which is
- * also what makes the small cells conforming under WCAG 2.2 SC 2.5.8's
- * "equivalent control" exception.
+ * A tap both selects a cell and cycles its mark, exactly as the pager does.
+ * What makes that workable on a 12.5px cell is that the tap is resolved by
+ * nearest-centre hit testing with a screen-space tolerance rather than by the
+ * cell's own box, so the touch target never shrinks with the zoom.
+ *
+ * The action bar beside the grid sets a mark directly instead of cycling to it.
+ * It is a normal 44px control, which is also what makes the small cells
+ * conforming under WCAG 2.2 SC 2.5.8's "equivalent control" exception.
  */
 
 import { CELL, MIN_CELL_PX, createLayout, hitTest } from './geometry.js';
@@ -156,7 +158,15 @@ export function createOverviewCanvas({
             // otherwise a tap on a label silently selects whatever sits behind.
             if (x < gutters.left || y < gutters.top) return;
             const world = screenToWorld(view, x, y);
-            setSelected(hitTest(layout, world.x, world.y, view.scale, TAP_TOLERANCE_PX));
+            const cell = hitTest(layout, world.x, world.y, view.scale, TAP_TOLERANCE_PX);
+            setSelected(cell);
+            // A tap marks straight away, cycling empty -> x -> o -> empty, the
+            // same as the pager. Making it select first and mark second would
+            // have cost two taps for every single cross, and a 5x5 puzzle has
+            // 250 cells - that adds up long before the grid is solved. The
+            // crosshair and the readout show what was just marked, and undo is
+            // one button away, so a mis-tap is cheap to take back.
+            if (cell) onActivate(cell.key);
         },
         onPan({ dx, dy }) {
             applyView(panBy(view, dx, dy));

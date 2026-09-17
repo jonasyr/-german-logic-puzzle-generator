@@ -77,43 +77,70 @@ for (const device of DEVICES) {
     });
     expect(together).toEqual({ gridVisible: true, barVisible: true });
 
-    // Selecting has to work on EVERY size, not just the one the interaction
-    // tests use. A layout regression once left this viewport 984x2 px on iPad
+    // Marking has to work on EVERY size, not just the one the interaction tests
+    // use. A layout regression once left this viewport 984x2 px on iPad
     // landscape, where no tap could land on a cell at all, and nothing caught it.
     const grid = (await page.locator('#overview-viewport').boundingBox())!;
     await page.mouse.click(grid.x + grid.width * 0.55, grid.y + grid.height * 0.6);
     await expect(page.locator('#overview-readout-pair')).not.toHaveText('Keine Zelle gewählt');
-    await expect(page.locator('#overview-mark-yes')).toBeEnabled();
-    await page.locator('#overview-mark-yes').click();
     await expect(page.locator('#play-undo')).toBeEnabled();
+    await expect(page.locator('#overview-mark-yes')).toBeEnabled();
   });
 }
 
-test('tapping selects a cell and the action bar marks it in both views', async ({ page }) => {
+test('tapping cycles the mark, exactly as the pager does', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+
+  const cell = page.locator('.overview-mirror__cell').first();
+  const key = await cell.getAttribute('data-key');
+  const box = (await cell.boundingBox())!;
+  const tap = () => page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  const label = () => page.locator(`.overview-mirror__cell[data-key="${key}"]`).getAttribute('aria-label');
+
+  // One tap is one mark. Selecting first and marking second would cost two taps
+  // for every cross, and a 5x5 puzzle has 250 cells.
+  await tap();
+  await expect(page.locator('#overview-readout-pair')).not.toHaveText('Keine Zelle gewählt');
+  expect(await label()).toContain('ausgeschlossen');
+
+  await tap();
+  expect(await label()).toContain('sichere Zuordnung');
+
+  await tap();
+  expect(await label()).toContain('leer');
+});
+
+test('a mark made in the overview shows up in the pager', async ({ page }) => {
   test.setTimeout(120_000);
   await openPuzzle(page, 375, 812);
 
   const key = await tapCell(page, 0);
-  await expect(page.locator('#overview-readout-pair')).not.toHaveText('Keine Zelle gewählt');
-  await expect(page.locator('#overview-mark-no')).toBeEnabled();
-
-  await page.locator('#overview-mark-no').click();
-  await expect(page.locator('#play-undo')).toBeEnabled();
-
-  // The same logical cell carries the mark in the pager view.
-  await page.locator('#play-view').click();
-  await expect(page.locator('#screen-play')).toHaveAttribute('data-view', 'pager');
-  const pagerMark = await page.evaluate(k => {
-    const button = document.querySelector(`.play-pager .cell[data-key="${k}"]`);
-    return button?.textContent ?? '';
+  const pagerMark = await page.evaluate(async k => {
+    document.getElementById('play-view')!.click();
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    return document.querySelector(`.play-pager .cell[data-key="${k}"]`)?.textContent ?? '';
   }, key);
   expect(pagerMark).toBe('×');
+});
 
-  // And the mirror describes it for assistive technology.
-  await page.locator('#play-view').click();
-  const label = await page.locator(`.overview-mirror__cell[data-key="${key}"]`).getAttribute('aria-label');
-  expect(label).toContain('ausgeschlossen');
-  expect(label).toMatch(/^Zeile .+, Spalte .+,/);
+test('the action bar sets a mark directly instead of cycling to it', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+
+  const key = await tapCell(page, 0);   // now 'no'
+  const label = () => page.locator(`.overview-mirror__cell[data-key="${key}"]`).getAttribute('aria-label');
+  expect(await label()).toContain('ausgeschlossen');
+
+  // One press, not two cycles.
+  await page.locator('#overview-mark-yes').click();
+  expect(await label()).toContain('sichere Zuordnung');
+
+  await page.locator('#overview-mark-clear').click();
+  expect(await label()).toContain('leer');
+
+  // And the mirror keeps naming the cell's coordinates for assistive tech.
+  expect(await label()).toMatch(/^Zeile .+, Spalte .+,/);
 });
 
 test('a mark made in the pager shows up in the overview', async ({ page }) => {
@@ -135,13 +162,13 @@ test('undo reverts a mark made from the overview', async ({ page }) => {
   test.setTimeout(120_000);
   await openPuzzle(page, 375, 812);
   const key = await tapCell(page, 0);
-  await page.locator('#overview-mark-yes').click();
   await expect(page.locator('#play-undo')).toBeEnabled();
+  const label = () => page.locator(`.overview-mirror__cell[data-key="${key}"]`).getAttribute('aria-label');
+  expect(await label()).toContain('ausgeschlossen');
 
   await page.locator('#play-undo').click();
   await expect(page.locator('#play-undo')).toBeDisabled();
-  const label = await page.locator(`.overview-mirror__cell[data-key="${key}"]`).getAttribute('aria-label');
-  expect(label).toContain('leer');
+  expect(await label()).toContain('leer');
 });
 
 test('hit testing still lands on the right cell after zoom and pan', async ({ page }) => {

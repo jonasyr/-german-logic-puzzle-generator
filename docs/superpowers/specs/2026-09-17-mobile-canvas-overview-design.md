@@ -131,11 +131,13 @@ overview. The single-pair pager stays exactly as it is.
 2. **Headers in screen space.** Constant 11 px, rotated via canvas transform, never
    `writing-mode`. They occupy a fixed screen gutter, not world width.
 3. **Hit testing in world space** with a screen-space tolerance, decoupled from visual cell size.
-4. **Selection plus a persistent action bar.** A tap selects; the bar applies the mark. This
-   satisfies both "which two values does this cell belong to" (always spelled out in full) and
-   touch safety, at any zoom level.
-5. **Crosshair across the entire grid** and a **minimap** placed in the empty triangular corner
-   (6 of 16 block slots, 37.5 %, are structurally empty).
+4. **A tap marks; a persistent action bar sets.** One tap cycles empty → `×` → `○` → empty and
+   moves the selection, so marking never costs more taps than it does in the pager. The bar sets
+   a state directly, and the readout beside it always spells the selected cell's two values out
+   in full, whatever the zoom.
+5. **Crosshair across the entire grid** and a **minimap** in the empty triangular corner. A block
+   exists only where `colBlock < columnCount - rowBlock`, so the filled half is the **upper left**
+   triangle and the dead space — 6 of 16 block slots, 37.5 % — is **lower right**.
 6. **One gesture owner.** `touch-action: none` on the viewport only; no nested scrollers.
 7. **Zoom floor at 12.5 px per cell.** Below that the view pans instead of fitting — it never
    silently becomes unusable.
@@ -174,12 +176,20 @@ A block exists iff `colBlock < columns.length - rowBlock`.
 
 | gesture | resolution |
 |---|---|
-| 1 pointer, moved < 10 px | tap → select nearest cell within tolerance |
+| 1 pointer, moved < 10 px | tap → select nearest cell within tolerance **and cycle its mark** |
 | 1 pointer, moved ≥ 10 px | pan |
 | 2 pointers | pinch zoom about the midpoint + two-finger pan |
 
-- Tapping empty space clears the selection.
-- The action bar shows `×` (excluded), `○` (confirmed), `␣` (clear); each ≥ 44 × 44 px.
+- A tap cycles the mark empty → `×` → `○` → empty, identical to the pager, and moves the
+  selection at the same time. An earlier draft made the tap select only, with the action bar
+  doing the marking; that cost **two taps for every single cross**, and a 5×5 puzzle has 250
+  cells. One tap, one mark.
+- Tapping empty space clears the selection without marking anything.
+- The action bar shows `×` (excluded), `○` (confirmed), `␣` (clear); each ≥ 44 × 44 px. It **sets**
+  a mark directly rather than cycling towards it, which is what it is for once the tap already
+  cycles: reaching `○` from empty is one press instead of two taps.
+- The three marks are one grouped, equally sized control. The fit button acts on the view rather
+  than on the cell, so it sits with the readout instead of among them.
 - The readout shows both values in full plus both category names.
 - The selected cell keeps a marked outline; its row and column are tinted across the whole grid.
 - Existing toolbar actions (Prüfen, Undo, Pause, Löschen, view toggle) are unchanged.
@@ -187,7 +197,11 @@ A block exists iff `colBlock < columns.length - rowBlock`.
 ### 4.1 Why the two-step model is the conforming one
 
 A 13 px cell is smaller than Apple's 44 pt hit region and smaller than WCAG 2.2 SC 2.5.8's
-24 × 24 px minimum. Two exceptions in SC 2.5.8 apply and are the formal basis for this design:
+24 × 24 px minimum. What makes the tap workable anyway is that it is resolved by nearest-centre
+hit testing with a screen-space tolerance rather than by the cell's own box, so the touch target
+never shrinks with the zoom — measured at 250/250 correct under a ±6 px finger error.
+
+For conformance, two exceptions in SC 2.5.8 apply:
 
 - **Essential** — "a particular presentation of the target is essential to the information being
   conveyed". A logic grid's geometry *is* the information; scaling the cells up destroys the
@@ -195,9 +209,9 @@ A 13 px cell is smaller than Apple's 44 pt hit region and smaller than WCAG 2.2 
 - **Equivalent** — "the function can be achieved through a different control on the same page that
   meets this criterion". The action bar is that control, and it is 52 × 44 px.
 
-So the tap only ever has to *identify* a cell, never to *actuate* it. Identification survives
-13 px; actuation would not. This is the same decoupling that Excel and Numbers use on iPhone
-(tap selects, the persistent formula bar edits) and that Sudoku apps call "cell first".
+The action bar is the conforming route to every state, and it stays available at any zoom. The
+grid itself is the fast route, and it is accurate because the hit test is decoupled from the
+cell's visual size.
 
 Honest framing: at fit scale the overview is a **survey and selection** surface. Sustained
 marking is more comfortable zoomed in, and the design makes that one pinch away rather than a
@@ -271,7 +285,8 @@ const views = [];   // pager adapter + canvas overview
 3. Zoom about a fixed point drifts < 0.01 px over 50 gestures.
 4. Pan round trip is lossless.
 5. No horizontal page overflow at any tested viewport.
-6. A mark made in the overview appears in the pager and vice versa.
+6. A mark made in the overview appears in the pager and vice versa, and a tap cycles
+   empty → `×` → `○` → empty in both views.
 7. Undo, Prüfen, Löschen, Pause behave exactly as before.
 8. Rotation preserves the selected cell and a sensible view position.
 9. The existing 46 site tests, 5 e2e scenarios and 168 generator tests still pass.
