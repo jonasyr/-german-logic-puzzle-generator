@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1789630002843,
+      "tag": "0000_logicals_multiplayer",
+      "breakpoints": true
+    }
+  ]
+}

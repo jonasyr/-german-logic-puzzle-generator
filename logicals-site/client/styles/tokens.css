@@ -1,0 +1,137 @@
+/*
+ * Design tokens. Every colour is defined once on :root (light) and redefined in
+ * the dark block, so no rule anywhere else needs a media query for colour.
+ */
+
+:root {
+    color-scheme: light dark;
+
+    /* Brand */
+    --ink: #172033;
+    --accent: #c6492d;
+    --accent-strong: #a93b22;
+    --teal: #227c78;
+
+    /* Surfaces */
+    --paper: #fbfaf7;
+    --surface: #ffffff;
+    --surface-sunken: #f3f0ea;
+    --surface-raised: #ffffff;
+    --pale: #f3f0ea;
+
+    /* Text */
+    --text: #172033;
+    --muted: #5b6475;
+    --on-accent: #ffffff;
+    --on-ink: #ffffff;
+
+    /* Lines */
+    --line: #d5d8de;
+    --line-strong: #172033;
+
+    /* The timer chip needs its own surface: in dark mode --ink is almost the
+       page background, so reusing it would make the chip vanish. */
+    --timer-bg: #172033;
+    --timer-fg: #ffffff;
+
+    /* Feedback */
+    --danger-bg: #fbe3dd;
+    --danger-fg: #c6492d;
+    --good: #227c78;
+
+    /* Shape */
+    --radius: 14px;
+    --radius-lg: 22px;
+    --radius-pill: 999px;
+
+    /* Touch: Apple HIG minimum is 44pt. Nothing interactive goes below this. */
+    --tap-min: 44px;
+    --cell-size: 44px;
+
+    /* Spacing: a strict 4/8pt scale. Every margin, gap and padding in the app
+       comes from here - that is what keeps the vertical rhythm even. */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 40px;
+    --space-8: 48px;
+
+    /* Legacy aliases, kept so existing rules stay on the same scale. */
+    --gap-xs: var(--space-1);
+    --gap-sm: var(--space-2);
+    --gap-md: var(--space-4);
+    --gap-lg: var(--space-5);
+    --gap-xl: var(--space-6);
+
+    /* Type scale. Line heights are multiples of 4 so text blocks land on the
+       same rhythm as the spacing scale. */
+    --text-caption: 13px;   --leading-caption: 16px;
+    --text-sm: 15px;        --leading-sm: 20px;
+    --text-body: 17px;      --leading-body: 24px;
+    --text-title: 20px;     --leading-title: 28px;
+    --text-display: 28px;   --leading-display: 34px;
+
+    /* Grouped list rows */
+    --row-min: 44px;
+    --row-pad-x: var(--space-4);
+    --row-inset: var(--space-4);   /* where hairline dividers start */
+    --hairline: 1px;
+
+    /* Safe areas. Fall back to 0px where env() is unknown, then take the larger
+       of our own gutter and the device inset - insets supplement margins, they
+       do not replace them (per WebKit's iPhone X guidance). */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+
+    --gutter: 20px;
+    --pad-left: max(var(--gutter), var(--safe-left));
+    --pad-right: max(var(--gutter), var(--safe-right));
+
+    /* Elevation */
+    --shadow-sheet: 0 -8px 32px rgba(23, 32, 51, .16);
+    --shadow-bar: 0 1px 0 var(--line);
+    --shadow-card: 0 1px 2px rgba(23, 32, 51, .04);
+
+    /* Motion */
+    --ease-out: cubic-bezier(.32, .72, 0, 1);
+    --dur-fast: .16s;
+    --dur-sheet: .34s;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --ink: #0d1220;
+        --accent: #ff7a5c;
+        --accent-strong: #ff9578;
+        --teal: #4bb3ad;
+
+        --paper: #0d1117;
+        --surface: #161b26;
+        --surface-sunken: #1e2431;
+        --surface-raised: #1b2130;
+        --pale: #1e2431;
+
+        --text: #e9edf5;
+        --muted: #9aa4b8;
+        --on-accent: #24120c;
+        --on-ink: #e9edf5;
+
+        --line: #2c3444;
+        --line-strong: #7b879e;
+
+        --timer-bg: #2f3a4f;
+        --timer-fg: #f2f5fa;
+
+        --danger-bg: #3d1f19;
+        --danger-fg: #ff8f75;
+        --good: #4bb3ad;
+
+        --shadow-sheet: 0 -8px 32px rgba(0, 0, 0, .5);
+        --shadow-card: 0 1px 2px rgba(0, 0, 0, .3);
+    }
+}

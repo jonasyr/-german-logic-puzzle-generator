@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CrossOrdinalOperator = exports.UnaryFilter = exports.SuperlativeOperator = exports.OrdinalOperator = exports.BinaryOperator = exports.ClueType = void 0;
+const types_1 = require("../types");
+Object.defineProperty(exports, "ClueType", { enumerable: true, get: function () { return types_1.ClueType; } });
+Object.defineProperty(exports, "BinaryOperator", { enumerable: true, get: function () { return types_1.BinaryOperator; } });
+Object.defineProperty(exports, "OrdinalOperator", { enumerable: true, get: function () { return types_1.OrdinalOperator; } });
+Object.defineProperty(exports, "SuperlativeOperator", { enumerable: true, get: function () { return types_1.SuperlativeOperator; } });
+Object.defineProperty(exports, "UnaryFilter", { enumerable: true, get: function () { return types_1.UnaryFilter; } });
+Object.defineProperty(exports, "CrossOrdinalOperator", { enumerable: true, get: function () { return types_1.CrossOrdinalOperator; } });

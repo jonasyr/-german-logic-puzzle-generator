@@ -1,0 +1,7 @@
+{
+  "name": "logic-puzzle-generator",
+  "version": "1.4.1-logicals.b03a226",
+  "private": true,
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts"
+}

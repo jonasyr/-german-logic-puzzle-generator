@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <!-- viewport-fit=cover opts into the full screen on notched devices; every
+         edge is then paid back with env(safe-area-inset-*) in the CSS.
+         user-scalable is deliberately left alone: Safari ignores it since iOS 10
+         and disabling zoom fails WCAG 1.4.4. Double-tap zoom is handled per
+         element with touch-action: manipulation instead. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#fbfaf7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)" />
+    <meta name="description" content="Deutsche Logikrätsel erstellen, lösen und gemeinsam als Duell spielen." />
+
+    <title>Logicals – Rätsel spielen</title>
+
+    <!-- Home Screen web app -->
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Logicals" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <link rel="icon" href="./icons/favicon.svg" type="image/svg+xml" />
+
+    <link rel="stylesheet" href="./styles/tokens.css" />
+    <link rel="stylesheet" href="./styles/base.css" />
+    <link rel="stylesheet" href="./styles/components.css" />
+    <link rel="stylesheet" href="./styles/screens.css" />
+    <link rel="stylesheet" href="./styles/play.css" />
+</head>
+<body>
+<main id="app">
+    <!-- 1. Startbildschirm -->
+    <section class="screen screen--start is-active" id="screen-start">
+        <div class="start-card">
+            <p class="start-kicker">Deutsche Logikrätsel</p>
+            <h1 class="start-title">LOGICALS</h1>
+            <p class="start-sub">Neue Rätsel im Browser erzeugen, lösen und deine Ergebnisse speichern.</p>
+            <div class="start-actions">
+                <button class="btn btn--on-dark btn--block" id="player-button" type="button">Spieler auswählen</button>
+                <button class="btn btn--primary btn--large btn--block" id="start-button" type="button" disabled>Rätsel erstellen</button>
+                <button class="btn btn--on-dark btn--block" id="duel-join-button" type="button" disabled>Duell beitreten</button>
+                <button class="btn btn--on-dark btn--block" id="history-button" type="button" disabled>Meine Ergebnisse</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. Einstellungen -->
+    <section class="screen screen--config" id="screen-config">
+        <header class="bar">
+            <button class="btn btn--ghost btn--back" type="button" data-goto="screen-start" aria-label="Zurück">
+                <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Zurück</span>
+            </button>
+            <h2>Einstellungen</h2>
+        </header>
+
+        <form id="config-form" class="form">
+            <section class="group">
+                <h3 class="group__caption" id="caption-puzzle">Rätsel</h3>
+                <div class="rows" role="group" aria-labelledby="caption-puzzle">
+                    <label class="row">
+                        <span class="row__label">Anzahl der Rätsel</span>
+                        <select class="row__control" name="puzzleCount" id="field-puzzleCount"></select>
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Anzahl Kategorien</span>
+                        <select class="row__control" name="categoryCount" id="field-categoryCount"></select>
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Werte pro Kategorie</span>
+                        <select class="row__control" name="valuesPerCategory" id="field-valuesPerCategory"></select>
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Theme</span>
+                        <select class="row__control" name="themeId" id="field-themeId"></select>
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Schwierigkeit</span>
+                        <select class="row__control" name="difficulty" id="field-difficulty">
+                            <option value="leicht">leicht</option>
+                            <option value="mittel">mittel</option>
+                            <option value="schwer" selected>schwer</option>
+                        </select>
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Zielfrage</span>
+                        <select class="row__control" name="targetCategoryIndex" id="field-targetCategoryIndex"></select>
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Seed</span>
+                        <span class="row__control row__control--split">
+                            <input type="number" name="seed" id="field-seed" min="0" step="1"
+                                   inputmode="numeric" enterkeyhint="done" autocomplete="off" />
+                            <button class="btn btn--fill btn--small" type="button" id="seed-random">Würfeln</button>
+                        </span>
+                    </label>
+                </div>
+                <p class="group__note">
+                    Die Zielfrage bestimmt, auf welche Kategorie die Schlussfrage zielt.
+                    Gleicher Seed und gleiche Einstellungen ergeben dasselbe Heft.
+                </p>
+            </section>
+
+            <section class="group">
+                <h3 class="group__caption" id="caption-design">Darstellung</h3>
+                <div class="rows" role="group" aria-labelledby="caption-design">
+                    <label class="row row--stacked">
+                        <span class="row__label">Titel</span>
+                        <input class="row__control" type="text" name="title" id="field-title" maxlength="80"
+                               placeholder="Logik unter Hochdruck" autocomplete="off"
+                               autocapitalize="sentences" enterkeyhint="next" />
+                    </label>
+                    <label class="row row--stacked">
+                        <span class="row__label">Untertitel</span>
+                        <input class="row__control" type="text" name="subtitle" id="field-subtitle" maxlength="120"
+                               placeholder="wird automatisch erzeugt" autocomplete="off"
+                               autocapitalize="sentences" enterkeyhint="done" />
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Farbschema</span>
+                        <select class="row__control" id="field-palette"></select>
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Akzentfarbe</span>
+                        <input class="row__swatch" type="color" name="accent" id="field-accent" value="#C6492D" />
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Zweitfarbe</span>
+                        <input class="row__swatch" type="color" name="secondary" id="field-secondary" value="#227C78" />
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Textfarbe</span>
+                        <input class="row__swatch" type="color" name="ink" id="field-ink" value="#172033" />
+                    </label>
+                </div>
+                <p class="group__note">Titel, Untertitel und Farben gelten für dein erzeugtes Rätselheft.</p>
+            </section>
+
+            <p class="hint" id="config-hint"></p>
+
+            <div class="action-bar">
+                <button class="btn btn--primary btn--block" type="submit" id="generate-button">Rätsel erzeugen</button>
+            </div>
+        </form>
+    </section>
+
+    <!-- 3. Ergebnis -->
+    <section class="screen screen--result" id="screen-result">
+        <header class="bar">
+            <button class="btn btn--ghost btn--back" type="button" data-goto="screen-config" aria-label="Zurück zu den Einstellungen">
+                <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Einstellungen</span>
+            </button>
+            <h2 id="result-title">Heft</h2>
+        </header>
+
+        <div class="result-head">
+            <p id="result-subtitle" class="result-sub"></p>
+            <ul class="meta" id="result-meta"></ul>
+            <p class="hint" id="result-hint"></p>
+        </div>
+
+        <div id="puzzle-list" class="puzzles"></div>
+
+        <div class="action-bar">
+            <button class="btn btn--ghost btn--block" type="button" id="reroll-button">Anderer Seed</button>
+        </div>
+    </section>
+
+    <!-- 4. Duell beitreten -->
+    <section class="screen screen--duel" id="screen-duel-entry">
+        <header class="bar">
+            <button class="btn btn--ghost btn--back" type="button" data-goto="screen-start" aria-label="Zurück">
+                <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Zurück</span>
+            </button>
+            <h2>Duell beitreten</h2>
+        </header>
+        <form id="duel-entry-form" class="duel-entry">
+            <p class="result-sub">Gib den sechsstelligen Code vom anderen Gerät ein.</p>
+            <label class="duel-code-field" for="duel-code">
+                <span>Raumcode</span>
+                <input id="duel-code" name="code" type="text" minlength="6" maxlength="6" required
+                       inputmode="text" autocomplete="one-time-code" autocapitalize="characters"
+                       spellcheck="false" enterkeyhint="go" placeholder="ABC123" />
+            </label>
+            <p class="hint" id="duel-entry-hint" role="status" aria-live="polite"></p>
+            <button class="btn btn--primary btn--block" id="duel-entry-submit" type="submit">Raum öffnen</button>
+        </form>
+    </section>
+
+    <!-- 5. Duell-Lobby -->
+    <section class="screen screen--duel" id="screen-duel-lobby">
+        <header class="bar">
+            <button class="btn btn--ghost btn--back" type="button" data-goto="screen-start" aria-label="Duell verlassen">
+                <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Verlassen</span>
+            </button>
+            <h2>Duell</h2>
+        </header>
+        <div class="duel-lobby">
+            <div class="duel-code-card">
+                <span>Raumcode</span>
+                <strong id="duel-room-code">------</strong>
+            </div>
+            <div class="duel-share">
+                <input class="selectable" id="duel-share-link" type="text" readonly aria-label="Einladungslink" />
+                <button class="btn btn--ghost btn--small" id="duel-copy" type="button">Kopieren</button>
+            </div>
+            <div class="duel-members" id="duel-members" aria-live="polite"></div>
+            <p class="duel-countdown" id="duel-countdown" aria-live="assertive" hidden></p>
+            <p class="hint" id="duel-lobby-hint" role="status"></p>
+            <button class="btn btn--primary btn--large btn--block" id="duel-ready" type="button" disabled>Bereit</button>
+        </div>
+    </section>
+
+    <!-- 6. Duell-Ergebnis -->
+    <section class="screen screen--duel" id="screen-duel-result">
+        <header class="bar">
+            <button class="btn btn--ghost btn--back" type="button" data-goto="screen-start" aria-label="Zur Startseite">
+                <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Start</span>
+            </button>
+            <h2 id="duel-result-title">Duell-Ergebnis</h2>
+        </header>
+        <div class="duel-result">
+            <div class="duel-result-waiting" id="duel-result-waiting" aria-hidden="true">
+                <div class="spinner"></div>
+            </div>
+            <div class="duel-result-list" id="duel-result-list"></div>
+            <p class="hint" id="duel-result-hint" role="status" aria-live="polite"></p>
+            <button class="btn btn--primary btn--block" type="button" data-goto="screen-start">Neues Rätsel</button>
+        </div>
+    </section>
+
+    <!-- 7. Persönliche Ergebnisse -->
+    <section class="screen screen--history" id="screen-history">
+        <header class="bar">
+            <button class="btn btn--ghost btn--back" type="button" data-goto="screen-start" aria-label="Zurück">
+                <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Zurück</span>
+            </button>
+            <h2>Meine Ergebnisse</h2>
+        </header>
+        <p class="result-sub" id="history-player"></p>
+        <div class="history-list" id="history-list"></div>
+        <p class="hint" id="history-hint" role="status"></p>
+    </section>
+
+    <!-- 8. Spielen -->
+    <section class="screen screen--play" id="screen-play" data-view="pager">
+        <header class="bar play-bar">
+            <button class="btn btn--ghost btn--small" type="button" data-goto="screen-result" aria-label="Zurück zur Übersicht">← Übersicht</button>
+            <h2 id="play-title">Rätsel</h2>
+            <span class="timer" id="play-timer" aria-live="off" aria-label="Verstrichene Zeit">0:00</span>
+        </header>
+
+        <div class="play-toolbar">
+            <button class="btn btn--primary btn--small" type="button" id="play-check">Prüfen</button>
+            <button class="btn btn--ghost btn--small btn--icon" type="button" id="play-undo" disabled aria-label="Letzte Markierung zurücknehmen">↶</button>
+            <button class="btn btn--ghost btn--small" type="button" id="play-pause">Pause</button>
+            <button class="btn btn--ghost btn--small view-toggle" type="button" id="play-view">Gesamt</button>
+            <button class="btn btn--ghost btn--small" type="button" id="play-clear">Löschen</button>
+        </div>
+
+        <div class="play-head">
+            <p class="result-sub" id="play-story"></p>
+            <p class="goal" id="play-goal"></p>
+            <p class="hint" id="play-status" role="status" aria-live="polite"></p>
+        </div>
+
+        <div class="play-stage" id="play-stage">
+            <div class="play-pager" id="play-pager">
+                <div class="segmented" id="pager-nav" role="tablist" aria-label="Kategoriepaare"></div>
+                <div class="pager-track" id="pager-track"></div>
+            </div>
+
+            <div class="play-overview" id="play-overview">
+                <div class="zoom-controls">
+                    <button class="btn btn--ghost btn--small btn--icon" type="button" id="zoom-out" aria-label="Verkleinern">−</button>
+                    <output id="zoom-level" for="zoom-out zoom-in">100%</output>
+                    <button class="btn btn--ghost btn--small btn--icon" type="button" id="zoom-in" aria-label="Vergrößern">+</button>
+                    <button class="btn btn--ghost btn--small" type="button" id="zoom-fit" aria-label="Gesamtansicht einpassen">Einpassen</button>
+                </div>
+                <p class="overview-zoom-hint" id="overview-zoom-hint" role="status">
+                    Tippe auf die Übersicht oder ziehe zwei Finger auseinander, um sicher zu markieren.
+                </p>
+                <div class="grid-scroll" id="grid-scroll">
+                    <div class="grid-zoom" id="grid-zoom"></div>
+                </div>
+            </div>
+
+            <aside class="clues-sheet" id="clues-sheet" data-detent="peek">
+                <div class="sheet-handle" id="sheet-handle" aria-hidden="true"></div>
+                <button class="sheet-header" type="button" id="sheet-toggle" aria-expanded="false" aria-controls="sheet-body">
+                    <h3>Hinweise <span class="sheet-count" id="clue-count"></span></h3>
+                    <span class="sheet-chevron" aria-hidden="true">▲</span>
+                </button>
+                <div class="sheet-body" id="sheet-body">
+                    <ol class="clues" id="play-clue-list"></ol>
+                    <div class="solution">
+                        <button class="btn btn--ghost btn--small" type="button" id="play-solution-button">Lösung anzeigen</button>
+                        <div id="play-solution-table"></div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+        <div class="sheet-backdrop" id="sheet-backdrop"></div>
+
+    </section>
+
+    <dialog class="confirm player-dialog" id="player-dialog" aria-labelledby="player-dialog-title">
+        <h3 class="confirm__title" id="player-dialog-title">Wer spielt?</h3>
+        <p class="confirm__text">Wähle einen Namen oder lege einen neuen Spieler an.</p>
+        <div class="player-list" id="player-list"></div>
+        <form class="player-form" id="player-form">
+            <label for="player-name">Neuer Spieler</label>
+            <div class="player-form__row">
+                <input id="player-name" name="displayName" type="text" maxlength="40" autocomplete="nickname"
+                       autocapitalize="words" enterkeyhint="done" placeholder="Name" />
+                <button class="btn btn--primary btn--small" type="submit">Hinzufügen</button>
+            </div>
+            <p class="hint" id="player-hint" role="status"></p>
+        </form>
+        <div class="confirm__actions">
+            <button class="btn btn--ghost" type="button" id="player-close">Schließen</button>
+        </div>
+    </dialog>
+
+    <!-- Shared guard for the two toolbar actions a mis-tap must not trigger:
+         "Prüfen" reveals wrong cells (a spoiler) and "Löschen" wipes every
+         mark. Both sit between three other buttons. Title, body and the
+         confirm label are filled in per action. -->
+    <dialog class="confirm" id="confirm-dialog" aria-labelledby="confirm-title">
+        <h3 class="confirm__title" id="confirm-title"></h3>
+        <p class="confirm__text" id="confirm-text"></p>
+        <form method="dialog" class="confirm__actions">
+            <!-- autofocus sits on the safe action, so Enter dismisses. -->
+            <button class="btn btn--ghost" type="submit" value="cancel" id="confirm-cancel" autofocus>Abbrechen</button>
+            <button class="btn btn--primary" type="submit" value="ok" id="confirm-ok">Bestätigen</button>
+        </form>
+    </dialog>
+
+    <div class="overlay" id="overlay" hidden>
+        <div class="spinner"></div>
+        <p id="overlay-text">Rätsel werden erzeugt …</p>
+    </div>
+</main>
+
+<!-- Pure play rules, shared verbatim with the Jest suite (test/PlayLogic.test.ts).
+     Loaded as a classic script so it keeps its UMD wrapper and CommonJS export. -->
+<script src="./playLogic.js"></script>
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>

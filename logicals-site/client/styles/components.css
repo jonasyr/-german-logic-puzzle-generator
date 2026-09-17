@@ -1,0 +1,429 @@
+/* Reusable controls. Every interactive element here clears --tap-min. */
+
+/* --- Buttons -------------------------------------------------------------- */
+
+.btn {
+    font: inherit;
+    font-weight: 500;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    padding: 0 20px;
+    min-height: var(--tap-min);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-xs);
+    cursor: pointer;
+    transition: background var(--dur-fast) var(--ease-out),
+                border-color var(--dur-fast) var(--ease-out),
+                opacity var(--dur-fast) var(--ease-out),
+                transform var(--dur-fast) var(--ease-out);
+}
+.btn:active:not(:disabled) { transform: scale(.97); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.btn--primary { background: var(--accent); color: var(--on-accent); }
+.btn--primary:hover:not(:disabled) { background: var(--accent-strong); }
+
+.btn--ghost { background: transparent; border-color: var(--line); color: var(--text); }
+.btn--ghost:hover:not(:disabled) { border-color: var(--text); }
+
+.btn--fill { background: var(--surface-sunken); color: var(--text); }
+.btn--on-dark { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .32); color: var(--on-ink); }
+.btn--on-dark:hover:not(:disabled) { background: rgba(255, 255, 255, .14); }
+
+/* Destructive confirmations only. */
+.btn--danger { background: var(--danger-fg); color: var(--on-accent); }
+.btn--danger:hover:not(:disabled) { filter: brightness(.92); }
+
+.btn--large { padding: 0 34px; min-height: 52px; font-size: 17px; }
+/* "small" is visual only - the tap target stays at --tap-min. */
+.btn--small { padding: 0 14px; font-size: 15px; }
+.btn--icon { padding: 0; width: var(--tap-min); }
+
+/* --- Bars ----------------------------------------------------------------- */
+
+.bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+    min-height: var(--tap-min);
+}
+.bar h2 {
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+    font-size: var(--text-title);
+    line-height: var(--leading-title);
+    /* One line, ellipsised: a wrapping title used to collide with the back
+       button on a 375px screen. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Back button: chevron plus label, collapsing to the chevron alone on phones so
+   the title keeps the room it needs. */
+.btn--back { flex: 0 0 auto; padding: 0 var(--space-4); gap: var(--space-1); }
+.btn--back .chevron { font-size: 22px; line-height: 1; margin-top: -2px; }
+
+@media (max-width: 560px) {
+    .btn--back { width: var(--tap-min); padding: 0; }
+    .btn--back .btn__label { display: none; }
+}
+
+/* --- Cards ---------------------------------------------------------------- */
+
+.card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    padding: 18px 20px;
+}
+
+/* --- Grouped inset list ---------------------------------------------------
+ *
+ * The settings form follows the iOS grouped-list convention: a small caption
+ * above the card, rows of label-left / value-right inside it, hairline dividers
+ * inset to the label's left edge, and explanatory notes below the group rather
+ * than squeezed between rows (which is what broke the vertical rhythm before).
+ */
+
+.form { display: grid; gap: var(--space-6); }
+
+.group { display: grid; gap: var(--space-2); }
+
+.group__caption {
+    margin: 0 var(--row-pad-x);
+    font-size: var(--text-caption);
+    line-height: var(--leading-caption);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--muted);
+}
+
+.group__note {
+    margin: 0 var(--row-pad-x);
+    font-size: var(--text-caption);
+    line-height: var(--leading-caption);
+    color: var(--muted);
+}
+
+.rows {
+    border: var(--hairline) solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    overflow: hidden;
+}
+
+.row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-height: var(--row-min);
+    padding: var(--space-2) var(--row-pad-x);
+}
+/* Divider between rows only, inset like iOS - never after the last one. */
+.row + .row::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: var(--row-inset);
+    right: 0;
+    height: var(--hairline);
+    background: var(--line);
+}
+
+.row__label {
+    flex: 0 1 auto;
+    font-size: var(--text-body);
+    line-height: var(--leading-body);
+}
+
+.row__control {
+    flex: 0 1 auto;
+    min-width: 0;
+    text-align: right;
+}
+
+/* Free-text fields need the full width, so those rows stack. */
+.row--stacked {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-1);
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-3);
+}
+.row--stacked .row__label {
+    font-size: var(--text-caption);
+    line-height: var(--leading-caption);
+    color: var(--muted);
+}
+.row--stacked .row__control { text-align: left; }
+
+.row__control--split { display: flex; align-items: center; gap: var(--space-2); }
+.row__control--split input { width: 6em; text-align: right; }
+
+/* --- Controls ------------------------------------------------------------- */
+
+select,
+input[type="text"],
+input[type="number"] {
+    font: inherit;
+    font-size: max(16px, 1rem);
+    color: inherit;
+    background: none;
+    border: none;
+    padding: 0;
+    min-height: var(--row-min);
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* Inside a row the control is chrome-less; the row is the visual container.
+   The real <select> is kept, so iOS still opens its native wheel picker. */
+.row select {
+    /* Stretches across the rest of the row so the tap target is the full row
+       height AND width, not just the few pixels the value happens to occupy. */
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: right;
+    text-align-last: right;
+    color: var(--muted);
+    padding-right: var(--space-4);
+    text-overflow: ellipsis;
+    background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                      linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: right 4px center, right 0 center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    border-radius: 10px;
+}
+.row input[type="text"],
+.row input[type="number"] {
+    color: var(--text);
+    border-radius: 10px;
+}
+.row--stacked input::placeholder { color: var(--muted); }
+
+/* Colour rows show a swatch, not a full-width slab. */
+.row__swatch {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: var(--hairline) solid var(--line);
+    border-radius: 50%;
+    background: none;
+    -webkit-appearance: none;
+    appearance: none;
+    overflow: hidden;
+    cursor: pointer;
+}
+.row__swatch::-webkit-color-swatch-wrapper { padding: 0; }
+.row__swatch::-webkit-color-swatch { border: none; border-radius: 50%; }
+.row__swatch::-moz-color-swatch { border: none; border-radius: 50%; }
+/* The 28px circle is the visual; the row itself provides the 44pt target. */
+.row:has(.row__swatch) { cursor: pointer; }
+
+.actions { display: grid; gap: var(--space-2); justify-items: start; }
+.actions--row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+/* --- Sticky action bar ---------------------------------------------------- */
+
+.action-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: grid;
+    gap: var(--space-2);
+    /* margin-top:auto drops it to the bottom when the page is short; sticky
+       keeps it there once the page is long enough to scroll. The negative side
+       and bottom margins make it full-bleed against the app padding.
+       Each side negates its OWN padding: in landscape on a notched phone the
+       left and right insets differ, so crossing them over would push the bar
+       toward the unsafe edge. */
+    margin-top: auto;
+    margin-right: calc(var(--pad-right) * -1);
+    margin-bottom: calc(var(--space-5) * -1);
+    margin-left: calc(var(--pad-left) * -1);
+    padding: var(--space-3) var(--pad-left) calc(var(--space-3) + var(--safe-bottom));
+    background: var(--paper);
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    backdrop-filter: saturate(180%) blur(14px);
+    border-top: var(--hairline) solid var(--line);
+}
+.action-bar--split { grid-auto-flow: column; grid-auto-columns: 1fr; }
+.btn--block { width: 100%; }
+
+.hint { margin: 0; color: var(--muted); font-size: 14px; min-height: 1.2em; }
+.hint.is-error { color: var(--danger-fg); font-weight: 600; }
+.status-good { color: var(--good); font-weight: 600; }
+
+/* --- Chips / meta --------------------------------------------------------- */
+
+.meta { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; }
+.meta li { background: var(--surface-sunken); border-radius: var(--radius-pill); padding: 5px 12px; font-size: 13px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 var(--gap-md); padding: 0; list-style: none; }
+.chip { border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 13px; }
+.chip b { color: var(--teal); }
+
+/* --- Segmented control ---------------------------------------------------- */
+
+.segmented {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--surface-sunken);
+    border-radius: var(--radius-pill);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+}
+.segmented::-webkit-scrollbar { display: none; }
+
+.segmented__item {
+    flex: 0 0 auto;
+    min-height: var(--tap-min);
+    padding: 0 14px;
+    border-radius: var(--radius-pill);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.segmented__item[aria-selected="true"] {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow-card);
+}
+.segmented__item.is-complete::after {
+    content: "\2713";
+    color: var(--good);
+    font-weight: 700;
+}
+
+/* --- Tables --------------------------------------------------------------- */
+
+.data-table { border-collapse: collapse; width: 100%; margin-top: 12px; font-size: 14px; }
+.data-table th, .data-table td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; }
+.data-table th { background: var(--teal); color: #fff; }
+.data-table tbody tr:nth-child(even) { background: var(--surface-sunken); }
+
+details { margin-top: var(--gap-md); }
+summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--teal);
+    min-height: var(--tap-min);
+    display: flex;
+    align-items: center;
+}
+
+/* --- Confirmation dialog -------------------------------------------------- */
+/* <dialog> gives the focus trap, Esc-to-dismiss and inert background for free. */
+
+.confirm {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    color: var(--text);
+    padding: 24px 22px 20px;
+    width: min(400px, calc(100vw - 40px));
+    box-shadow: 0 24px 60px rgba(23, 32, 51, .28);
+    /* Sit a little above centre so the buttons land under the thumb. */
+    margin: auto auto max(24px, calc(18vh + var(--safe-bottom)));
+}
+.confirm::backdrop {
+    background: rgba(0, 0, 0, .42);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+}
+
+.confirm__title { margin: 0 0 8px; font-size: 18px; font-weight: 600; }
+.confirm__text { margin: 0 0 20px; color: var(--muted); font-size: 15px; }
+.confirm__actions { display: flex; gap: var(--gap-sm); justify-content: flex-end; flex-wrap: wrap; }
+.confirm__actions .btn { flex: 1 1 auto; }
+
+.player-dialog {
+    width: min(460px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+    overflow-x: hidden;
+}
+.player-list { display: grid; gap: var(--space-2); max-height: 30vh; overflow-y: auto; margin-bottom: var(--space-4); }
+.player-list__empty { margin: 0; color: var(--muted); font-size: var(--text-sm); }
+.player-choice {
+    min-height: var(--tap-min);
+    padding: 0 var(--space-4);
+    border: var(--hairline) solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface-sunken);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+}
+.player-choice[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 3px 0 var(--accent); }
+.player-form { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); }
+.player-form > label { color: var(--muted); font-size: var(--text-caption); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.player-form__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2);
+    width: 100%;
+    min-width: 0;
+}
+.player-form__row input {
+    width: 100%;
+    min-width: 0;
+    padding: 0 var(--space-3);
+    border: var(--hairline) solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface-sunken);
+}
+.player-form__row .btn { max-width: 100%; padding-inline: var(--space-4); }
+
+@media (min-width: 900px) {
+    .confirm { margin: auto; }
+    .confirm__actions .btn { flex: 0 0 auto; }
+}
+
+/* --- Overlay -------------------------------------------------------------- */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: var(--gap-md);
+    padding: var(--gap-lg);
+    background: var(--paper);   /* fallback before Safari 16.2 gained color-mix */
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    z-index: 60;
+}
+/* display:grid above would otherwise beat the user-agent [hidden] rule. */
+.overlay[hidden] { display: none; }
+.overlay p { margin: 0; color: var(--muted); text-align: center; }
+
+.spinner {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    border: 4px solid var(--surface-sunken);
+    border-top-color: var(--accent);
+    animation: spin .9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

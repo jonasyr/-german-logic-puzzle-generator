@@ -1,0 +1,27 @@
+{
+  "name": "logicals-chatgpt-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "node scripts/build.mjs",
+    "test": "vitest run --root . test",
+    "test:e2e": "playwright test",
+    "preview": "vite preview --host 0.0.0.0",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.2",
+    "logic-puzzle-generator": "file:vendor/logic-puzzle-generator"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.0",
+    "drizzle-kit": "0.31.10",
+    "esbuild": "0.28.2",
+    "typescript": "5.9.3",
+    "vite": "8.0.13",
+    "vitest": "4.0.16",
+    "wrangler": "4.92.0"
+  }
+}
