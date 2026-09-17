@@ -283,10 +283,10 @@
                         <p class="overview-readout__cats" id="overview-readout-cats">Tippe eine Zelle an</p>
                     </div>
                     <button class="btn btn--ghost btn--small overview-fit" type="button" id="overview-fit">Einpassen</button>
-                    <div class="overview-marks" role="group" aria-label="Markierung für die gewählte Zelle">
-                        <button class="overview-mark" type="button" id="overview-mark-no" disabled aria-label="Ausschließen">×</button>
-                        <button class="overview-mark" type="button" id="overview-mark-yes" disabled aria-label="Sichere Zuordnung">○</button>
-                        <button class="overview-mark" type="button" id="overview-mark-clear" disabled aria-label="Markierung entfernen">␣</button>
+                    <div class="overview-marks" role="group" aria-label="Werkzeug für das Antippen von Zellen">
+                        <button class="overview-mark" type="button" id="overview-mark-no" data-tool="no" aria-pressed="true" aria-label="Werkzeug: ausschließen">×</button>
+                        <button class="overview-mark" type="button" id="overview-mark-yes" data-tool="yes" aria-pressed="false" aria-label="Werkzeug: sichere Zuordnung">○</button>
+                        <button class="overview-mark" type="button" id="overview-mark-clear" data-tool="clear" aria-pressed="false" aria-label="Werkzeug: Markierung entfernen">␣</button>
                     </div>
                 </div>
             </div>

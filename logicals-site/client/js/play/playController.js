@@ -15,7 +15,7 @@ import { flushOutbox, queueResult } from '../results/outbox.js';
 import { openDuelResult } from '../duel/duelResultController.js';
 import {
     MARK_SYMBOLS, createPlayState, storageKeyFor,
-    cycleMark, undoMark, clearMarks, save, load, recordFailedCheck,
+    cycleMark, setMarkWith, undoMark, clearMarks, save, load, recordFailedCheck,
     resetForNewAttempt,
 } from './playState.js';
 
@@ -52,6 +52,24 @@ function paintCell(key) {
 
 function paintAll() {
     for (const key of pagerCells.keys()) paintCell(key);
+}
+
+/** Values per category, which the implication rules need. */
+function valueCount() {
+    return state.puzzle.categories[0].values.length;
+}
+
+/** Shared tail of every mark change, however it was made. */
+function afterMarkChange(changed) {
+    if (!changed.length) return;
+    clearWrongMarks();
+    changed.forEach(paintCell);
+    renderPairProgress();
+    renderUndo();
+    persist();
+
+    if (evaluate(state.marks, state.truth).solved) handleSolved();
+    else setStatus('');
 }
 
 function clearWrongMarks() {
@@ -117,42 +135,20 @@ function persist() {
 
 function onCellActivate(key) {
     if (state.solved || paused) return;
-
-    cycleMark(state, key);
-    clearWrongMarks();
-    paintCell(key);
-    renderPairProgress();
-    renderUndo();
-    persist();
-
-    if (evaluate(state.marks, state.truth).solved) handleSolved();
-    else setStatus('');
+    afterMarkChange(cycleMark(state, key, valueCount()));
 }
 
 /**
- * Sets a cell to an exact mark instead of cycling it.
+ * Sets a cell to an exact mark instead of cycling towards it.
  *
- * The overview's action bar names the state it applies, so cycling towards it
- * would take up to three taps and the button's label would be lying about what
- * pressing it does. The undo entry has the same shape cycleMark records, so one
- * undo stack serves both views.
+ * The overview's tool names the state it writes, so cycling to it would take up
+ * to three taps and the button's label would be lying about what pressing it
+ * does. Confirming a cell also crosses out the rest of its row and column; that
+ * happens inside playState, as one undo step.
  */
 function setMark(key, mark) {
     if (state.solved || paused) return;
-    const previous = state.marks.get(key);
-    if (previous === mark || (previous === undefined && mark === null)) return;
-
-    if (mark) state.marks.set(key, mark); else state.marks.delete(key);
-    state.undo.push({ key, previous });
-
-    clearWrongMarks();
-    paintCell(key);
-    renderPairProgress();
-    renderUndo();
-    persist();
-
-    if (evaluate(state.marks, state.truth).solved) handleSolved();
-    else setStatus('');
+    afterMarkChange(setMarkWith(state, key, mark, valueCount()));
 }
 
 function handleSolved() {
@@ -243,10 +239,10 @@ function checkNow() {
 
 function onUndo() {
     if (paused || state.solved) return;
-    const key = undoMark(state);
-    if (!key) return;
+    const changed = undoMark(state);
+    if (!changed.length) return;
     clearWrongMarks();
-    paintCell(key);
+    changed.forEach(paintCell);
     renderPairProgress();
     renderUndo();
     setStatus('');
@@ -325,6 +321,7 @@ export function openPlay(puzzle, context) {
     state.context = context;
     state.storageKey = storageKeyFor(puzzle, context);
     state.marks = new Map();
+    state.auto = new Map();
     state.wrong = new Set();
     state.undo = [];
     state.usedClues = new Set();
@@ -372,7 +369,7 @@ export function openPlay(puzzle, context) {
         readoutCats: el('overview-readout-cats'),
         markButtons: [el('overview-mark-no'), el('overview-mark-yes'), el('overview-mark-clear')],
         fitButton: el('overview-fit'),
-        puzzle, cellKey, onActivate: onCellActivate,
+        puzzle, cellKey, onSetMark: setMark,
     });
     views = [overview];
 
@@ -414,15 +411,6 @@ export function initPlay() {
         backdrop: el('sheet-backdrop'),
         countNode: el('clue-count'),
     });
-
-    for (const [id, mark] of [
-        ['overview-mark-no', 'no'], ['overview-mark-yes', 'yes'], ['overview-mark-clear', null],
-    ]) {
-        el(id).addEventListener('click', () => {
-            const cell = overview?.selected();
-            if (cell) setMark(cell.key, mark);
-        });
-    }
 
     el('play-check').addEventListener('click', requestCheck);
     el('play-undo').addEventListener('click', onUndo);

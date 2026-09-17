@@ -1,13 +1,22 @@
 /**
  * The overview: one canvas, one world, one gesture owner.
  *
- * A tap both selects a cell and cycles its mark, exactly as the pager does.
- * What makes that workable on a 12.5px cell is that the tap is resolved by
- * nearest-centre hit testing with a screen-space tolerance rather than by the
- * cell's own box, so the touch target never shrinks with the zoom.
+ * Marking is a TOOL model, not a cycle. One of x / o / erase is armed, and a tap
+ * writes it. Armed on the cell's existing value, a tap clears it instead, so
+ * every tool is a two-state switch and correcting always costs exactly one tap.
  *
- * The action bar beside the grid sets a mark directly instead of cycling to it.
- * It is a normal 44px control, which is also what makes the small cells
+ * Why not cycle on tap: four marks in five are crosses - a solved 5x5 has 200 of
+ * them against 50 circles - so cycling barely saves taps, and it turns a mis-tap
+ * on an already-marked cell into a silent circle. At a 12.5px cell that is the
+ * mistake people actually make. Writing the same value twice is harmless.
+ *
+ * Tapping the armed tool disarms it; a tap then only selects, which is how you
+ * inspect a cell without changing it.
+ *
+ * What keeps any of this workable at 12.5px is that the tap is resolved by
+ * nearest-centre hit testing with a screen-space tolerance rather than by the
+ * cell's own box, so the touch target never shrinks with the zoom. The tool
+ * buttons are ordinary 44px controls, which is also what makes the small cells
  * conforming under WCAG 2.2 SC 2.5.8's "equivalent control" exception.
  */
 
@@ -24,9 +33,12 @@ const PADDING = 6;
 /** Cell size the "comfortable" half of the fit toggle aims for. */
 const COMFY_CELL_PX = 30;
 
+/** Tool id -> the mark it writes. `null` erases. */
+const TOOL_MARK = { no: 'no', yes: 'yes', clear: null };
+
 export function createOverviewCanvas({
     canvas, minimap, mirrorHost, readoutPair, readoutCats, markButtons, fitButton,
-    puzzle, cellKey, onActivate, onSelect,
+    puzzle, cellKey, onSetMark, onSelect,
 }) {
     const layout = createLayout(puzzle, cellKey);
     const marks = new Map();
@@ -38,10 +50,11 @@ export function createOverviewCanvas({
     // no crosshair to steer by, so activating also moves the selection - that
     // way the readout and the highlight follow wherever they are working.
     const mirror = createMirror(mirrorHost, layout, puzzle, {
+        // Keyboard and VoiceOver go through the same tool, so the two input
+        // routes cannot disagree about what a cell is worth.
         onActivate(key) {
             if (disabled) return;
-            setSelected(byKey.get(key) ?? null);
-            onActivate(key);
+            applyTool(byKey.get(key) ?? null);
         },
     });
     const surface = canvas.parentElement;
@@ -55,6 +68,8 @@ export function createOverviewCanvas({
     let frame = 0;
     let pinchBaseScale = 1;
     let gutters = computeGutters(0, 0);
+    /** Armed tool, or null for inspect-only. Crosses dominate, so start on one. */
+    let tool = 'no';
 
     for (const cell of layout.cells) byKey.set(cell.key, cell);
 
@@ -126,12 +141,26 @@ export function createOverviewCanvas({
         ));
     }
 
+    const TOOL_HINT = {
+        no: 'Tippen setzt ×',
+        yes: 'Tippen setzt ○',
+        clear: 'Tippen leert die Zelle',
+    };
+
+    function renderTools() {
+        for (const button of markButtons) {
+            const active = !disabled && button.dataset.tool === tool;
+            button.disabled = disabled;
+            button.classList.toggle('is-active', active);
+            button.setAttribute('aria-pressed', String(active));
+        }
+    }
+
     function renderReadout() {
-        const hasSelection = Boolean(selected);
-        for (const button of markButtons) button.disabled = disabled || !hasSelection;
-        if (!hasSelection) {
+        renderTools();
+        if (!selected) {
             readoutPair.textContent = 'Keine Zelle gewählt';
-            readoutCats.textContent = 'Tippe eine Zelle an';
+            readoutCats.textContent = tool ? TOOL_HINT[tool] : 'Tippen wählt nur aus';
             return;
         }
         const rowCategory = puzzle.categories[selected.rowCategoryIndex];
@@ -141,6 +170,20 @@ export function createOverviewCanvas({
         readoutPair.textContent =
             `${rowCategory.values[selected.rowValue]}  ×  ${colCategory.values[selected.colValue]}`;
         readoutCats.textContent = `${rowCategory.label} × ${colCategory.label}`;
+    }
+
+    /**
+     * Selects the cell and, if a tool is armed, writes it.
+     *
+     * Armed on the value the cell already holds, the tap clears it instead -
+     * that is what makes each tool a switch and keeps a correction at one tap.
+     */
+    function applyTool(cell) {
+        setSelected(cell);
+        if (!cell || !tool) return;
+        const next = TOOL_MARK[tool];
+        const current = marks.get(cell.key) ?? null;
+        onSetMark(cell.key, current === next && next !== null ? null : next);
     }
 
     function setSelected(cell) {
@@ -158,15 +201,7 @@ export function createOverviewCanvas({
             // otherwise a tap on a label silently selects whatever sits behind.
             if (x < gutters.left || y < gutters.top) return;
             const world = screenToWorld(view, x, y);
-            const cell = hitTest(layout, world.x, world.y, view.scale, TAP_TOLERANCE_PX);
-            setSelected(cell);
-            // A tap marks straight away, cycling empty -> x -> o -> empty, the
-            // same as the pager. Making it select first and mark second would
-            // have cost two taps for every single cross, and a 5x5 puzzle has
-            // 250 cells - that adds up long before the grid is solved. The
-            // crosshair and the readout show what was just marked, and undo is
-            // one button away, so a mis-tap is cheap to take back.
-            if (cell) onActivate(cell.key);
+            applyTool(hitTest(layout, world.x, world.y, view.scale, TAP_TOLERANCE_PX));
         },
         onPan({ dx, dy }) {
             applyView(panBy(view, dx, dy));
@@ -183,6 +218,15 @@ export function createOverviewCanvas({
     // touch-action: none is necessary but not sufficient on iOS; the
     // proprietary gesture events have to be cancelled as well.
     const releaseNativeZoom = suppressNativeZoom(surface);
+
+    for (const button of markButtons) {
+        button.addEventListener('click', () => {
+            if (disabled) return;
+            // Tapping the armed tool disarms it, which is the inspect mode.
+            tool = button.dataset.tool === tool ? null : button.dataset.tool;
+            renderReadout();
+        });
+    }
 
     fitButton?.addEventListener('click', fit);
 
@@ -226,6 +270,8 @@ export function createOverviewCanvas({
             mirror.setDisabled(next);
             renderReadout();
         },
+        /** The armed tool, exposed for tests. */
+        tool: () => tool,
         destroy() {
             observer.disconnect();
             window.visualViewport?.removeEventListener('resize', refit);

@@ -2,6 +2,16 @@
  * Marks, undo history and persistence for one puzzle.
  *
  * The mark cycle is unchanged from the original app: empty -> no -> yes -> empty.
+ *
+ * Confirming a cell also crosses out the rest of its row and column inside the
+ * same 5x5 block, because in a logic grid those are not deductions - they are
+ * restatements of what "confirmed" means. Doing it by hand is eight taps of
+ * bookkeeping per confirmation and adds nothing.
+ *
+ * Withdrawing the confirmation withdraws those crosses again, which needs
+ * provenance: `state.auto` maps a derived cross to the set of confirmations that
+ * justify it. A cross the player placed themselves has no entry and is never
+ * touched, and one justified by two confirmations survives losing either.
  */
 
 const UNDO_LIMIT = 50;
@@ -34,11 +44,33 @@ export function storageKeyFor(puzzle, context = {}) {
     return `logicals:play:${mode}:${room}:${player}:${puzzle.id}:${puzzle.seed}:${dimensions}:${clues}`;
 }
 
+/**
+ * Every cell that a confirmation at `key` trivially excludes: the rest of its
+ * row and the rest of its column, inside that block only.
+ *
+ * Keys are `categoryA.categoryB.valueA.valueB` with the lower category first
+ * (see playLogic.js), so the block and both coordinates come straight out of the
+ * key and no puzzle lookup is needed.
+ */
+export function impliedKeys(key, valueCount) {
+    const [categoryA, categoryB, valueA, valueB] = key.split('.');
+    const a = Number(valueA);
+    const b = Number(valueB);
+    const implied = [];
+    for (let value = 0; value < valueCount; value++) {
+        if (value !== b) implied.push(`${categoryA}.${categoryB}.${a}.${value}`);
+        if (value !== a) implied.push(`${categoryA}.${categoryB}.${value}.${b}`);
+    }
+    return implied;
+}
+
 export function createPlayState() {
     return {
         puzzle: null,
         storageKey: null,
         marks: new Map(),
+        /** derived cross -> the confirmations justifying it. */
+        auto: new Map(),
         truth: new Set(),
         wrong: new Set(),
         undo: [],
@@ -55,28 +87,114 @@ export function recordFailedCheck(state, wrongCount) {
     if (wrongCount > 0) state.failedChecks += 1;
 }
 
-/** Advances one cell through empty -> x -> o -> empty and records it for undo. */
-export function cycleMark(state, key) {
-    const previous = state.marks.get(key);
-    if (previous === undefined) state.marks.set(key, 'no');
-    else if (previous === 'no') state.marks.set(key, 'yes');
-    else state.marks.delete(key);
+/**
+ * Sets one cell and maintains the crosses its confirmation implies.
+ *
+ * The whole change - the cell, every cross added or withdrawn, and the
+ * provenance behind them - goes onto the undo stack as ONE entry, so a single
+ * tap costs a single undo.
+ *
+ * @returns {string[]} every key whose mark changed, for repainting.
+ */
+export function setMarkWith(state, key, mark, valueCount) {
+    const previous = state.marks.get(key) ?? null;
+    if (previous === mark) return [];
 
-    state.undo.push({ key, previous });
+    const marks = [];
+    const auto = [];
+    const recordMark = k => marks.push({ key: k, previous: state.marks.get(k) ?? null });
+    const recordAuto = k => auto.push({
+        key: k,
+        previous: state.auto.has(k) ? new Set(state.auto.get(k)) : null,
+    });
+
+    // Leaving 'yes' retires the crosses this confirmation was holding up.
+    if (previous === 'yes') {
+        for (const implied of impliedKeys(key, valueCount)) {
+            const sources = state.auto.get(implied);
+            if (!sources || !sources.has(key)) continue;
+            recordAuto(implied);
+            sources.delete(key);
+            if (sources.size === 0) {
+                state.auto.delete(implied);
+                // Only withdraw the cross itself; anything else the player has
+                // since put there is theirs to keep.
+                if (state.marks.get(implied) === 'no') {
+                    recordMark(implied);
+                    state.marks.delete(implied);
+                }
+            }
+        }
+    }
+
+    // Touching a cell directly makes it the player's own. Without this, a derived
+    // cross that they cleared and later re-drew by hand would keep its stale
+    // provenance and vanish again with the confirmation behind it.
+    if (state.auto.has(key)) {
+        recordAuto(key);
+        state.auto.delete(key);
+    }
+
+    recordMark(key);
+    if (mark === null) state.marks.delete(key); else state.marks.set(key, mark);
+
+    // Entering 'yes' crosses out the rest of the row and column.
+    if (mark === 'yes') {
+        for (const implied of impliedKeys(key, valueCount)) {
+            const current = state.marks.get(implied);
+            // A cell the player already decided is left exactly as it is - a
+            // manual cross keeps no provenance, so it outlives this confirmation.
+            if (current !== undefined) continue;
+            recordMark(implied);
+            recordAuto(implied);
+            state.marks.set(implied, 'no');
+            state.auto.set(implied, new Set([key]));
+        }
+        // A cross that was already derived gains this confirmation as a second
+        // justification, so losing the first one does not withdraw it.
+        for (const implied of impliedKeys(key, valueCount)) {
+            const sources = state.auto.get(implied);
+            if (sources && !sources.has(key)) {
+                if (!auto.some(entry => entry.key === implied)) recordAuto(implied);
+                sources.add(key);
+            }
+        }
+    }
+
+    state.undo.push({ marks, auto });
     if (state.undo.length > UNDO_LIMIT) state.undo.shift();
+    return marks.map(entry => entry.key);
 }
 
-/** Reverts the last cycle. Returns the affected key, or null if there was none. */
+/** Advances one cell through empty -> x -> o -> empty. */
+export function cycleMark(state, key, valueCount) {
+    const previous = state.marks.get(key);
+    const next = previous === undefined ? 'no' : previous === 'no' ? 'yes' : null;
+    return setMarkWith(state, key, next, valueCount);
+}
+
+/**
+ * Reverts the last change as a whole.
+ * @returns {string[]} the affected keys, empty when there was nothing to undo.
+ */
 export function undoMark(state) {
     const entry = state.undo.pop();
-    if (!entry) return null;
-    if (entry.previous === undefined) state.marks.delete(entry.key);
-    else state.marks.set(entry.key, entry.previous);
-    return entry.key;
+    if (!entry) return [];
+
+    for (const { key, previous } of entry.auto) {
+        if (previous === null) state.auto.delete(key);
+        else state.auto.set(key, new Set(previous));
+    }
+    for (const { key, previous } of entry.marks) {
+        if (previous === null) state.marks.delete(key);
+        else state.marks.set(key, previous);
+    }
+    return entry.marks.map(change => change.key);
 }
 
 export function clearMarks(state) {
     state.marks.clear();
+    state.auto.clear();
     state.wrong.clear();
     state.undo.length = 0;
     state.solved = false;
@@ -95,6 +213,9 @@ export function save(state, elapsedMs) {
     try {
         localStorage.setItem(state.storageKey, JSON.stringify({
             marks: [...state.marks],
+            // Without provenance a reload would strand the derived crosses:
+            // taking a confirmation back would no longer withdraw them.
+            auto: [...state.auto].map(([key, sources]) => [key, [...sources]]),
             usedClues: [...state.usedClues],
             elapsedMs,
             solved: state.solved,
@@ -112,6 +233,11 @@ export function load(state) {
         if (!raw) return 0;
         const saved = JSON.parse(raw);
         if (Array.isArray(saved.marks)) state.marks = new Map(saved.marks);
+        state.auto = new Map(
+            Array.isArray(saved.auto)
+                ? saved.auto.map(([key, sources]) => [key, new Set(sources)])
+                : [],
+        );
         if (Array.isArray(saved.usedClues)) state.usedClues = new Set(saved.usedClues);
         state.solved = Boolean(saved.solved);
         state.attemptKey = typeof saved.attemptKey === 'string' ? saved.attemptKey : null;

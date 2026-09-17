@@ -88,9 +88,12 @@ for (const device of DEVICES) {
   });
 }
 
-test('tapping cycles the mark, exactly as the pager does', async ({ page }) => {
+test('the armed tool writes on a tap, and the same tap takes it back', async ({ page }) => {
   test.setTimeout(120_000);
   await openPuzzle(page, 375, 812);
+
+  // The cross tool is armed on open, because four marks in five are crosses.
+  await expect(page.locator('#overview-mark-no')).toHaveAttribute('aria-pressed', 'true');
 
   const cell = page.locator('.overview-mirror__cell').first();
   const key = await cell.getAttribute('data-key');
@@ -98,17 +101,72 @@ test('tapping cycles the mark, exactly as the pager does', async ({ page }) => {
   const tap = () => page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   const label = () => page.locator(`.overview-mirror__cell[data-key="${key}"]`).getAttribute('aria-label');
 
-  // One tap is one mark. Selecting first and marking second would cost two taps
-  // for every cross, and a 5x5 puzzle has 250 cells.
   await tap();
-  await expect(page.locator('#overview-readout-pair')).not.toHaveText('Keine Zelle gewählt');
   expect(await label()).toContain('ausgeschlossen');
+  await expect(page.locator('#overview-readout-pair')).not.toHaveText('Keine Zelle gewählt');
 
-  await tap();
-  expect(await label()).toContain('sichere Zuordnung');
-
+  // Armed on the value the cell already holds, the tool clears it - correcting
+  // costs one tap and never produces a surprise third state.
   await tap();
   expect(await label()).toContain('leer');
+});
+
+test('arming a different tool changes what a tap writes', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+
+  await page.locator('#overview-mark-yes').click();
+  await expect(page.locator('#overview-mark-yes')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#overview-mark-no')).toHaveAttribute('aria-pressed', 'false');
+
+  const key = await tapCell(page, 0);
+  const label = await page.locator(`.overview-mirror__cell[data-key="${key}"]`).getAttribute('aria-label');
+  expect(label).toContain('sichere Zuordnung');
+});
+
+test('disarming the tool leaves taps as inspection only', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+
+  // Pressing the armed tool disarms it.
+  await page.locator('#overview-mark-no').click();
+  await expect(page.locator('#overview-mark-no')).toHaveAttribute('aria-pressed', 'false');
+
+  const key = await tapCell(page, 0);
+  const label = await page.locator(`.overview-mirror__cell[data-key="${key}"]`).getAttribute('aria-label');
+  expect(label).toContain('leer');
+  // It still selects, so the readout names the cell - you just did not change it.
+  await expect(page.locator('#overview-readout-pair')).not.toHaveText('Keine Zelle gewählt');
+  await expect(page.locator('#play-undo')).toBeDisabled();
+});
+
+test('confirming a cell crosses out the rest of its row and column', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+
+  await page.locator('#overview-mark-yes').click();
+  const key = (await tapCell(page, 0))!;
+
+  const [catA, catB, valA, valB] = key.split('.').map(Number);
+  const implied: string[] = [];
+  for (let v = 0; v < 5; v++) {
+    if (v !== valB) implied.push(`${catA}.${catB}.${valA}.${v}`);
+    if (v !== valA) implied.push(`${catA}.${catB}.${v}.${valB}`);
+  }
+  expect(implied).toHaveLength(8);
+
+  for (const other of implied) {
+    const label = await page.locator(`.overview-mirror__cell[data-key="${other}"]`).getAttribute('aria-label');
+    expect(label, other).toContain('ausgeschlossen');
+  }
+
+  // One tap is one undo, however many cells it touched.
+  await page.locator('#play-undo').click();
+  await expect(page.locator('#play-undo')).toBeDisabled();
+  for (const other of [key, ...implied]) {
+    const label = await page.locator(`.overview-mirror__cell[data-key="${other}"]`).getAttribute('aria-label');
+    expect(label, other).toContain('leer');
+  }
 });
 
 test('a mark made in the overview shows up in the pager', async ({ page }) => {
@@ -122,25 +180,6 @@ test('a mark made in the overview shows up in the pager', async ({ page }) => {
     return document.querySelector(`.play-pager .cell[data-key="${k}"]`)?.textContent ?? '';
   }, key);
   expect(pagerMark).toBe('×');
-});
-
-test('the action bar sets a mark directly instead of cycling to it', async ({ page }) => {
-  test.setTimeout(120_000);
-  await openPuzzle(page, 375, 812);
-
-  const key = await tapCell(page, 0);   // now 'no'
-  const label = () => page.locator(`.overview-mirror__cell[data-key="${key}"]`).getAttribute('aria-label');
-  expect(await label()).toContain('ausgeschlossen');
-
-  // One press, not two cycles.
-  await page.locator('#overview-mark-yes').click();
-  expect(await label()).toContain('sichere Zuordnung');
-
-  await page.locator('#overview-mark-clear').click();
-  expect(await label()).toContain('leer');
-
-  // And the mirror keeps naming the cell's coordinates for assistive tech.
-  expect(await label()).toMatch(/^Zeile .+, Spalte .+,/);
 });
 
 test('a mark made in the pager shows up in the overview', async ({ page }) => {

@@ -373,6 +373,15 @@
     font: inherit; font-size: 22px; line-height: 1;
 }
 .overview-mark:disabled { opacity: .35; }
+/* The armed tool has to be obvious: it is the only invisible state in the view,
+   and getting it wrong writes the wrong mark. Border, fill and weight together,
+   so it does not rely on colour alone. */
+.overview-mark.is-active {
+    border-color: var(--teal);
+    border-width: 2px;
+    background: color-mix(in srgb, var(--teal) 12%, var(--surface));
+    font-weight: 700;
+}
 
 /* --- Paused veil ---------------------------------------------------------- */
 
