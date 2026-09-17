@@ -14,7 +14,7 @@ import {
     MAX_SCALE, fitView, zoomTo, panBy, clampView, minScaleFor, screenToWorld,
 } from './viewport.js';
 import { bindGestures, suppressNativeZoom } from './gestures.js';
-import { render, renderMinimap, resizeCanvas, GUTTER_LEFT, GUTTER_TOP } from './renderer.js';
+import { render, renderMinimap, resizeCanvas, computeGutters } from './renderer.js';
 import { createMirror } from './a11yMirror.js';
 
 const TAP_TOLERANCE_PX = 22;
@@ -52,6 +52,7 @@ export function createOverviewCanvas({
     let dpr = 1;
     let frame = 0;
     let pinchBaseScale = 1;
+    let gutters = computeGutters(0, 0);
 
     for (const cell of layout.cells) byKey.set(cell.key, cell);
 
@@ -59,7 +60,7 @@ export function createOverviewCanvas({
     const bounds = () => ({
         worldWidth: layout.width, worldHeight: layout.height,
         viewWidth: cssWidth, viewHeight: cssHeight,
-        gutterLeft: GUTTER_LEFT, gutterTop: GUTTER_TOP, padding: PADDING,
+        gutterLeft: gutters.left, gutterTop: gutters.top, padding: PADDING,
     });
 
     function schedule() {
@@ -68,11 +69,11 @@ export function createOverviewCanvas({
             frame = 0;
             if (!cssWidth || !cssHeight) return;
             render(context, {
-                layout, view, puzzle, marks, wrong, selected, cssWidth, cssHeight, dpr,
+                layout, view, puzzle, marks, wrong, selected, cssWidth, cssHeight, dpr, gutters,
             });
             if (minimapContext) {
                 renderMinimap(minimapContext, {
-                    layout, view, marks,
+                    layout, view, marks, gutters,
                     width: minimap.width, height: minimap.height,
                     cssWidth, cssHeight,
                 });
@@ -85,6 +86,10 @@ export function createOverviewCanvas({
         const rect = surface.getBoundingClientRect();
         cssWidth = rect.width;
         cssHeight = rect.height;
+        gutters = computeGutters(cssWidth, cssHeight);
+        // The minimap is a DOM element, so it needs the measured gutter too -
+        // otherwise it parks on top of the column labels.
+        surface.style.setProperty('--overview-gutter-top', `${gutters.top}px`);
         canvas.style.width = `${cssWidth}px`;
         canvas.style.height = `${cssHeight}px`;
         ({ dpr } = resizeCanvas(canvas, cssWidth, cssHeight));
@@ -113,8 +118,8 @@ export function createOverviewCanvas({
         if (!atWhole || whole.scale >= comfortable - 0.01) { applyView(whole); return; }
         applyView(zoomTo(
             whole,
-            GUTTER_LEFT + (cssWidth - GUTTER_LEFT) / 2,
-            GUTTER_TOP + (cssHeight - GUTTER_TOP) / 2,
+            gutters.left + (cssWidth - gutters.left) / 2,
+            gutters.top + (cssHeight - gutters.top) / 2,
             comfortable, limits,
         ));
     }
@@ -149,7 +154,7 @@ export function createOverviewCanvas({
             // Taps inside the header gutters belong to the labels, not to a
             // cell. The hit test must mirror the way the gutters are drawn,
             // otherwise a tap on a label silently selects whatever sits behind.
-            if (x < GUTTER_LEFT || y < GUTTER_TOP) return;
+            if (x < gutters.left || y < gutters.top) return;
             const world = screenToWorld(view, x, y);
             setSelected(hitTest(layout, world.x, world.y, view.scale, TAP_TOLERANCE_PX));
         },

@@ -63,6 +63,29 @@ for (const device of DEVICES) {
     const undersized = await page.locator('.overview-actions button:visible').evaluateAll(buttons =>
       buttons.map(b => b.getBoundingClientRect()).filter(r => r.width < 44 || r.height < 44));
     expect(undersized).toEqual([]);
+
+    // The grid and the buttons that mark it must be reachable together. On a
+    // scrolling page you had to scroll away from the grid to press a mark and
+    // back again to see the result, which breaks the select-then-mark loop.
+    const together = await page.evaluate(() => {
+      const grid = document.getElementById('overview-viewport')!.getBoundingClientRect();
+      const bar = document.querySelector('.overview-actions')!.getBoundingClientRect();
+      return {
+        gridVisible: grid.top >= -1 && grid.bottom <= window.innerHeight + 1,
+        barVisible: bar.top >= -1 && bar.bottom <= window.innerHeight + 1,
+      };
+    });
+    expect(together).toEqual({ gridVisible: true, barVisible: true });
+
+    // Selecting has to work on EVERY size, not just the one the interaction
+    // tests use. A layout regression once left this viewport 984x2 px on iPad
+    // landscape, where no tap could land on a cell at all, and nothing caught it.
+    const grid = (await page.locator('#overview-viewport').boundingBox())!;
+    await page.mouse.click(grid.x + grid.width * 0.55, grid.y + grid.height * 0.6);
+    await expect(page.locator('#overview-readout-pair')).not.toHaveText('Keine Zelle gewählt');
+    await expect(page.locator('#overview-mark-yes')).toBeEnabled();
+    await page.locator('#overview-mark-yes').click();
+    await expect(page.locator('#play-undo')).toBeEnabled();
   });
 }
 

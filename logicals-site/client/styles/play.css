@@ -90,9 +90,41 @@
     }
 }
 
-.play-head { display: grid; gap: var(--gap-sm); margin-bottom: var(--gap-md); }
-.play-head .result-sub { font-size: 15px; }
+.play-head { display: grid; gap: var(--gap-sm); margin-bottom: var(--gap-sm); }
 #play-status { min-height: 1.4em; font-size: 14px; }
+.sheet-body .result-sub { font-size: 15px; margin: 0 0 var(--space-3); }
+
+/*
+ * The play screen is a fixed surface, not a scrolling document.
+ *
+ * While the page could grow, the action bar sat below the fold: you had to
+ * scroll away from the grid to press a mark and back again to see the result,
+ * which is precisely the loop this design is built around. The grid takes
+ * whatever height the chrome leaves, and nothing below it is out of reach.
+ */
+.screen--play.is-active { height: 100svh; }
+/* The shell's own vertical padding sits OUTSIDE that 100svh and pushed the
+   action bar exactly that far below the fold. The play bar carries the
+   safe-area inset itself, so dropping it here costs nothing. */
+#app:has(#screen-play.is-active) { padding-top: 0; padding-bottom: 0; }
+/* A flex column, so the overview below it has a definite height to fill. As a
+   plain block the stage was auto-height, the 1fr grid row inside resolved
+   against nothing, and the viewport collapsed to 2px. */
+.screen--play.is-active .play-stage {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.screen--play.is-active .play-overview {
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr) auto;
+}
+/* 100%, not auto: the canvas inside is absolutely positioned and contributes no
+   intrinsic height, so an auto box would collapse to nothing. The 1fr grid row
+   above gives this a definite height to fill. */
+.screen--play.is-active .overview-viewport { height: 100%; min-height: 0; }
 
 /* --- Pager (phone) -------------------------------------------------------- */
 
@@ -224,7 +256,6 @@
 .overview-viewport {
     position: relative;
     min-height: 0;
-    height: min(50svh, 520px);
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--surface);
@@ -234,7 +265,18 @@
     user-select: none;
     -webkit-touch-callout: none;
 }
-.overview-viewport > canvas#overview-canvas { display: block; width: 100%; height: 100%; }
+/*
+ * Absolutely positioned so the canvas can never feed its own size back into the
+ * viewport's. With the viewport sized by a grid row and the canvas sized from
+ * the viewport, an in-flow canvas closed the loop: JS set the canvas height, the
+ * viewport grew, the ResizeObserver fired, and the refit threw away whatever the
+ * player had just zoomed to.
+ */
+.overview-viewport > canvas#overview-canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+}
 
 /*
  * The accessible mirror sits exactly on top of the painted cells. It is
@@ -273,7 +315,7 @@
    only dead space in the layout - and below the column-label gutter so it never
    covers a header. */
 .overview-minimap {
-    position: absolute; right: 6px; top: 46px;
+    position: absolute; right: 6px; top: calc(var(--overview-gutter-top, 46px) + 6px);
     width: 76px; height: 76px;
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -454,14 +496,34 @@
     .view-toggle { display: none; }
     .screen--play[data-view] .play-overview { display: grid; }
 
-    .play-stage {
+    /*
+     * The stage fills the window instead of letting the page grow.
+     *
+     * With the action bar living under the grid, a scrolling page meant you had
+     * to scroll away from the grid to reach the mark buttons and back again to
+     * see the result - which breaks the whole select-then-mark loop on the
+     * device that has the most room for it. The clue list scrolls inside its own
+     * column instead.
+     */
+    /* Same specificity as the shared phone rule above, which is a flex column -
+       otherwise that rule wins here and collapses this two-column layout. */
+    .screen--play.is-active .play-stage {
         display: grid;
-        grid-template-columns: minmax(0, auto) minmax(300px, 1fr);
+        grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
         gap: 18px;
-        align-items: start;
+        align-items: stretch;
+        flex: 1 1 auto;
+        min-height: 0;
         padding-bottom: 0;
     }
-    .overview-viewport { height: min(76svh, 900px); }
+    .clues-sheet { min-height: 0; overflow: hidden; }
+    /* Beats the earlier desktop rule that makes the body overflow: visible -
+       here the column, not the page, is what scrolls. */
+    .clues-sheet .sheet-body,
+    .clues-sheet[data-detent] .sheet-body {
+        overflow-y: auto;
+        min-height: 0;
+    }
 
     .clues-sheet {
         position: static;
@@ -505,10 +567,6 @@
     /* The stage takes whatever height the chrome leaves, and the viewport fills
        it. Sizing from svh here guessed high and pushed the grid past the bottom
        edge, because the bar and toolbar are not part of that guess. */
-    .screen--play.is-active { height: 100svh; }
-    /* The shell's own padding would push that 100svh past the bottom edge and
-       leave the page scrollable behind a screen that is meant to be fixed. */
-    #app:has(#screen-play.is-active) { padding-top: 0; padding-bottom: 0; }
     /* Still clear of the peeking clue sheet, which is fixed to the bottom across
        the full width and would otherwise cover the foot of the action bar. */
     .play-stage { flex: 1 1 auto; min-height: 0; padding-bottom: calc(50px + var(--safe-bottom)); }

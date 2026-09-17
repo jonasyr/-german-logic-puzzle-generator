@@ -14,16 +14,49 @@ import { worldToScreen } from './viewport.js';
  * Screen-space gutters reserved for the always-legible labels.
  *
  * These are charged against the viewport ONCE, unlike the old table where the
- * labels lived inside the scaled content. They are still the scarcest resource
- * on a 375px phone: every pixel here is a pixel the grid cannot use, and at 78px
- * the left gutter alone was costing enough width to push the fit below the tap
- * floor. 64 is the smallest that still holds a German value label.
+ * labels lived inside the scaled content - but they are still the scarcest
+ * resource on a phone, so they scale with the space actually available instead
+ * of being fixed.
+ *
+ * Fixed gutters got this exactly backwards. The column labels are rotated, so
+ * their text runs along the TOP gutter's depth; at a flat 40px they had 28px of
+ * run for words like "Flammkuchen", while the row labels had 43px. The top is
+ * where the room is needed most, and in portrait - where width, not height, is
+ * the binding constraint - it is also the cheapest room in the layout.
  */
-export const GUTTER_LEFT = 64;
-export const GUTTER_TOP = 40;
+const GUTTER = {
+    left: { min: 54, ratio: 0.20, max: 96 },
+    top: { min: 38, ratio: 0.17, max: 96 },
+};
+
+function clamp(value, { min, max }) {
+    return Math.round(Math.min(max, Math.max(min, value)));
+}
+
+export function computeGutters(cssWidth, cssHeight) {
+    return {
+        left: clamp(cssWidth * GUTTER.left.ratio, GUTTER.left),
+        top: clamp(cssHeight * GUTTER.top.ratio, GUTTER.top),
+    };
+}
 
 /** Far-left strip holding the rotated category name, clear of the values. */
 const CATEGORY_STRIP = 13;
+
+/**
+ * Truncates to fit instead of squeezing.
+ *
+ * Canvas's fillText(text, x, y, maxWidth) does NOT clip - it condenses the
+ * glyphs horizontally until they fit, which is what made the column headers look
+ * crushed. An ellipsis costs a character and keeps the letterforms honest.
+ */
+function fitText(ctx, text, maxWidth) {
+    if (maxWidth <= 0) return '';
+    if (ctx.measureText(text).width <= maxWidth) return text;
+    let cut = text.length;
+    while (cut > 1 && ctx.measureText(`${text.slice(0, cut)}…`).width > maxWidth) cut--;
+    return `${text.slice(0, cut)}…`;
+}
 
 const CATEGORY_FONT_PX = 8;
 /** Below this a glyph is noise, so the mark is drawn as a dot instead. */
@@ -96,7 +129,7 @@ export function render(ctx, options) {
     drawHeaders(ctx, options);
 }
 
-function drawCells(ctx, { layout, view, marks, wrong, cssWidth, cssHeight, dpr }) {
+function drawCells(ctx, { layout, view, marks, wrong, cssWidth, cssHeight, dpr, gutters }) {
     const size = CELL * view.scale;
     const glyphs = size >= GLYPH_MIN_CELL_PX;
     ctx.lineWidth = Math.max(0.5, Math.min(1, size / 34));
@@ -106,7 +139,7 @@ function drawCells(ctx, { layout, view, marks, wrong, cssWidth, cssHeight, dpr }
     for (const cell of layout.cells) {
         const point = worldToScreen(view, cell.x, cell.y);
         if (point.x > cssWidth || point.y > cssHeight) continue;
-        if (point.x + size < GUTTER_LEFT || point.y + size < GUTTER_TOP) continue;
+        if (point.x + size < gutters.left || point.y + size < gutters.top) continue;
 
         const mark = marks.get(cell.key);
         const isWrong = wrong.has(cell.key);
@@ -151,37 +184,37 @@ function drawBlockRules(ctx, { layout, view, dpr }) {
 }
 
 /** The active row and column, tinted across the whole grid. */
-function drawCrosshair(ctx, { view, selected, cssWidth, cssHeight }) {
+function drawCrosshair(ctx, { view, selected, cssWidth, cssHeight, gutters }) {
     if (!selected) return;
     const size = CELL * view.scale;
     const point = worldToScreen(view, selected.x, selected.y);
     ctx.fillStyle = COLORS.crosshair;
-    ctx.fillRect(GUTTER_LEFT, point.y, cssWidth - GUTTER_LEFT, size);
-    ctx.fillRect(point.x, GUTTER_TOP, size, cssHeight - GUTTER_TOP);
+    ctx.fillRect(gutters.left, point.y, cssWidth - gutters.left, size);
+    ctx.fillRect(point.x, gutters.top, size, cssHeight - gutters.top);
     ctx.strokeStyle = COLORS.accent;
     ctx.lineWidth = 2;
     ctx.strokeRect(point.x - 1, point.y - 1, size + 2, size + 2);
 }
 
-function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight, dpr }) {
+function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight, dpr, gutters }) {
     const size = CELL * view.scale;
     const labelPx = labelFontPx(size);
 
     ctx.fillStyle = COLORS.gutter;
-    ctx.fillRect(0, 0, GUTTER_LEFT, cssHeight);
-    ctx.fillRect(0, 0, cssWidth, GUTTER_TOP);
+    ctx.fillRect(0, 0, gutters.left, cssHeight);
+    ctx.fillRect(0, 0, cssWidth, gutters.top);
     ctx.strokeStyle = COLORS.rule;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    const ruleX = hairline(GUTTER_LEFT, dpr);
-    const ruleY = hairline(GUTTER_TOP, dpr);
+    const ruleX = hairline(gutters.left, dpr);
+    const ruleY = hairline(gutters.top, dpr);
     ctx.moveTo(ruleX, 0); ctx.lineTo(ruleX, cssHeight);
     ctx.moveTo(0, ruleY); ctx.lineTo(cssWidth, ruleY);
     ctx.stroke();
 
     // --- Row labels -------------------------------------------------------
     ctx.save();
-    ctx.beginPath(); ctx.rect(0, GUTTER_TOP, GUTTER_LEFT, cssHeight - GUTTER_TOP); ctx.clip();
+    ctx.beginPath(); ctx.rect(0, gutters.top, gutters.left, cssHeight - gutters.top); ctx.clip();
     ctx.textBaseline = 'middle';
     layout.rows.forEach((categoryIndex, rowBlock) => {
         const category = puzzle.categories[categoryIndex];
@@ -189,15 +222,17 @@ function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight,
             const cell = layout.cells.find(c => c.rowBlock === rowBlock && c.rowValue === value);
             if (!cell) continue;
             const y = worldToScreen(view, 0, cell.y).y + size / 2;
-            if (y < GUTTER_TOP - 10 || y > cssHeight + 10) continue;
+            if (y < gutters.top - 10 || y > cssHeight + 10) continue;
             const active = selected?.rowBlock === rowBlock && selected?.rowValue === value;
             ctx.textAlign = 'right';
             ctx.fillStyle = active ? COLORS.accent : COLORS.text;
             ctx.font = `${active ? 700 : 400} ${labelPx}px system-ui, sans-serif`;
             // Values keep clear of the category strip on the far left, which is
             // what stopped the two colliding on a narrow gutter.
-            ctx.fillText(category.values[value], GUTTER_LEFT - 5, y,
-                GUTTER_LEFT - CATEGORY_STRIP - 8);
+            ctx.fillText(
+                fitText(ctx, category.values[value], gutters.left - CATEGORY_STRIP - 8),
+                gutters.left - 5, y,
+            );
         }
 
         // Category name, rotated into its own strip and centred on the block.
@@ -205,15 +240,15 @@ function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight,
         if (!blockCells.length) return;
         const top = worldToScreen(view, 0, blockCells[0].y).y;
         const bottom = top + layout.valueCount * size;
-        if (bottom < GUTTER_TOP || top > cssHeight) return;
-        const centre = Math.min(Math.max((top + bottom) / 2, GUTTER_TOP + 20), cssHeight - 20);
+        if (bottom < gutters.top || top > cssHeight) return;
+        const centre = Math.min(Math.max((top + bottom) / 2, gutters.top + 20), cssHeight - 20);
         ctx.save();
         ctx.translate(CATEGORY_STRIP - 4, centre);
         ctx.rotate(-Math.PI / 2);
         ctx.textAlign = 'center';
         ctx.fillStyle = COLORS.teal;
         ctx.font = `700 ${CATEGORY_FONT_PX}px system-ui, sans-serif`;
-        ctx.fillText(category.label.toUpperCase(), 0, 0, layout.valueCount * size);
+        ctx.fillText(fitText(ctx, category.label.toUpperCase(), layout.valueCount * size), 0, 0);
         ctx.restore();
     });
     ctx.restore();
@@ -223,7 +258,7 @@ function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight,
     // needed vertical-rl plus a rotate plus sticky, and those three do not
     // survive each other in Safari.
     ctx.save();
-    ctx.beginPath(); ctx.rect(GUTTER_LEFT, 0, cssWidth - GUTTER_LEFT, GUTTER_TOP); ctx.clip();
+    ctx.beginPath(); ctx.rect(gutters.left, 0, cssWidth - gutters.left, gutters.top); ctx.clip();
     ctx.textBaseline = 'middle';
     layout.columns.forEach((categoryIndex, colBlock) => {
         const category = puzzle.categories[categoryIndex];
@@ -231,33 +266,33 @@ function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight,
             const cell = layout.cells.find(c => c.colBlock === colBlock && c.colValue === value);
             if (!cell) continue;
             const x = worldToScreen(view, cell.x, 0).x + size / 2;
-            if (x < GUTTER_LEFT - 10 || x > cssWidth + 10) continue;
+            if (x < gutters.left - 10 || x > cssWidth + 10) continue;
             const active = selected?.colBlock === colBlock && selected?.colValue === value;
             ctx.save();
-            ctx.translate(x, GUTTER_TOP - 4);
+            ctx.translate(x, gutters.top - 4);
             ctx.rotate(-Math.PI / 2);
             ctx.textAlign = 'left';
             ctx.fillStyle = active ? COLORS.accent : COLORS.text;
             ctx.font = `${active ? 700 : 400} ${labelPx}px system-ui, sans-serif`;
-            ctx.fillText(category.values[value], 0, 0, GUTTER_TOP - 12);
+            ctx.fillText(fitText(ctx, category.values[value], gutters.top - 12), 0, 0);
             ctx.restore();
         }
         const blockCells = layout.cells.filter(c => c.colBlock === colBlock);
         if (!blockCells.length) return;
         const left = worldToScreen(view, blockCells[0].x, 0).x;
         const right = left + layout.valueCount * size;
-        if (right < GUTTER_LEFT || left > cssWidth) return;
-        const centre = Math.min(Math.max((left + right) / 2, GUTTER_LEFT + 24), cssWidth - 24);
+        if (right < gutters.left || left > cssWidth) return;
+        const centre = Math.min(Math.max((left + right) / 2, gutters.left + 24), cssWidth - 24);
         ctx.textAlign = 'center';
         ctx.fillStyle = COLORS.teal;
         ctx.font = `700 ${CATEGORY_FONT_PX}px system-ui, sans-serif`;
-        ctx.fillText(category.label.toUpperCase(), centre, 6, layout.valueCount * size);
+        ctx.fillText(fitText(ctx, category.label.toUpperCase(), layout.valueCount * size), centre, 6);
     });
     ctx.restore();
 }
 
 /** The whole world plus the current viewport rectangle, for the empty corner. */
-export function renderMinimap(ctx, { layout, view, marks, width, height, cssWidth, cssHeight }) {
+export function renderMinimap(ctx, { layout, view, marks, width, height, cssWidth, cssHeight, gutters }) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, width, height);
     const scale = Math.min((width - 8) / layout.width, (height - 8) / layout.height);
@@ -275,12 +310,20 @@ export function renderMinimap(ctx, { layout, view, marks, width, height, cssWidt
         ctx.fillRect(offsetX + cell.x * scale, offsetY + cell.y * scale, CELL * scale, CELL * scale);
     }
 
-    const topLeft = { x: (GUTTER_LEFT - view.tx) / view.scale, y: (GUTTER_TOP - view.ty) / view.scale };
+    // Zoomed out, the visible region is larger than the world, so the rectangle
+    // would spill past the minimap's own edges and read as a stray stroke across
+    // the grid behind it. Clip it to the minimap.
+    const topLeft = { x: (gutters.left - view.tx) / view.scale, y: (gutters.top - view.ty) / view.scale };
     const bottomRight = { x: (cssWidth - view.tx) / view.scale, y: (cssHeight - view.ty) / view.scale };
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(1, 1, width - 2, height - 2);
+    ctx.clip();
     ctx.strokeStyle = COLORS.accent;
     ctx.lineWidth = 2;
     ctx.strokeRect(
         offsetX + topLeft.x * scale, offsetY + topLeft.y * scale,
         (bottomRight.x - topLeft.x) * scale, (bottomRight.y - topLeft.y) * scale,
     );
+    ctx.restore();
 }
