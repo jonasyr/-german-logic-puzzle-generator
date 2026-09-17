@@ -16,7 +16,7 @@ async function cellPx(page: Page) {
   });
 }
 
-async function openPuzzle(page: Page, width: number, height: number) {
+async function openPuzzle(page: Page, width: number, height: number, autoCross = true) {
   await page.setViewportSize({ width, height });
   await page.addInitScript(() => Object.defineProperty(navigator, 'maxTouchPoints', { get: () => 5 }));
   await page.route('**/api/players', route => route.fulfill({
@@ -33,6 +33,7 @@ async function openPuzzle(page: Page, width: number, height: number) {
   await page.locator('#field-categoryCount').selectOption('5');
   await page.locator('#field-valuesPerCategory').selectOption('5');
   await page.locator('#field-difficulty').selectOption('leicht');
+  if (!autoCross) await page.locator('#field-autoCross').uncheck();
   await page.locator('#generate-button').click();
   await expect(page.locator('.puzzle')).toHaveCount(1, { timeout: 60_000 });
   await page.getByRole('button', { name: 'Spielen', exact: true }).click();
@@ -167,6 +168,31 @@ test('confirming a cell crosses out the rest of its row and column', async ({ pa
     const label = await page.locator(`.overview-mirror__cell[data-key="${other}"]`).getAttribute('aria-label');
     expect(label, other).toContain('leer');
   }
+});
+
+test('the settings switch turns the derived crosses off', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812, false);
+
+  await page.locator('#overview-mark-yes').click();
+  const key = (await tapCell(page, 0))!;
+
+  const [catA, catB, valA, valB] = key.split('.').map(Number);
+  const neighbour = `${catA}.${catB}.${valA}.${valB === 0 ? 1 : 0}`;
+
+  expect(await page.locator(`.overview-mirror__cell[data-key="${key}"]`).getAttribute('aria-label'))
+    .toContain('sichere Zuordnung');
+  // Nothing else was touched.
+  expect(await page.locator(`.overview-mirror__cell[data-key="${neighbour}"]`).getAttribute('aria-label'))
+    .toContain('leer');
+});
+
+test('the switch is remembered for the next puzzle', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812, false);
+  await page.goto('/');
+  await page.locator('#start-button').click();
+  await expect(page.locator('#field-autoCross')).not.toBeChecked();
 });
 
 test('a mark made in the overview shows up in the pager', async ({ page }) => {

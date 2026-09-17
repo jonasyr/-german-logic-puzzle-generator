@@ -7,6 +7,7 @@ import { el, make, clear } from '../dom.js';
 import { showScreen, onLeave } from '../router.js';
 import { buildPager, categoryPairs } from './matrixView.js';
 import { createOverviewCanvas } from './overview/overviewCanvas.js';
+import { loadPrefs } from './playPrefs.js';
 import { createCluesSheet } from './cluesSheet.js';
 import { askConfirm, closeConfirm } from '../ui/confirmDialog.js';
 import { createAuthoritativeTimer, createTimer, formatTime } from './playTimer.js';
@@ -57,6 +58,14 @@ function paintAll() {
 /** Values per category, which the implication rules need. */
 function valueCount() {
     return state.puzzle.categories[0].values.length;
+}
+
+/**
+ * Read per action rather than cached at open, so changing the setting in another
+ * tab - or between puzzles - takes effect without a reload.
+ */
+function derivesCrosses() {
+    return loadPrefs().autoCross;
 }
 
 /** Shared tail of every mark change, however it was made. */
@@ -135,7 +144,7 @@ function persist() {
 
 function onCellActivate(key) {
     if (state.solved || paused) return;
-    afterMarkChange(cycleMark(state, key, valueCount()));
+    afterMarkChange(cycleMark(state, key, valueCount(), derivesCrosses()));
 }
 
 /**
@@ -148,7 +157,7 @@ function onCellActivate(key) {
  */
 function setMark(key, mark) {
     if (state.solved || paused) return;
-    afterMarkChange(setMarkWith(state, key, mark, valueCount()));
+    afterMarkChange(setMarkWith(state, key, mark, valueCount(), derivesCrosses()));
 }
 
 function handleSolved() {

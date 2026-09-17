@@ -183,17 +183,35 @@ function drawBlockRules(ctx, { layout, view, dpr }) {
     });
 }
 
-/** The active row and column, tinted across the whole grid. */
-function drawCrosshair(ctx, { view, selected, cssWidth, cssHeight, gutters }) {
+/**
+ * The active row and column, tinted across the grid.
+ *
+ * Bounded by where the puzzle actually is, not by the viewport: the matrix is
+ * triangular, so filling to the far edge drew a long stripe out across empty
+ * space and made the highlight look like a rendering fault rather than a cue.
+ */
+function drawCrosshair(ctx, { layout, view, selected, gutters }) {
     if (!selected) return;
     const size = CELL * view.scale;
     const point = worldToScreen(view, selected.x, selected.y);
+    const origin = worldToScreen(view, 0, 0);
+    const rowRight = worldToScreen(view, layout.rowEnd[selected.rowBlock], 0).x;
+    const colBottom = worldToScreen(view, 0, layout.colEnd[selected.colBlock]).y;
+
+    ctx.save();
+    // Never paint into the label gutters.
+    ctx.beginPath();
+    ctx.rect(gutters.left, gutters.top, ctx.canvas.width, ctx.canvas.height);
+    ctx.clip();
+
     ctx.fillStyle = COLORS.crosshair;
-    ctx.fillRect(gutters.left, point.y, cssWidth - gutters.left, size);
-    ctx.fillRect(point.x, gutters.top, size, cssHeight - gutters.top);
+    ctx.fillRect(origin.x, point.y, rowRight - origin.x, size);
+    ctx.fillRect(point.x, origin.y, size, colBottom - origin.y);
+
     ctx.strokeStyle = COLORS.accent;
     ctx.lineWidth = 2;
     ctx.strokeRect(point.x - 1, point.y - 1, size + 2, size + 2);
+    ctx.restore();
 }
 
 function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight, dpr, gutters }) {

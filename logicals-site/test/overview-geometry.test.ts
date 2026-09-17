@@ -69,6 +69,20 @@ describe('overview geometry', () => {
     }
   });
 
+  it('knows how far each row and column block is actually filled', () => {
+    const layout = createLayout(puzzleOf(5, 5), cellKey);
+    const block = 5 * CELL + BLOCK_GAP;
+    // Row block 0 spans all four column blocks; row block 3 spans only the first.
+    expect(layout.rowEnd[0]).toBe(3 * block + 5 * CELL);
+    expect(layout.rowEnd[3]).toBe(5 * CELL);
+    expect(layout.colEnd[0]).toBe(3 * block + 5 * CELL);
+    expect(layout.colEnd[3]).toBe(5 * CELL);
+    // Nothing reaches past the grid itself.
+    for (const end of [...layout.rowEnd, ...layout.colEnd]) {
+      expect(end).toBeLessThanOrEqual(layout.width);
+    }
+  });
+
   it('returns null well outside the grid', () => {
     const layout = createLayout(puzzleOf(5, 5), cellKey);
     expect(hitTest(layout, -500, -500, 1, 22)).toBeNull();

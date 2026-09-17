@@ -2,6 +2,7 @@
 
 import { el, setHint, fillRange, fillOptions } from '../dom.js';
 import { fetchOptions } from '../api.js';
+import { loadPrefs, savePrefs } from '../play/playPrefs.js';
 
 export const PALETTES = {
     klassik: { label: 'Klassik', accent: '#C6492D', secondary: '#227C78', ink: '#172033' },
@@ -40,6 +41,12 @@ export async function loadOptions(state) {
     fillOptions(el('field-palette'), Object.entries(PALETTES).map(([value, palette]) => ({
         value, label: palette.label,
     })));
+
+    // Play-time preferences are not booklet options: they are never sent to the
+    // generator, and they outlive the puzzle chosen here.
+    const autoCross = el('field-autoCross');
+    autoCross.checked = loadPrefs().autoCross;
+    autoCross.addEventListener('change', () => savePrefs({ autoCross: autoCross.checked }));
 
     setHint('config-hint', '');
 }

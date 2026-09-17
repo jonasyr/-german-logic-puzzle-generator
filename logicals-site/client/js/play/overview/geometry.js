@@ -63,8 +63,16 @@ export function createLayout(puzzle, cellKey) {
     });
 
     const span = block => blockOrigin(block, valueCount) + valueCount * CELL;
+
+    // How far the filled part of each row and column block reaches. The matrix
+    // is triangular, so a row that sits further down stops further left; the
+    // crosshair uses these so it ends where the puzzle ends instead of running
+    // out across the empty half.
+    const rowEnd = rows.map((_, rowBlock) => span(columns.length - 1 - rowBlock));
+    const colEnd = columns.map((_, colBlock) => span(columns.length - 1 - colBlock));
+
     return {
-        columns, rows, valueCount, cells,
+        columns, rows, valueCount, cells, rowEnd, colEnd,
         width: span(columns.length - 1),
         height: span(rows.length - 1),
     };

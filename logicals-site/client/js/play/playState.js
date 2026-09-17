@@ -94,9 +94,13 @@ export function recordFailedCheck(state, wrongCount) {
  * provenance behind them - goes onto the undo stack as ONE entry, so a single
  * tap costs a single undo.
  *
+ * `deriveCrosses` governs only whether NEW crosses are derived. Withdrawing
+ * always follows the recorded provenance, whatever the setting says now:
+ * turning the help off must not strand crosses that nothing explains any more.
+ *
  * @returns {string[]} every key whose mark changed, for repainting.
  */
-export function setMarkWith(state, key, mark, valueCount) {
+export function setMarkWith(state, key, mark, valueCount, deriveCrosses = true) {
     const previous = state.marks.get(key) ?? null;
     if (previous === mark) return [];
 
@@ -139,7 +143,7 @@ export function setMarkWith(state, key, mark, valueCount) {
     if (mark === null) state.marks.delete(key); else state.marks.set(key, mark);
 
     // Entering 'yes' crosses out the rest of the row and column.
-    if (mark === 'yes') {
+    if (mark === 'yes' && deriveCrosses) {
         for (const implied of impliedKeys(key, valueCount)) {
             const current = state.marks.get(implied);
             // A cell the player already decided is left exactly as it is - a
@@ -167,10 +171,10 @@ export function setMarkWith(state, key, mark, valueCount) {
 }
 
 /** Advances one cell through empty -> x -> o -> empty. */
-export function cycleMark(state, key, valueCount) {
+export function cycleMark(state, key, valueCount, deriveCrosses = true) {
     const previous = state.marks.get(key);
     const next = previous === undefined ? 'no' : previous === 'no' ? 'yes' : null;
-    return setMarkWith(state, key, next, valueCount);
+    return setMarkWith(state, key, next, valueCount, deriveCrosses);
 }
 
 /**

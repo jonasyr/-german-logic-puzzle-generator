@@ -99,6 +99,22 @@ describe('setting and clearing a confirmed cell', () => {
   });
 });
 
+describe('the automatic-crosses preference', () => {
+  it('places no crosses when it is off', () => {
+    const state = fresh();
+    setMarkWith(state, '0.1.2.3', 'yes', V, false);
+    expect(snapshot(state)).toEqual({ '0.1.2.3': 'yes' });
+  });
+
+  it('still withdraws crosses derived while it was on', () => {
+    const state = fresh();
+    setMarkWith(state, '0.1.2.3', 'yes', V, true);   // derived while on
+    setMarkWith(state, '0.1.2.3', null, V, false);   // player turns it off, then undoes
+    // Leaving them behind would strand crosses that nothing explains any more.
+    expect(snapshot(state)).toEqual({});
+  });
+});
+
 describe('undo treats one tap as one step', () => {
   it('takes back the confirmation and all of its crosses together', () => {
     const state = fresh();
