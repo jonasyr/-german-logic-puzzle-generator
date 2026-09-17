@@ -8,6 +8,17 @@ const DEVICES = [
   { name: 'iPad landscape', width: 1024, height: 768 },
 ];
 
+/** The gutters the canvas is actually drawing with, published by the component. */
+async function gutters(page: Page) {
+  return page.evaluate(() => {
+    const style = getComputedStyle(document.getElementById('overview-viewport')!);
+    return {
+      left: parseFloat(style.getPropertyValue('--overview-gutter-left')) || 0,
+      top: parseFloat(style.getPropertyValue('--overview-gutter-top')) || 0,
+    };
+  });
+}
+
 /** Cell size in CSS px, read from the accessible mirror's own transform. */
 async function cellPx(page: Page) {
   return page.evaluate(() => {
@@ -78,11 +89,42 @@ for (const device of DEVICES) {
     });
     expect(together).toEqual({ gridVisible: true, barVisible: true });
 
+    // Every label has to fit its gutter without being cut to "Fla...". Measured
+    // with the same font the renderer uses, against the same gutters it draws.
+    const clipped = await page.evaluate(() => {
+      const style = getComputedStyle(document.getElementById('overview-viewport')!);
+      const left = parseFloat(style.getPropertyValue('--overview-gutter-left'));
+      const top = parseFloat(style.getPropertyValue('--overview-gutter-top'));
+      const ctx = document.createElement('canvas').getContext('2d')!;
+      // The renderer shrinks labels to fit before it ever truncates; 8px is
+      // the floor it will not go below, so that is the guarantee to assert.
+      ctx.font = '8px system-ui, sans-serif';
+      const labels = [...document.querySelectorAll('.overview-mirror__cell')]
+        .map(cell => cell.getAttribute('aria-label') ?? '')
+        .flatMap(label => {
+          const match = label.match(/^Zeile (.+?), Spalte (.+?),/);
+          return match ? [{ row: match[1], col: match[2] }] : [];
+        });
+      const tooWide: string[] = [];
+      for (const { row, col } of labels) {
+        // Row labels run across the gutter's width, minus the category strip.
+        if (ctx.measureText(row).width > left - 21) tooWide.push(row);
+        // Column labels are rotated, so they run down the gutter's depth.
+        if (ctx.measureText(col).width > top - 12) tooWide.push(col);
+      }
+      return [...new Set(tooWide)];
+    });
+    expect(clipped).toEqual([]);
+
     // Marking has to work on EVERY size, not just the one the interaction tests
     // use. A layout regression once left this viewport 984x2 px on iPad
     // landscape, where no tap could land on a cell at all, and nothing caught it.
     const grid = (await page.locator('#overview-viewport').boundingBox())!;
-    await page.mouse.click(grid.x + grid.width * 0.55, grid.y + grid.height * 0.6);
+    const gut = await gutters(page);
+    await page.mouse.click(
+      grid.x + gut.left + (grid.width - gut.left) * 0.4,
+      grid.y + gut.top + (grid.height - gut.top) * 0.4,
+    );
     await expect(page.locator('#overview-readout-pair')).not.toHaveText('Keine Zelle gewählt');
     await expect(page.locator('#play-undo')).toBeEnabled();
     await expect(page.locator('#overview-mark-yes')).toBeEnabled();
@@ -273,10 +315,11 @@ test('hit testing still lands on the right cell after zoom and pan', async ({ pa
     const box = await cell.boundingBox();
     if (!box || box.width < 1) continue;
     const viewport = (await page.locator('#overview-viewport').boundingBox())!;
+    const gut = await gutters(page);
     const cx = box.x + box.width / 2;
     const cy = box.y + box.height / 2;
     // Only cells fully inside the grid area, clear of the header gutters.
-    if (cx < viewport.x + 90 || cy < viewport.y + 58) continue;
+    if (cx < viewport.x + gut.left + 4 || cy < viewport.y + gut.top + 4) continue;
     if (cx > viewport.x + viewport.width - 6 || cy > viewport.y + viewport.height - 6) continue;
 
     await page.mouse.click(cx, cy);
@@ -303,4 +346,32 @@ test('rotation keeps the grid fitted and above the tap floor', async ({ page }) 
 
   await page.setViewportSize({ width: 375, height: 812 });
   await expect.poll(() => cellPx(page)).toBeGreaterThanOrEqual(12.5);
+});
+
+test.describe('dark mode', () => {
+  test.use({ colorScheme: 'dark' });
+
+  test('the grid follows the theme instead of staying a white rectangle', async ({ page }) => {
+    test.setTimeout(120_000);
+    await openPuzzle(page, 375, 812);
+
+    const theme = await page.evaluate(() => {
+      const style = getComputedStyle(document.documentElement);
+      const parse = (token: string) => {
+        const ctx = document.createElement('canvas').getContext('2d')!;
+        ctx.fillStyle = style.getPropertyValue(token).trim();
+        ctx.fillRect(0, 0, 1, 1);
+        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+        return (r * 299 + g * 587 + b * 114) / 1000;   // perceived brightness
+      };
+      return { page: parse('--paper'), cell: parse('--grid-cell'), gutter: parse('--grid-gutter') };
+    });
+
+    // The grid's surfaces are dark like the page, not the light defaults.
+    expect(theme.page).toBeLessThan(80);
+    expect(theme.cell).toBeLessThan(80);
+    expect(theme.gutter).toBeLessThan(80);
+    // And close enough to the page that the canvas does not read as a cut-out.
+    expect(Math.abs(theme.cell - theme.page)).toBeLessThan(40);
+  });
 });

@@ -105,8 +105,39 @@
 .screen--play.is-active { height: 100svh; }
 /* The shell's own vertical padding sits OUTSIDE that 100svh and pushed the
    action bar exactly that far below the fold. The play bar carries the
-   safe-area inset itself, so dropping it here costs nothing. */
-#app:has(#screen-play.is-active) { padding-top: 0; padding-bottom: 0; }
+   safe-area inset itself, so dropping it here costs nothing.
+
+   The side gutters shrink too: on a 375px phone the default 20px each side was
+   costing 40px of grid width, and width is the axis that decides whether the
+   whole matrix fits above the tap floor. The safe-area inset is still honoured
+   for landscape notches. */
+#app:has(#screen-play.is-active) {
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: max(10px, var(--safe-left));
+    padding-right: max(10px, var(--safe-right));
+}
+
+/*
+ * Reclaimed vertical space.
+ *
+ * Measured on an iPhone 13 mini, the bar, toolbar, target question and status
+ * line together took 232px before the grid even started - and that is before
+ * the notch inset on a real device. The grid is the screen; everything else is
+ * support, and support was outweighing it.
+ */
+.play-bar { padding-top: calc(var(--safe-top) + 4px); padding-bottom: 4px; }
+.play-bar h2 { font-size: 16px; }
+.play-toolbar { padding: 4px 0; }
+.play-head { gap: var(--space-1); margin-bottom: var(--space-1); }
+.play-head .goal {
+    padding: var(--space-2) var(--space-3);
+    font-size: 14px;
+    line-height: 1.3;
+}
+/* Reserved a line and a half of height even with nothing to say. */
+#play-status { min-height: 0; }
+#play-status:empty { display: none; }
 /* A flex column, so the overview below it has a definite height to fill. As a
    plain block the stage was auto-height, the 1fr grid row inside resolved
    against nothing, and the viewport collapsed to 2px. */

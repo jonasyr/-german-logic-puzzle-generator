@@ -25,7 +25,7 @@ import {
     MAX_SCALE, fitView, zoomTo, panBy, clampView, minScaleFor, screenToWorld,
 } from './viewport.js';
 import { bindGestures, suppressNativeZoom } from './gestures.js';
-import { render, renderMinimap, resizeCanvas, computeGutters } from './renderer.js';
+import { render, renderMinimap, resizeCanvas, computeGutters, readPalette } from './renderer.js';
 import { createMirror } from './a11yMirror.js';
 
 const TAP_TOLERANCE_PX = 22;
@@ -68,6 +68,7 @@ export function createOverviewCanvas({
     let frame = 0;
     let pinchBaseScale = 1;
     let gutters = computeGutters(0, 0);
+    let colors = null;
     /** Armed tool, or null for inspect-only. Crosses dominate, so start on one. */
     let tool = 'no';
 
@@ -86,11 +87,12 @@ export function createOverviewCanvas({
             frame = 0;
             if (!cssWidth || !cssHeight) return;
             render(context, {
-                layout, view, puzzle, marks, wrong, selected, cssWidth, cssHeight, dpr, gutters,
+                layout, view, puzzle, marks, wrong, selected,
+                cssWidth, cssHeight, dpr, gutters, colors,
             });
             if (minimapContext) {
                 renderMinimap(minimapContext, {
-                    layout, view, marks, gutters,
+                    layout, view, marks, gutters, colors,
                     width: minimap.width, height: minimap.height,
                     cssWidth, cssHeight,
                 });
@@ -104,8 +106,10 @@ export function createOverviewCanvas({
         cssWidth = rect.width;
         cssHeight = rect.height;
         gutters = computeGutters(cssWidth, cssHeight);
-        // The minimap is a DOM element, so it needs the measured gutter too -
-        // otherwise it parks on top of the column labels.
+        colors = readPalette(surface);
+        // Published so the DOM side - the minimap's placement, and the tests -
+        // reads the same numbers the canvas draws with instead of guessing.
+        surface.style.setProperty('--overview-gutter-left', `${gutters.left}px`);
         surface.style.setProperty('--overview-gutter-top', `${gutters.top}px`);
         canvas.style.width = `${cssWidth}px`;
         canvas.style.height = `${cssHeight}px`;
@@ -240,12 +244,26 @@ export function createOverviewCanvas({
         if (refitFrame) return;
         refitFrame = requestAnimationFrame(() => {
             refitFrame = 0;
+            const rect = surface.getBoundingClientRect();
+            // Only refit when the box genuinely changed size. Safari fires
+            // visualViewport resize for page pinch-zoom too, and the layout box
+            // does not move for that - refitting anyway threw the player's own
+            // zoom away mid-gesture and made the grid feel unresponsive.
+            if (Math.abs(rect.width - cssWidth) < 0.5 && Math.abs(rect.height - cssHeight) < 0.5) {
+                return;
+            }
             const previous = selected;
             fitWhole();
             // Rotation and toolbar collapse must not lose the player's place.
             if (previous) setSelected(previous);
         });
     };
+
+    // Repaint when the system flips between light and dark, so the grid does not
+    // stay in the palette it happened to start in.
+    const scheme = window.matchMedia('(prefers-color-scheme: dark)');
+    const onScheme = () => { colors = readPalette(surface); schedule(); };
+    scheme.addEventListener('change', onScheme);
 
     const observer = new ResizeObserver(refit);
     observer.observe(surface);
@@ -275,6 +293,7 @@ export function createOverviewCanvas({
         destroy() {
             observer.disconnect();
             window.visualViewport?.removeEventListener('resize', refit);
+            scheme.removeEventListener('change', onScheme);
             releaseNativeZoom();
             mirror.destroy();
             cancelAnimationFrame(frame);

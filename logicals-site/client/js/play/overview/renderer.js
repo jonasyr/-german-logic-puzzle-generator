@@ -25,8 +25,16 @@ import { worldToScreen } from './viewport.js';
  * the binding constraint - it is also the cheapest room in the layout.
  */
 const GUTTER = {
-    left: { min: 54, ratio: 0.20, max: 96 },
-    top: { min: 38, ratio: 0.17, max: 96 },
+    // The row labels read horizontally, so their run is the gutter's WIDTH, and
+    // width is the binding axis on a phone - hence the tighter ratio.
+    left: { min: 62, ratio: 0.21, max: 112 },
+    // The column labels are rotated, so their run is the gutter's DEPTH. At 38px
+    // that left about 26px for words like "Flammkuchen" and everything arrived
+    // as "Fla...". Height is the cheap axis in portrait, so it can afford this.
+    // The 64px floor is set by the longest German compound the generator can
+    // produce ("Flammkuchen") at the smallest label size. Where height is that
+    // tight the grid is panning anyway, so the extra depth costs nothing real.
+    top: { min: 64, ratio: 0.22, max: 124 },
 };
 
 function clamp(value, { min, max }) {
@@ -70,27 +78,70 @@ const GLYPH_MIN_CELL_PX = 11;
  * legible, and the readout under the grid always spells the selected cell out
  * in full anyway.
  */
+const LABEL_MAX_PX = 11;
+const LABEL_MIN_PX = 8;
+
 function labelFontPx(cellPx) {
-    return Math.max(8, Math.min(11, Math.floor(cellPx - 2)));
+    return Math.max(LABEL_MIN_PX, Math.min(LABEL_MAX_PX, Math.floor(cellPx - 2)));
 }
 
-const COLORS = {
-    gutter: '#FBFAF7',
-    rule: '#D9D4CA',
-    blockRule: '#8A8378',
-    cellLine: '#E2DED6',
-    surface: '#FFFFFF',
-    yesFill: '#E3F1EA',
-    noFill: '#F2F1EE',
-    yes: '#1B7A4B',
-    no: '#8A8378',
-    wrongFill: '#FBE9E7',
-    wrong: '#C0392B',
-    text: '#172033',
-    accent: '#C6492D',
-    teal: '#227C78',
-    crosshair: 'rgba(34,124,120,.13)',
+/**
+ * Largest size at or below `startPx` at which every one of `texts` fits.
+ *
+ * The row pitch is not the only constraint: a rotated column label runs along
+ * the gutter's DEPTH, and in landscape that is far tighter than the pitch. Sized
+ * by pitch alone, every long word arrived truncated. Shrinking is the better
+ * trade - a smaller word still reads, half a word does not.
+ */
+function fontToFit(ctx, texts, maxWidth, startPx) {
+    let size = startPx;
+    while (size > LABEL_MIN_PX) {
+        ctx.font = `400 ${size}px system-ui, sans-serif`;
+        if (texts.every(text => ctx.measureText(text).width <= maxWidth)) break;
+        size -= 1;
+    }
+    return size;
+}
+
+/**
+ * Canvas colours, read from the same CSS custom properties everything else uses.
+ *
+ * Hard-coding them left a white grid sitting on a dark page in dark mode. The
+ * canvas cannot inherit CSS, so it reads the tokens once per measure instead.
+ */
+const COLOR_TOKENS = {
+    gutter: '--grid-gutter',
+    rule: '--grid-rule',
+    blockRule: '--grid-block-rule',
+    surface: '--grid-cell',
+    cellLine: '--grid-cell-line',
+    yes: '--grid-yes',
+    yesFill: '--grid-yes-fill',
+    no: '--grid-no',
+    noFill: '--grid-no-fill',
+    wrong: '--grid-wrong',
+    wrongFill: '--grid-wrong-fill',
+    text: '--grid-label',
+    accent: '--grid-label-active',
+    teal: '--grid-category',
+    crosshair: '--grid-crosshair',
 };
+
+const FALLBACK = {
+    gutter: '#FBFAF7', rule: '#D9D4CA', blockRule: '#8A8378', surface: '#FFFFFF',
+    cellLine: '#E2DED6', yes: '#1B7A4B', yesFill: '#E3F1EA', no: '#8A8378',
+    noFill: '#F2F1EE', wrong: '#C0392B', wrongFill: '#FBE9E7', text: '#172033',
+    accent: '#C6492D', teal: '#227C78', crosshair: 'rgba(34,124,120,.13)',
+};
+
+export function readPalette(element) {
+    const style = getComputedStyle(element);
+    const palette = {};
+    for (const [name, token] of Object.entries(COLOR_TOKENS)) {
+        palette[name] = style.getPropertyValue(token).trim() || FALLBACK[name];
+    }
+    return palette;
+}
 
 /** Sizes the backing store for the device pixel ratio so text stays crisp. */
 export function resizeCanvas(canvas, cssWidth, cssHeight) {
@@ -129,7 +180,7 @@ export function render(ctx, options) {
     drawHeaders(ctx, options);
 }
 
-function drawCells(ctx, { layout, view, marks, wrong, cssWidth, cssHeight, dpr, gutters }) {
+function drawCells(ctx, { layout, view, marks, wrong, cssWidth, cssHeight, dpr, gutters, colors }) {
     const size = CELL * view.scale;
     const glyphs = size >= GLYPH_MIN_CELL_PX;
     ctx.lineWidth = Math.max(0.5, Math.min(1, size / 34));
@@ -144,16 +195,16 @@ function drawCells(ctx, { layout, view, marks, wrong, cssWidth, cssHeight, dpr, 
         const mark = marks.get(cell.key);
         const isWrong = wrong.has(cell.key);
 
-        ctx.fillStyle = isWrong ? COLORS.wrongFill
-            : mark === 'yes' ? COLORS.yesFill
-            : mark === 'no' ? COLORS.noFill
-            : COLORS.surface;
+        ctx.fillStyle = isWrong ? colors.wrongFill
+            : mark === 'yes' ? colors.yesFill
+            : mark === 'no' ? colors.noFill
+            : colors.surface;
         ctx.fillRect(point.x, point.y, size, size);
-        ctx.strokeStyle = COLORS.cellLine;
+        ctx.strokeStyle = colors.cellLine;
         ctx.strokeRect(hairline(point.x, dpr), hairline(point.y, dpr), size - 1, size - 1);
 
         if (!mark) continue;
-        ctx.fillStyle = isWrong ? COLORS.wrong : mark === 'yes' ? COLORS.yes : COLORS.no;
+        ctx.fillStyle = isWrong ? colors.wrong : mark === 'yes' ? colors.yes : colors.no;
         if (glyphs) {
             ctx.font = `${mark === 'yes' ? 700 : 400} ${Math.round(size * 0.62)}px system-ui, sans-serif`;
             ctx.fillText(mark === 'yes' ? '○' : '×', point.x + size / 2, point.y + size / 2 + size * 0.02);
@@ -166,9 +217,9 @@ function drawCells(ctx, { layout, view, marks, wrong, cssWidth, cssHeight, dpr, 
     }
 }
 
-function drawBlockRules(ctx, { layout, view, dpr }) {
+function drawBlockRules(ctx, { layout, view, dpr, colors }) {
     const size = layout.valueCount * CELL * view.scale;
-    ctx.strokeStyle = COLORS.blockRule;
+    ctx.strokeStyle = colors.blockRule;
     ctx.lineWidth = Math.max(1, Math.min(2, view.scale * 1.6));
     layout.rows.forEach((_, rowBlock) => {
         layout.columns.forEach((__, colBlock) => {
@@ -190,7 +241,7 @@ function drawBlockRules(ctx, { layout, view, dpr }) {
  * triangular, so filling to the far edge drew a long stripe out across empty
  * space and made the highlight look like a rendering fault rather than a cue.
  */
-function drawCrosshair(ctx, { layout, view, selected, gutters }) {
+function drawCrosshair(ctx, { layout, view, selected, gutters, colors }) {
     if (!selected) return;
     const size = CELL * view.scale;
     const point = worldToScreen(view, selected.x, selected.y);
@@ -204,24 +255,28 @@ function drawCrosshair(ctx, { layout, view, selected, gutters }) {
     ctx.rect(gutters.left, gutters.top, ctx.canvas.width, ctx.canvas.height);
     ctx.clip();
 
-    ctx.fillStyle = COLORS.crosshair;
+    ctx.fillStyle = colors.crosshair;
     ctx.fillRect(origin.x, point.y, rowRight - origin.x, size);
     ctx.fillRect(point.x, origin.y, size, colBottom - origin.y);
 
-    ctx.strokeStyle = COLORS.accent;
+    ctx.strokeStyle = colors.accent;
     ctx.lineWidth = 2;
     ctx.strokeRect(point.x - 1, point.y - 1, size + 2, size + 2);
     ctx.restore();
 }
 
-function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight, dpr, gutters }) {
+function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight, dpr, gutters, colors }) {
     const size = CELL * view.scale;
-    const labelPx = labelFontPx(size);
+    const basePx = labelFontPx(size);
+    const rowTexts = layout.rows.flatMap(index => puzzle.categories[index].values);
+    const colTexts = layout.columns.flatMap(index => puzzle.categories[index].values);
+    const rowPx = fontToFit(ctx, rowTexts, gutters.left - CATEGORY_STRIP - 8, basePx);
+    const colPx = fontToFit(ctx, colTexts, gutters.top - 12, basePx);
 
-    ctx.fillStyle = COLORS.gutter;
+    ctx.fillStyle = colors.gutter;
     ctx.fillRect(0, 0, gutters.left, cssHeight);
     ctx.fillRect(0, 0, cssWidth, gutters.top);
-    ctx.strokeStyle = COLORS.rule;
+    ctx.strokeStyle = colors.rule;
     ctx.lineWidth = 1;
     ctx.beginPath();
     const ruleX = hairline(gutters.left, dpr);
@@ -243,8 +298,8 @@ function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight,
             if (y < gutters.top - 10 || y > cssHeight + 10) continue;
             const active = selected?.rowBlock === rowBlock && selected?.rowValue === value;
             ctx.textAlign = 'right';
-            ctx.fillStyle = active ? COLORS.accent : COLORS.text;
-            ctx.font = `${active ? 700 : 400} ${labelPx}px system-ui, sans-serif`;
+            ctx.fillStyle = active ? colors.accent : colors.text;
+            ctx.font = `${active ? 700 : 400} ${rowPx}px system-ui, sans-serif`;
             // Values keep clear of the category strip on the far left, which is
             // what stopped the two colliding on a narrow gutter.
             ctx.fillText(
@@ -264,7 +319,7 @@ function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight,
         ctx.translate(CATEGORY_STRIP - 4, centre);
         ctx.rotate(-Math.PI / 2);
         ctx.textAlign = 'center';
-        ctx.fillStyle = COLORS.teal;
+        ctx.fillStyle = colors.teal;
         ctx.font = `700 ${CATEGORY_FONT_PX}px system-ui, sans-serif`;
         ctx.fillText(fitText(ctx, category.label.toUpperCase(), layout.valueCount * size), 0, 0);
         ctx.restore();
@@ -290,8 +345,8 @@ function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight,
             ctx.translate(x, gutters.top - 4);
             ctx.rotate(-Math.PI / 2);
             ctx.textAlign = 'left';
-            ctx.fillStyle = active ? COLORS.accent : COLORS.text;
-            ctx.font = `${active ? 700 : 400} ${labelPx}px system-ui, sans-serif`;
+            ctx.fillStyle = active ? colors.accent : colors.text;
+            ctx.font = `${active ? 700 : 400} ${colPx}px system-ui, sans-serif`;
             ctx.fillText(fitText(ctx, category.values[value], gutters.top - 12), 0, 0);
             ctx.restore();
         }
@@ -302,7 +357,7 @@ function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight,
         if (right < gutters.left || left > cssWidth) return;
         const centre = Math.min(Math.max((left + right) / 2, gutters.left + 24), cssWidth - 24);
         ctx.textAlign = 'center';
-        ctx.fillStyle = COLORS.teal;
+        ctx.fillStyle = colors.teal;
         ctx.font = `700 ${CATEGORY_FONT_PX}px system-ui, sans-serif`;
         ctx.fillText(fitText(ctx, category.label.toUpperCase(), layout.valueCount * size), centre, 6);
     });
@@ -310,21 +365,21 @@ function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight,
 }
 
 /** The whole world plus the current viewport rectangle, for the empty corner. */
-export function renderMinimap(ctx, { layout, view, marks, width, height, cssWidth, cssHeight, gutters }) {
+export function renderMinimap(ctx, { layout, view, marks, width, height, cssWidth, cssHeight, gutters, colors }) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, width, height);
     const scale = Math.min((width - 8) / layout.width, (height - 8) / layout.height);
     const offsetX = (width - layout.width * scale) / 2;
     const offsetY = (height - layout.height * scale) / 2;
 
-    ctx.fillStyle = '#ECE9E2';
+    ctx.fillStyle = colors.noFill;
     for (const cell of layout.cells) {
         ctx.fillRect(offsetX + cell.x * scale, offsetY + cell.y * scale, CELL * scale, CELL * scale);
     }
     for (const cell of layout.cells) {
         const mark = marks.get(cell.key);
         if (!mark) continue;
-        ctx.fillStyle = mark === 'yes' ? COLORS.yes : '#B5AFA4';
+        ctx.fillStyle = mark === 'yes' ? colors.yes : colors.no;
         ctx.fillRect(offsetX + cell.x * scale, offsetY + cell.y * scale, CELL * scale, CELL * scale);
     }
 
@@ -337,7 +392,7 @@ export function renderMinimap(ctx, { layout, view, marks, width, height, cssWidt
     ctx.beginPath();
     ctx.rect(1, 1, width - 2, height - 2);
     ctx.clip();
-    ctx.strokeStyle = COLORS.accent;
+    ctx.strokeStyle = colors.accent;
     ctx.lineWidth = 2;
     ctx.strokeRect(
         offsetX + topLeft.x * scale, offsetY + topLeft.y * scale,

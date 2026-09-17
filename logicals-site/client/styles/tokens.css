@@ -39,6 +39,29 @@
     --danger-fg: #c6492d;
     --good: #227c78;
 
+    /*
+     * The overview canvas. It cannot read --surface and friends through CSS, so
+     * it is given its own explicit set and reads them with getComputedStyle.
+     * Defining them here keeps every colour decision in one file, and means the
+     * grid follows the dark theme like everything else instead of staying a
+     * white rectangle on a dark page.
+     */
+    --grid-gutter: #fbfaf7;
+    --grid-rule: #d5d8de;
+    --grid-block-rule: #8a8378;
+    --grid-cell: #ffffff;
+    --grid-cell-line: #e2ded6;
+    --grid-yes: #1b7a4b;
+    --grid-yes-fill: #e3f1ea;
+    --grid-no: #8a8378;
+    --grid-no-fill: #f2f1ee;
+    --grid-wrong: #c0392b;
+    --grid-wrong-fill: #fbe9e7;
+    --grid-label: #172033;
+    --grid-label-active: #c6492d;
+    --grid-category: #227c78;
+    --grid-crosshair: rgba(34, 124, 120, .13);
+
     /* Shape */
     --radius: 14px;
     --radius-lg: 22px;
@@ -130,6 +153,22 @@
         --danger-bg: #3d1f19;
         --danger-fg: #ff8f75;
         --good: #4bb3ad;
+
+        --grid-gutter: #121721;
+        --grid-rule: #2c3444;
+        --grid-block-rule: #6b7689;
+        --grid-cell: #1a202c;
+        --grid-cell-line: #313a4c;
+        --grid-yes: #5fd0a0;
+        --grid-yes-fill: #17352c;
+        --grid-no: #9aa8c0;
+        --grid-no-fill: #222a38;
+        --grid-wrong: #ff8f75;
+        --grid-wrong-fill: #3d1f19;
+        --grid-label: #e9edf5;
+        --grid-label-active: #ff7a5c;
+        --grid-category: #4bb3ad;
+        --grid-crosshair: rgba(75, 179, 173, .16);
 
         --shadow-sheet: 0 -8px 32px rgba(0, 0, 0, .5);
         --shadow-card: 0 1px 2px rgba(0, 0, 0, .3);
