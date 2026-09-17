@@ -273,17 +273,20 @@
             </div>
 
             <div class="play-overview" id="play-overview">
-                <div class="zoom-controls">
-                    <button class="btn btn--ghost btn--small btn--icon" type="button" id="zoom-out" aria-label="Verkleinern">−</button>
-                    <output id="zoom-level" for="zoom-out zoom-in">100%</output>
-                    <button class="btn btn--ghost btn--small btn--icon" type="button" id="zoom-in" aria-label="Vergrößern">+</button>
-                    <button class="btn btn--ghost btn--small" type="button" id="zoom-fit" aria-label="Gesamtansicht einpassen">Einpassen</button>
+                <div class="overview-viewport" id="overview-viewport">
+                    <canvas id="overview-canvas" aria-hidden="true"></canvas>
+                    <div class="overview-mirror" id="overview-mirror"></div>
+                    <canvas class="overview-minimap" id="overview-minimap" width="152" height="152" aria-hidden="true"></canvas>
+                    <button class="btn btn--ghost btn--small overview-fit" type="button" id="overview-fit">Einpassen</button>
                 </div>
-                <p class="overview-zoom-hint" id="overview-zoom-hint" role="status">
-                    Tippe auf die Übersicht oder ziehe zwei Finger auseinander, um sicher zu markieren.
-                </p>
-                <div class="grid-scroll" id="grid-scroll">
-                    <div class="grid-zoom" id="grid-zoom"></div>
+                <div class="overview-actions">
+                    <div class="overview-readout" id="overview-readout">
+                        <p class="overview-readout__pair" id="overview-readout-pair">Keine Zelle gewählt</p>
+                        <p class="overview-readout__cats" id="overview-readout-cats">Tippe eine Zelle an</p>
+                    </div>
+                    <button class="overview-mark" type="button" id="overview-mark-no" disabled aria-label="Ausschließen">×</button>
+                    <button class="overview-mark" type="button" id="overview-mark-yes" disabled aria-label="Sichere Zuordnung">○</button>
+                    <button class="overview-mark" type="button" id="overview-mark-clear" disabled aria-label="Markierung entfernen">␣</button>
                 </div>
             </div>
 

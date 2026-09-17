@@ -111,11 +111,21 @@ test('two devices load the same runtime puzzle and enter play from one start ins
   await expect(guest.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 10_000 });
   await expect(host.locator('#play-title')).toHaveText(await guest.locator('#play-title').textContent() || '');
 
-  await host.locator('#grid-scroll').click({ position: { x: 160, y: 180 } });
-  await expect(host.locator('#grid-scroll')).toHaveAttribute('data-interactive', 'true');
-  await host.locator('.play-overview .cell').first().click();
-  await expect(guest.locator('.play-overview .cell').first()).toHaveText('');
+  // Marking in one room's overview must not leak into the other room's grid:
+  // the puzzle is shared, the progress is not.
+  await expect(host.locator('#overview-canvas')).toBeVisible();
+  const hostCell = host.locator('.overview-mirror__cell').first();
+  const hostKey = await hostCell.getAttribute('data-key');
+  const box = (await hostCell.boundingBox())!;
+  await host.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await host.locator('#overview-mark-no').click();
+  await expect(host.locator(`.overview-mirror__cell[data-key="${hostKey}"]`))
+    .toHaveAttribute('aria-label', /ausgeschlossen/);
+  await expect(guest.locator(`.overview-mirror__cell[data-key="${hostKey}"]`))
+    .toHaveAttribute('aria-label', /leer/);
   await host.locator('#play-undo').click();
+  await expect(host.locator(`.overview-mirror__cell[data-key="${hostKey}"]`))
+    .toHaveAttribute('aria-label', /leer/);
 
   const solve = async (page: Page) => {
     await page.locator('#play-solution-button').evaluate((button: HTMLButtonElement) => button.click());

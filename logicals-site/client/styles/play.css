@@ -210,118 +210,100 @@
 }
 .cell:disabled { cursor: default; opacity: .55; }
 
-/* --- Overview (whole grid) ------------------------------------------------ */
+/* --- Overview (whole grid, canvas viewport) ------------------------------- */
 
-.play-overview { display: grid; gap: var(--gap-sm); }
+.play-overview { display: grid; gap: var(--gap-sm); min-height: 0; }
 
-.grid-scroll {
-    overflow: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    max-height: 74vh;    /* fallback before Safari 15.4 gained svh */
-    max-height: 74svh;
+/*
+ * The only gesture surface on the screen. touch-action: none is what stops
+ * Safari claiming the pinch before we see it; it is scoped to this element, so
+ * the rest of the page still scrolls and zooms normally. (It is necessary but
+ * not sufficient - js/play/overview/gestures.js also cancels WebKit's own
+ * gesturestart/gesturechange/gestureend.)
+ */
+.overview-viewport {
+    position: relative;
+    min-height: 0;
+    height: min(58svh, 560px);
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--surface);
-    padding: 10px;
-    touch-action: pan-x pan-y;
-    scrollbar-gutter: stable both-edges;
+    overflow: hidden;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
 }
-.grid-scroll[data-interactive="false"] { cursor: zoom-in; }
-.grid-scroll[data-interactive="false"] .grid-zoom { pointer-events: none; }
-
-.grid-zoom { width: max-content; }
-
-.grid-table { border-collapse: separate; border-spacing: 0; }
-.grid-table th, .grid-table td { padding: 0; background: var(--surface); }
-
-/* Sticky headers: without these the row labels scroll out of view and you
-   cannot tell which row you are marking. This is the single biggest fix in
-   the overview. */
-.grid-table thead th,
-.grid-table thead td { position: sticky; z-index: 3; }
-.grid-table thead tr:nth-child(1) th,
-.grid-table thead tr:nth-child(1) td { top: 0; }
-.grid-table thead tr:nth-child(2) th,
-.grid-table thead tr:nth-child(2) td { top: var(--cat-head-h, 22px); }
-
-.grid-table .cat-side,
-.grid-table .val-side { position: sticky; z-index: 2; }
-.grid-table .cat-side { left: 0; }
-.grid-table .val-side { left: var(--cat-side-w, 22px); }
-
-.grid-table thead .void { z-index: 4; left: 0; }
-
-.grid-table .cat-head {
-    font-size: 12px; font-weight: 700; color: var(--teal);
-    text-align: center; padding: 0 0 6px; white-space: nowrap;
-}
-.grid-table .cat-side {
-    font-size: 12px; font-weight: 700; color: var(--teal);
-    writing-mode: vertical-rl; transform: rotate(180deg);
-    white-space: nowrap; padding-right: 6px;
-}
-.grid-table .val-head {
-    writing-mode: vertical-rl; transform: rotate(180deg);
-    font-size: 12px; font-weight: 500; text-align: left;
-    padding: 6px 0; height: 108px; vertical-align: bottom; white-space: nowrap;
-}
-.grid-table .val-side {
-    font-size: 12px; text-align: right; padding-right: 8px; white-space: nowrap;
-    max-width: 150px; overflow: hidden; text-overflow: ellipsis;
-}
-.grid-table .block-start { border-left: 2px solid var(--line-strong); }
-.grid-table .block-end { border-right: 2px solid var(--line-strong); }
-.grid-table .row-start { border-top: 2px solid var(--line-strong); }
-.grid-table .row-end { border-bottom: 2px solid var(--line-strong); }
-.grid-table .void { border: none !important; }
-
-.grid-table .cell {
-    width: 34px; height: 34px;
-    aspect-ratio: auto;
-    min-width: 0;
-    min-height: 0;
-    border-radius: 4px;
-    font-size: 17px;
-}
+.overview-viewport > canvas#overview-canvas { display: block; width: 100%; height: 100%; }
 
 /*
- * On a touch screen the overview cells must still be thumb-sized, even though
- * that makes the grid wider than the viewport - the headers are sticky, so
- * scrolling it stays legible. Mouse pointers keep the compact grid.
+ * The accessible mirror sits exactly on top of the painted cells. It is
+ * transparent but geometrically real: VoiceOver's direct-touch exploration uses
+ * element geometry, so a clipped 1px box would send every touch to one spot.
+ * Pointer events stay with the canvas; the mirror serves AT and the keyboard.
  */
-.grid-scroll[data-touch-layout="true"] .grid-table .cell {
-    width: var(--tap-min);
-    height: var(--tap-min);
+.overview-mirror { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.overview-mirror__surface { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+/* display: block, never display: contents - the latter has a history of
+   dropping the element from the accessibility tree, and the
+   grid > row > gridcell ownership chain has to stay intact. The row carries no
+   size of its own because the cells inside it are absolutely positioned. */
+.overview-mirror__row { display: block; }
+.overview-mirror__cell {
+    position: absolute;
+    width: var(--mirror-cell, 40px);
+    height: var(--mirror-cell, 40px);
+    opacity: 0;
+    pointer-events: auto;
 }
-.grid-scroll[data-touch-layout="true"] .grid-table .val-side { font-size: 13px; }
+.overview-mirror__cell:focus-visible {
+    opacity: 1;
+    outline: 2px solid var(--teal);
+    outline-offset: -2px;
+}
 
-.zoom-controls {
-    justify-self: end;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px;
-    border: var(--hairline) solid var(--line);
-    border-radius: var(--radius-pill);
+.overview-minimap {
+    position: absolute; right: 8px; top: 8px;
+    width: 76px; height: 76px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
     background: var(--surface);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .10);
+    pointer-events: none;
 }
-.zoom-controls .btn { min-height: var(--tap-min); }
-.zoom-controls output { font-size: 13px; color: var(--muted); min-width: 44px; text-align: center; }
-.overview-zoom-hint {
-    margin: 0;
-    color: var(--muted);
-    font-size: var(--text-caption);
-    line-height: var(--leading-caption);
-    text-align: right;
+.overview-fit { position: absolute; left: 8px; bottom: 8px; min-height: var(--tap-min); }
+
+.overview-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    align-items: center;
+    gap: 8px;
 }
-.overview-zoom-hint[hidden] { display: none; }
+.overview-readout { min-width: 0; }
+.overview-readout__pair {
+    margin: 0; font-size: 15px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.overview-readout__cats {
+    margin: 0; font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .05em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.overview-mark {
+    min-width: 52px; min-height: var(--tap-min);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit; font-size: 22px; line-height: 1;
+}
+.overview-mark:disabled { opacity: .35; }
 
 /* --- Paused veil ---------------------------------------------------------- */
 
 .play-stage.is-locked { position: relative; }
 .play-stage.is-locked .pager-track,
-.play-stage.is-locked .grid-scroll { opacity: .25; filter: blur(3px); pointer-events: none; }
+.play-stage.is-locked .overview-viewport { opacity: .25; filter: blur(3px); pointer-events: none; }
 .play-stage.is-locked::after {
     content: "Pausiert";
     position: absolute; inset: 0;
@@ -464,7 +446,7 @@
         align-items: start;
         padding-bottom: 0;
     }
-    .grid-scroll { max-height: none; }
+    .overview-viewport { height: min(76svh, 900px); }
 
     .clues-sheet {
         position: static;
@@ -502,7 +484,18 @@
 
 @media (max-width: 899px) and (max-height: 520px) {
     .play-bar, .play-toolbar { position: static; }
-    .grid-scroll { max-height: 62vh; max-height: 62svh; }
+    /* Stacked chrome costs 46% of the height in landscape, which drops the
+       fitted cell to 9.4px - below the 12.5px floor at which a tap can still be
+       attributed to one cell. Side-mounting it restores 15.5px. Measured. */
+    .play-overview {
+        grid-template-columns: minmax(0, 1fr) 150px;
+        align-items: stretch;
+    }
+    .overview-viewport { height: min(84svh, 100%); }
+    .overview-actions {
+        grid-template-columns: minmax(0, 1fr);
+        align-content: center;
+    }
     .clues-sheet { height: 92vh; height: 92svh; }
     .sheet-handle { padding: var(--space-1) 0 0; }
     /* min-height stays at the 44pt floor: the header is a button. */

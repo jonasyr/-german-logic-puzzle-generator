@@ -6,7 +6,7 @@
 import { el, make, clear } from '../dom.js';
 import { showScreen, onLeave } from '../router.js';
 import { buildPager, categoryPairs } from './matrixView.js';
-import { buildOverview, createZoom } from './overviewView.js';
+import { createOverviewCanvas } from './overview/overviewCanvas.js';
 import { createCluesSheet } from './cluesSheet.js';
 import { askConfirm, closeConfirm } from '../ui/confirmDialog.js';
 import { createAuthoritativeTimer, createTimer, formatTime } from './playTimer.js';
@@ -22,34 +22,36 @@ import {
 const { cellKey, buildTruthSet, evaluate } = window.PlayLogic;
 
 const state = createPlayState();
-/** key -> every button representing it (one in the pager, one in the overview). */
-let cellsByKey = new Map();
+/** key -> the pager button representing it. */
+let pagerCells = new Map();
+/** Every view that paints marks. The pager owns buttons; the overview a canvas. */
+let views = [];
+let overview = null;
 let paused = false;
 let sheet = null;
-let zoom = null;
 let timer = null;
 
 /* --- Painting ------------------------------------------------------------- */
 
 function paintCell(key) {
-    const buttons = cellsByKey.get(key);
-    if (!buttons) return;
     const mark = state.marks.get(key);
-    const symbol = mark ? MARK_SYMBOLS[mark] : '';
     const isWrong = state.wrong.has(key);
-    const description = mark === 'yes' ? 'sichere Zuordnung' : mark === 'no' ? 'ausgeschlossen' : 'leer';
 
-    for (const button of buttons) {
-        button.textContent = symbol;
+    const button = pagerCells.get(key);
+    if (button) {
+        const description = mark === 'yes' ? 'sichere Zuordnung' : mark === 'no' ? 'ausgeschlossen' : 'leer';
+        button.textContent = mark ? MARK_SYMBOLS[mark] : '';
         button.classList.toggle('is-yes', mark === 'yes');
         button.classList.toggle('is-no', mark === 'no');
         button.classList.toggle('is-wrong', isWrong);
         button.setAttribute('aria-label', `${button.dataset.label}: ${description}`);
     }
+
+    for (const view of views) view.paint(key, mark, isWrong);
 }
 
 function paintAll() {
-    for (const key of cellsByKey.keys()) paintCell(key);
+    for (const key of pagerCells.keys()) paintCell(key);
 }
 
 function clearWrongMarks() {
@@ -82,9 +84,8 @@ function renderPauseState() {
     el('play-pause').textContent = paused ? 'Weiter' : 'Pause';
     el('play-check').disabled = paused;
     el('play-clear').disabled = paused;
-    for (const buttons of cellsByKey.values()) {
-        for (const button of buttons) button.disabled = paused;
-    }
+    for (const button of pagerCells.values()) button.disabled = paused;
+    for (const view of views) view.setDisabled(paused);
     renderUndo();
 }
 
@@ -118,6 +119,32 @@ function onCellActivate(key) {
     if (state.solved || paused) return;
 
     cycleMark(state, key);
+    clearWrongMarks();
+    paintCell(key);
+    renderPairProgress();
+    renderUndo();
+    persist();
+
+    if (evaluate(state.marks, state.truth).solved) handleSolved();
+    else setStatus('');
+}
+
+/**
+ * Sets a cell to an exact mark instead of cycling it.
+ *
+ * The overview's action bar names the state it applies, so cycling towards it
+ * would take up to three taps and the button's label would be lying about what
+ * pressing it does. The undo entry has the same shape cycleMark records, so one
+ * undo stack serves both views.
+ */
+function setMark(key, mark) {
+    if (state.solved || paused) return;
+    const previous = state.marks.get(key);
+    if (previous === mark || (previous === undefined && mark === null)) return;
+
+    if (mark) state.marks.set(key, mark); else state.marks.delete(key);
+    state.undo.push({ key, previous });
+
     clearWrongMarks();
     paintCell(key);
     renderPairProgress();
@@ -248,13 +275,6 @@ function togglePause() {
     persist();
 }
 
-/** A stale scroll offset would leave the sticky corner covering a column header. */
-function resetGridScroll() {
-    const scroller = el('grid-scroll');
-    scroller.scrollLeft = 0;
-    scroller.scrollTop = 0;
-}
-
 function toggleView() {
     const screen = el('screen-play');
     const next = screen.dataset.view === 'pager' ? 'overview' : 'pager';
@@ -335,18 +355,26 @@ export function openPlay(puzzle, context) {
     el('play-story').textContent = puzzle.story;
     el('play-goal').textContent = `Zielfrage: ${puzzle.targetQuestion}`;
 
-    // Both views are built every time; each owns its own buttons for a key.
-    cellsByKey = new Map();
+    // Both views are built every time; the pager owns buttons, the overview a
+    // canvas, and paintCell fans out over whatever is registered.
+    overview?.destroy();
+    pagerCells = new Map();
     const pager = buildPager(puzzle, el('pager-track'), el('pager-nav'), {
         cellKey, onActivate: onCellActivate,
     });
-    for (const [key, buttons] of pager.cells) cellsByKey.set(key, [...buttons]);
+    for (const [key, buttons] of pager.cells) pagerCells.set(key, buttons[0]);
 
-    const overview = buildOverview(puzzle, el('grid-zoom'), { cellKey, onActivate: onCellActivate });
-    for (const [key, button] of overview.cells) {
-        if (!cellsByKey.has(key)) cellsByKey.set(key, []);
-        cellsByKey.get(key).push(button);
-    }
+    overview = createOverviewCanvas({
+        canvas: el('overview-canvas'),
+        minimap: el('overview-minimap'),
+        mirrorHost: el('overview-mirror'),
+        readoutPair: el('overview-readout-pair'),
+        readoutCats: el('overview-readout-cats'),
+        markButtons: [el('overview-mark-no'), el('overview-mark-yes'), el('overview-mark-clear')],
+        fitButton: el('overview-fit'),
+        puzzle, cellKey, onActivate: onCellActivate,
+    });
+    views = [overview];
 
     sheet.render(puzzle.clues, state.usedClues, persist);
     sheet.collapse();
@@ -358,7 +386,6 @@ export function openPlay(puzzle, context) {
     el('screen-play').dataset.view = 'overview';
     el('play-view').textContent = 'Einzeln';
     el('pager-track').scrollLeft = 0;
-    resetGridScroll();
 
     paintAll();
     renderPairProgress();
@@ -369,7 +396,7 @@ export function openPlay(puzzle, context) {
 
     // The overview is hidden while it is built. Fit only after the active
     // screen has a real Safari layout box, otherwise every measurement is 0.
-    requestAnimationFrame(() => zoom?.fit());
+    requestAnimationFrame(() => overview?.fit());
 
     if (state.solved) timer.reset(restoredMs);
     else timer.start(restoredMs);
@@ -388,10 +415,14 @@ export function initPlay() {
         countNode: el('clue-count'),
     });
 
-    zoom = createZoom(el('grid-zoom'), el('grid-scroll'), el('zoom-level'));
-    el('zoom-in').addEventListener('click', () => zoom.in());
-    el('zoom-out').addEventListener('click', () => zoom.out());
-    el('zoom-fit').addEventListener('click', () => zoom.fit());
+    for (const [id, mark] of [
+        ['overview-mark-no', 'no'], ['overview-mark-yes', 'yes'], ['overview-mark-clear', null],
+    ]) {
+        el(id).addEventListener('click', () => {
+            const cell = overview?.selected();
+            if (cell) setMark(cell.key, mark);
+        });
+    }
 
     el('play-check').addEventListener('click', requestCheck);
     el('play-undo').addEventListener('click', onUndo);
