@@ -31,7 +31,17 @@ export function createOverviewCanvas({
     const wrong = new Set();
     const context = canvas.getContext('2d');
     const minimapContext = minimap?.getContext('2d') ?? null;
-    const mirror = createMirror(mirrorHost, layout, puzzle, { onActivate });
+    const byKey = new Map();
+    // Keyboard and VoiceOver activate a mirror cell directly. Those users have
+    // no crosshair to steer by, so activating also moves the selection - that
+    // way the readout and the highlight follow wherever they are working.
+    const mirror = createMirror(mirrorHost, layout, puzzle, {
+        onActivate(key) {
+            if (disabled) return;
+            setSelected(byKey.get(key) ?? null);
+            onActivate(key);
+        },
+    });
     const surface = canvas.parentElement;
 
     let view = { scale: 1, tx: 0, ty: 0 };
@@ -42,6 +52,8 @@ export function createOverviewCanvas({
     let dpr = 1;
     let frame = 0;
     let pinchBaseScale = 1;
+
+    for (const cell of layout.cells) byKey.set(cell.key, cell);
 
     const limits = { minScale: minScaleFor(MIN_CELL_PX), maxScale: MAX_SCALE };
     const bounds = () => ({
@@ -186,7 +198,7 @@ export function createOverviewCanvas({
         fit: fitWhole,
         selected: () => selected,
         selectKey(key) {
-            setSelected(layout.cells.find(cell => cell.key === key) ?? null);
+            setSelected(byKey.get(key) ?? null);
         },
         paint(key, mark, isWrong) {
             if (mark) marks.set(key, mark); else marks.delete(key);

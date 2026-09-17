@@ -224,7 +224,7 @@
 .overview-viewport {
     position: relative;
     min-height: 0;
-    height: min(58svh, 560px);
+    height: min(50svh, 520px);
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--surface);
@@ -249,12 +249,19 @@
    grid > row > gridcell ownership chain has to stay intact. The row carries no
    size of its own because the cells inside it are absolutely positioned. */
 .overview-mirror__row { display: block; }
+/*
+ * pointer-events stay off: a real finger must always reach the canvas, which
+ * owns selection and the pan/pinch gestures. Letting the mirror catch pointers
+ * made one tap both select AND cycle the mark, and kept cells clickable where
+ * the header gutters visually cover them. Assistive technology and the keyboard
+ * activate these nodes programmatically, which pointer-events does not affect.
+ */
 .overview-mirror__cell {
     position: absolute;
     width: var(--mirror-cell, 40px);
     height: var(--mirror-cell, 40px);
     opacity: 0;
-    pointer-events: auto;
+    pointer-events: none;
 }
 .overview-mirror__cell:focus-visible {
     opacity: 1;
@@ -262,8 +269,11 @@
     outline-offset: -2px;
 }
 
+/* Parked in the triangular matrix's structurally empty top-right corner - the
+   only dead space in the layout - and below the column-label gutter so it never
+   covers a header. */
 .overview-minimap {
-    position: absolute; right: 8px; top: 8px;
+    position: absolute; right: 6px; top: 46px;
     width: 76px; height: 76px;
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -271,14 +281,19 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, .10);
     pointer-events: none;
 }
-.overview-fit { position: absolute; left: 8px; bottom: 8px; min-height: var(--tap-min); }
+.overview-fit { min-height: var(--tap-min); }
 
 .overview-actions {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    /* The readout gets a row of its own: squeezed into a column beside four
+       buttons it truncated the very thing it exists to show, the two values the
+       selected cell joins. */
+    grid-template-columns: repeat(4, auto);
+    justify-content: space-between;
     align-items: center;
     gap: 8px;
 }
+.overview-readout { grid-column: 1 / -1; }
 .overview-readout { min-width: 0; }
 .overview-readout__pair {
     margin: 0; font-size: 15px; font-weight: 600;
@@ -487,15 +502,29 @@
     /* Stacked chrome costs 46% of the height in landscape, which drops the
        fitted cell to 9.4px - below the 12.5px floor at which a tap can still be
        attributed to one cell. Side-mounting it restores 15.5px. Measured. */
+    /* The stage takes whatever height the chrome leaves, and the viewport fills
+       it. Sizing from svh here guessed high and pushed the grid past the bottom
+       edge, because the bar and toolbar are not part of that guess. */
+    .screen--play.is-active { height: 100svh; }
+    /* The shell's own padding would push that 100svh past the bottom edge and
+       leave the page scrollable behind a screen that is meant to be fixed. */
+    #app:has(#screen-play.is-active) { padding-top: 0; padding-bottom: 0; }
+    /* Still clear of the peeking clue sheet, which is fixed to the bottom across
+       the full width and would otherwise cover the foot of the action bar. */
+    .play-stage { flex: 1 1 auto; min-height: 0; padding-bottom: calc(50px + var(--safe-bottom)); }
     .play-overview {
         grid-template-columns: minmax(0, 1fr) 150px;
         align-items: stretch;
+        min-height: 0;
+        height: 100%;
     }
-    .overview-viewport { height: min(84svh, 100%); }
+    .overview-viewport { height: 100%; }
     .overview-actions {
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         align-content: center;
     }
+    .overview-actions .overview-readout { grid-column: 1 / -1; }
+    .overview-minimap { width: 58px; height: 58px; }
     .clues-sheet { height: 92vh; height: 92svh; }
     .sheet-handle { padding: var(--space-1) 0 0; }
     /* min-height stays at the 44pt floor: the header is a button. */
@@ -504,5 +533,16 @@
         padding-bottom: calc(var(--space-2) + var(--safe-bottom));
     }
     .play-stage { padding-bottom: calc(60px + var(--safe-bottom)); }
-    .play-head .result-sub { display: none; }
+
+    /*
+     * A 375px-tall window has no room for the story, the target question and the
+     * status line on top of the bar and the toolbar: together they pushed the
+     * grid's top edge to y=243, i.e. below the fold, and the action bar with it.
+     * The narrative belongs to the clue sheet, which is one tap away; the grid
+     * is what landscape is for.
+     */
+    .play-head { display: none; }
+    .play-bar { padding-top: max(4px, var(--safe-top)); padding-bottom: 4px; }
+    .play-bar h2 { font-size: 15px; -webkit-line-clamp: 1; }
+    .play-toolbar { padding: 4px 0; }
 }

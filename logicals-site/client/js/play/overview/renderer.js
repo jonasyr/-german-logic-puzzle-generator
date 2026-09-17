@@ -10,16 +10,36 @@
 import { CELL, blockVisible } from './geometry.js';
 import { worldToScreen } from './viewport.js';
 
-/** Screen-space gutters reserved for the always-legible labels. */
-export const GUTTER_LEFT = 78;
-export const GUTTER_TOP = 46;
+/*
+ * Screen-space gutters reserved for the always-legible labels.
+ *
+ * These are charged against the viewport ONCE, unlike the old table where the
+ * labels lived inside the scaled content. They are still the scarcest resource
+ * on a 375px phone: every pixel here is a pixel the grid cannot use, and at 78px
+ * the left gutter alone was costing enough width to push the fit below the tap
+ * floor. 64 is the smallest that still holds a German value label.
+ */
+export const GUTTER_LEFT = 64;
+export const GUTTER_TOP = 40;
 
-const LABEL_FONT_PX = 11;
-const CATEGORY_FONT_PX = 9;
-/** Below this the rows are too tight for text; labels are decimated, not shrunk. */
-const LABEL_MIN_CELL_PX = 13;
+/** Far-left strip holding the rotated category name, clear of the values. */
+const CATEGORY_STRIP = 13;
+
+const CATEGORY_FONT_PX = 8;
 /** Below this a glyph is noise, so the mark is drawn as a dot instead. */
 const GLYPH_MIN_CELL_PX = 11;
+
+/**
+ * Labels shrink with the row pitch instead of being dropped.
+ *
+ * Decimating them - showing only the first value of each block - left the grid
+ * unreadable exactly when the player most needs the labels. 8px is small but
+ * legible, and the readout under the grid always spells the selected cell out
+ * in full anyway.
+ */
+function labelFontPx(cellPx) {
+    return Math.max(8, Math.min(11, Math.floor(cellPx - 2)));
+}
 
 const COLORS = {
     gutter: '#FBFAF7',
@@ -145,7 +165,7 @@ function drawCrosshair(ctx, { view, selected, cssWidth, cssHeight }) {
 
 function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight, dpr }) {
     const size = CELL * view.scale;
-    const sparse = size < LABEL_MIN_CELL_PX;
+    const labelPx = labelFontPx(size);
 
     ctx.fillStyle = COLORS.gutter;
     ctx.fillRect(0, 0, GUTTER_LEFT, cssHeight);
@@ -171,21 +191,30 @@ function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight,
             const y = worldToScreen(view, 0, cell.y).y + size / 2;
             if (y < GUTTER_TOP - 10 || y > cssHeight + 10) continue;
             const active = selected?.rowBlock === rowBlock && selected?.rowValue === value;
-            if (sparse && !active && value !== 0) continue;
             ctx.textAlign = 'right';
             ctx.fillStyle = active ? COLORS.accent : COLORS.text;
-            ctx.font = `${active ? 700 : 400} ${LABEL_FONT_PX}px system-ui, sans-serif`;
-            ctx.fillText(category.values[value], GUTTER_LEFT - 6, y, GUTTER_LEFT - 10);
+            ctx.font = `${active ? 700 : 400} ${labelPx}px system-ui, sans-serif`;
+            // Values keep clear of the category strip on the far left, which is
+            // what stopped the two colliding on a narrow gutter.
+            ctx.fillText(category.values[value], GUTTER_LEFT - 5, y,
+                GUTTER_LEFT - CATEGORY_STRIP - 8);
         }
-        const first = layout.cells.find(c => c.rowBlock === rowBlock && c.rowValue === 0);
-        if (!first) return;
-        const top = worldToScreen(view, 0, first.y).y;
-        if (top > GUTTER_TOP - 40 && top < cssHeight) {
-            ctx.textAlign = 'left';
-            ctx.fillStyle = COLORS.teal;
-            ctx.font = `700 ${CATEGORY_FONT_PX}px system-ui, sans-serif`;
-            ctx.fillText(category.label.toUpperCase(), 4, Math.max(GUTTER_TOP + 7, top + 7), GUTTER_LEFT - 8);
-        }
+
+        // Category name, rotated into its own strip and centred on the block.
+        const blockCells = layout.cells.filter(c => c.rowBlock === rowBlock);
+        if (!blockCells.length) return;
+        const top = worldToScreen(view, 0, blockCells[0].y).y;
+        const bottom = top + layout.valueCount * size;
+        if (bottom < GUTTER_TOP || top > cssHeight) return;
+        const centre = Math.min(Math.max((top + bottom) / 2, GUTTER_TOP + 20), cssHeight - 20);
+        ctx.save();
+        ctx.translate(CATEGORY_STRIP - 4, centre);
+        ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = COLORS.teal;
+        ctx.font = `700 ${CATEGORY_FONT_PX}px system-ui, sans-serif`;
+        ctx.fillText(category.label.toUpperCase(), 0, 0, layout.valueCount * size);
+        ctx.restore();
     });
     ctx.restore();
 
@@ -204,25 +233,25 @@ function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight,
             const x = worldToScreen(view, cell.x, 0).x + size / 2;
             if (x < GUTTER_LEFT - 10 || x > cssWidth + 10) continue;
             const active = selected?.colBlock === colBlock && selected?.colValue === value;
-            if (sparse && !active && value !== 0) continue;
             ctx.save();
             ctx.translate(x, GUTTER_TOP - 4);
             ctx.rotate(-Math.PI / 2);
             ctx.textAlign = 'left';
             ctx.fillStyle = active ? COLORS.accent : COLORS.text;
-            ctx.font = `${active ? 700 : 400} ${LABEL_FONT_PX}px system-ui, sans-serif`;
-            ctx.fillText(category.values[value], 0, 0, GUTTER_TOP - 16);
+            ctx.font = `${active ? 700 : 400} ${labelPx}px system-ui, sans-serif`;
+            ctx.fillText(category.values[value], 0, 0, GUTTER_TOP - 12);
             ctx.restore();
         }
-        const first = layout.cells.find(c => c.colBlock === colBlock && c.colValue === 0);
-        if (!first) return;
-        const left = worldToScreen(view, first.x, 0).x;
-        if (left > GUTTER_LEFT - 60 && left < cssWidth) {
-            ctx.textAlign = 'left';
-            ctx.fillStyle = COLORS.teal;
-            ctx.font = `700 ${CATEGORY_FONT_PX}px system-ui, sans-serif`;
-            ctx.fillText(category.label.toUpperCase(), Math.max(GUTTER_LEFT + 3, left + 2), 7, 90);
-        }
+        const blockCells = layout.cells.filter(c => c.colBlock === colBlock);
+        if (!blockCells.length) return;
+        const left = worldToScreen(view, blockCells[0].x, 0).x;
+        const right = left + layout.valueCount * size;
+        if (right < GUTTER_LEFT || left > cssWidth) return;
+        const centre = Math.min(Math.max((left + right) / 2, GUTTER_LEFT + 24), cssWidth - 24);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = COLORS.teal;
+        ctx.font = `700 ${CATEGORY_FONT_PX}px system-ui, sans-serif`;
+        ctx.fillText(category.label.toUpperCase(), centre, 6, layout.valueCount * size);
     });
     ctx.restore();
 }
