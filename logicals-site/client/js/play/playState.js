@@ -16,7 +16,8 @@
 
 const UNDO_LIMIT = 50;
 
-export const MARK_SYMBOLS = { yes: '○', no: '×' };
+/** `maybe` is the player's own uncertainty; scoring ignores it by construction. */
+export const MARK_SYMBOLS = { yes: '○', no: '×', maybe: '·' };
 
 /** FNV-1a, 32 bit. Short, stable, and enough to tell two clue sets apart. */
 function fingerprint(text) {

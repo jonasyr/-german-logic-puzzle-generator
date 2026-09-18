@@ -193,3 +193,43 @@ describe('clearing', () => {
     expect(state.undo).toHaveLength(0);
   });
 });
+
+describe('the note mark', () => {
+  it('is neither right nor wrong, and does not complete a solve', async () => {
+    // playLogic tests explicitly for 'yes' and 'no', so a note falls through
+    // both. That is the behaviour we want, and it is load-bearing enough to pin.
+    const { buildTruthSet, evaluate } = (await import('../client/playLogic.js')) as any;
+    const puzzle = {
+      categories: [
+        { label: 'A', values: ['a1', 'a2'] },
+        { label: 'B', values: ['b1', 'b2'] },
+      ],
+      solutionRows: [{ A: 'a1', B: 'b1' }, { A: 'a2', B: 'b2' }],
+    };
+    const truth = buildTruthSet(puzzle);
+
+    const marks = new Map([['0.1.0.0', 'maybe'], ['0.1.1.1', 'maybe']]);
+    const result = evaluate(marks, truth);
+    expect([...result.wrong]).toEqual([]);     // never counted as an error
+    expect(result.solved).toBe(false);          // and never completes the grid
+    expect(result.missing).toBe(2);
+  });
+
+  it('is left alone by the crosses a confirmation derives', () => {
+    const state = fresh();
+    setMarkWith(state, '0.1.2.0', 'maybe', V);
+    setMarkWith(state, '0.1.2.3', 'yes', V);
+    // Derived crosses only ever fill EMPTY cells, so the note survives...
+    expect(state.marks.get('0.1.2.0')).toBe('maybe');
+    setMarkWith(state, '0.1.2.3', null, V);
+    // ...and is still there when the confirmation is withdrawn.
+    expect(state.marks.get('0.1.2.0')).toBe('maybe');
+  });
+
+  it('is replaced by a confirmation placed on top of it', () => {
+    const state = fresh();
+    setMarkWith(state, '0.1.2.3', 'maybe', V);
+    setMarkWith(state, '0.1.2.3', 'yes', V);
+    expect(state.marks.get('0.1.2.3')).toBe('yes');
+  });
+});
