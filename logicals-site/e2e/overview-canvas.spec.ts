@@ -743,3 +743,50 @@ test('the single-pair view has the tool bar, and it works', async ({ page }) => 
   await cell.click();
   await expect(cell).toHaveText('');
 });
+
+/*
+ * The single-pair grid is centred, and stays above the tap floor while doing it.
+ *
+ * The table used to be width: 100% with a label column pinned at 26%, so short
+ * labels like "Anna" left 52px of dead space on the left against 3px on the
+ * right - the grid read as right-aligned. Measuring the table box against its
+ * page is what pins this down; measuring the label text would not, because
+ * labels are right-aligned and differ in length by design.
+ */
+for (const width of [320, 375, 430]) {
+  test(`the single-pair grid is centred at ${width}px`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await openPuzzle(page, width, 812);
+    await page.locator('#play-view').click();
+    await page.waitForTimeout(300);
+
+    const pages = await page.evaluate(() =>
+      [...document.querySelectorAll('.pair-page')].map(pane => {
+        const box = pane.getBoundingClientRect();
+        const table = pane.querySelector('.matrix')!.getBoundingClientRect();
+        const cells = [...pane.querySelector('tbody tr')!.querySelectorAll('.cell')]
+          .map(cell => cell.getBoundingClientRect());
+        const gaps = cells.slice(1).map((cell, i) => cell.left - cells[i].right);
+        return {
+          left: table.left - box.left,
+          right: box.right - table.right,
+          cell: cells[0].width,
+          gapSpread: Math.max(...gaps) - Math.min(...gaps),
+          scrolls: pane.scrollWidth > pane.clientWidth,
+        };
+      }));
+
+    expect(pages.length).toBeGreaterThan(0);
+    for (const pane of pages) {
+      // Centred: the two margins match.
+      expect(Math.abs(pane.left - pane.right)).toBeLessThanOrEqual(2);
+      // And never at the cost of the 44pt floor, or of scrolling to reach a cell.
+      expect(pane.cell).toBeGreaterThanOrEqual(44);
+      expect(pane.scrolls).toBe(false);
+      // Every column sits the same distance from the next. A long header
+      // ("Flammkuchen") used to widen its own column, and the overhang read as
+      // the last column being cut off from the grid.
+      expect(pane.gapSpread).toBeLessThanOrEqual(0.5);
+    }
+  });
+}

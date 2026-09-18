@@ -272,17 +272,42 @@
 
 /* --- Matrix (one category pair) ------------------------------------------- */
 
+/*
+ * Sized to its content and centred, not stretched to the full width.
+ *
+ * With table-layout: fixed and width: 100%, the label column was a flat 26% of
+ * the page whatever the labels said. "Anna" needs 31px of that 89px, so the
+ * grid was pushed right: 52px of dead space on the left against 3px on the
+ * right. Letting the column shrink to its content and centring the table splits
+ * that surplus evenly, and gives the cells room to grow at the same time.
+ *
+ * max-width keeps it inside the page; if the content still does not fit - a
+ * narrow phone, or long values - the columns compress to the 44pt floor and
+ * .pair-page scrolls, which it is already set up to do. margin-inline resolves
+ * to zero in that case, so nothing is ever clipped off the left.
+ */
 .matrix {
-    table-layout: fixed;
-    width: 100%;
-    min-width: min-content;
+    table-layout: auto;
+    /* fit-content, not max-content: it takes the width it wants but gives way
+       to the available space, so a narrow phone compresses the columns to the
+       tap floor instead of scrolling for the sake of 52px cells. */
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
+    /* One width for every column, headers included. Without it a long header
+       ("Flammkuchen") widened its own column past the 52px cell inside it, and
+       the overhang showed up as a gap that cut the last column off from the
+       rest. */
+    --pair-cell: clamp(var(--tap-min), 14vw, 52px);
     border-collapse: separate;
     border-spacing: 2px;
 }
 .matrix th { font-weight: 500; }
 .matrix .m-corner,
 .matrix .m-rowhead {
-    width: 26%;
+    /* Whatever the labels need, capped so one long value cannot squeeze the
+       cells below their tap floor. */
+    width: auto;
     max-width: 104px;
     font-size: 13px;
     text-align: right;
@@ -295,6 +320,9 @@
     line-height: 1.2;
 }
 .matrix .m-colhead {
+    /* Same width as the cells below it; the text wraps or hyphenates to fit
+       rather than pushing the column wider than the grid it labels. */
+    width: var(--pair-cell);
     font-size: 12px;
     line-height: 1.15;
     vertical-align: bottom;
@@ -311,7 +339,14 @@
 /* --- Cell ----------------------------------------------------------------- */
 
 .cell {
-    width: 100%;
+    /*
+     * Now that the table is content-sized, the cell carries its own width.
+     * A flat 52px made the column's minimum 52px too, so a 320px phone scrolled
+     * rather than giving way. The clamp keeps 44pt as the hard floor - the
+     * measured limit at which a tap can still be attributed to one cell - and
+     * stops growing at 52 so a large phone does not get cartoon buttons.
+     */
+    width: var(--pair-cell);
     aspect-ratio: 1;
     min-width: var(--tap-min);
     min-height: var(--tap-min);
