@@ -71,6 +71,12 @@ function refreshResumeButton() {
     const record = player ? loadResume(player.id) : null;
     button.hidden = !record;
     if (record) el('resume-detail').textContent = describeResume(record);
+
+    // Two primary buttons stacked compete with each other. When there is a game
+    // to go back to, that is the main action and starting a new one steps down.
+    const start = el('start-button');
+    start.classList.toggle('btn--primary', !record);
+    start.classList.toggle('btn--on-dark', Boolean(record));
 }
 
 /**
