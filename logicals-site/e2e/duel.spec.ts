@@ -138,10 +138,13 @@ test('two devices load the same runtime puzzle and enter play from one start ins
           `${values[left]} / ${values[left + offset + 1]}`));
       });
     });
+    // Arm the confirm tool, then one click per cell. This used to click twice to
+    // cycle empty -> x -> o; both views share an armed tool now, so a second
+    // click would take the mark straight back off again.
+    await page.locator('#overview-mark-yes').evaluate((button: HTMLButtonElement) => button.click());
     await page.locator('.play-pager .cell').evaluateAll((cells, wanted) => {
       for (const label of wanted as string[]) {
         const cell = cells.find(candidate => (candidate as HTMLElement).dataset.label === label) as HTMLButtonElement;
-        cell.click();
         cell.click();
       }
     }, labels);

@@ -133,6 +133,7 @@ const COLOR_TOKENS = {
     yes: '--grid-yes',
     yesFill: '--grid-yes-fill',
     no: '--grid-no',
+    maybe: '--grid-maybe',
     noFill: '--grid-no-fill',
     wrong: '--grid-wrong',
     wrongFill: '--grid-wrong-fill',
@@ -145,7 +146,7 @@ const COLOR_TOKENS = {
 const FALLBACK = {
     gutter: '#FBFAF7', rule: '#D9D4CA', blockRule: '#8A8378', surface: '#FFFFFF',
     cellLine: '#E2DED6', yes: '#1B7A4B', yesFill: '#E3F1EA', no: '#8A8378',
-    noFill: '#F2F1EE', wrong: '#C0392B', wrongFill: '#FBE9E7', text: '#172033',
+    noFill: '#F2F1EE', maybe: '#9AA0AB', wrong: '#C0392B', wrongFill: '#FBE9E7', text: '#172033',
     accent: '#C6492D', teal: '#227C78', crosshair: 'rgba(34,124,120,.13)',
 };
 
@@ -219,8 +220,17 @@ function drawCells(ctx, { layout, view, marks, wrong, cssWidth, cssHeight, dpr, 
         ctx.strokeRect(hairline(point.x, dpr), hairline(point.y, dpr), size - 1, size - 1);
 
         if (!mark) continue;
-        ctx.fillStyle = isWrong ? colors.wrong : mark === 'yes' ? colors.yes : colors.no;
-        if (glyphs) {
+        ctx.fillStyle = isWrong ? colors.wrong
+            : mark === 'yes' ? colors.yes
+            : mark === 'maybe' ? colors.maybe
+            : colors.no;
+        if (mark === 'maybe') {
+            // A small dot, deliberately quieter than a settled cross: this is the
+            // player's own uncertainty, not a decision.
+            ctx.beginPath();
+            ctx.arc(point.x + size / 2, point.y + size / 2, Math.max(1, size * 0.12), 0, Math.PI * 2);
+            ctx.fill();
+        } else if (glyphs) {
             ctx.font = `${mark === 'yes' ? 700 : 400} ${Math.round(size * 0.62)}px system-ui, sans-serif`;
             ctx.fillText(mark === 'yes' ? '○' : '×', point.x + size / 2, point.y + size / 2 + size * 0.02);
         } else {

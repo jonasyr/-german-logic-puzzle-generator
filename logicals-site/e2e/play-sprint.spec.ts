@@ -115,3 +115,65 @@ test('a solved puzzle is not offered for resuming', async ({ page }) => {
   await page.reload();
   await expect(page.locator('#resume-button')).toBeHidden();
 });
+
+test('a note can be placed and cleared, and survives a reload', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await withPlayer(page);
+  await page.goto('/');
+  await generateAndPlay(page);
+
+  await page.locator('#overview-mark-maybe').click();
+  const key = await tapCell(page, 0);
+  const label = () => page.locator(`.overview-mirror__cell[data-key="${key}"]`).getAttribute('aria-label');
+  expect(await label()).toContain('vermutet');
+
+  await page.reload();
+  await page.locator('#resume-button').click();
+  await expect(page.locator('#overview-canvas')).toBeVisible({ timeout: 60_000 });
+  expect(await label()).toContain('vermutet');
+
+  // Armed on what the cell already holds, the same tool takes it back off.
+  await page.locator('#overview-mark-maybe').click();
+  await tapCell(page, 0);
+  expect(await label()).toContain('leer');
+});
+
+test('the pager marks with the same tool as the overview', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await withPlayer(page);
+  await page.goto('/');
+  await generateAndPlay(page);
+
+  await page.locator('#overview-mark-maybe').click();
+  await page.locator('#play-view').click();
+  await expect(page.locator('#screen-play')).toHaveAttribute('data-view', 'pager');
+
+  const cell = page.locator('.play-pager .cell').first();
+  const key = await cell.getAttribute('data-key');
+  await cell.click();
+  // The pager used to cycle to a cross here regardless of the armed tool.
+  await expect(cell).toHaveText('·');
+
+  await page.locator('#play-view').click();
+  const label = await page.locator(`.overview-mirror__cell[data-key="${key}"]`).getAttribute('aria-label');
+  expect(label).toContain('vermutet');
+});
+
+test('a note is never reported as a wrong mark', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await withPlayer(page);
+  await page.goto('/');
+  await generateAndPlay(page);
+
+  await page.locator('#overview-mark-maybe').click();
+  for (const index of [0, 1, 2, 3]) await tapCell(page, index);
+
+  await page.locator('#play-check').click();
+  await page.locator('#confirm-ok').click();
+  // Notes are uncertainty, not claims: checking cannot find fault with them.
+  await expect(page.locator('#play-status')).not.toContainText('stimmt nicht');
+  await expect(page.locator('#play-status')).not.toContainText('stimmen nicht');
+});

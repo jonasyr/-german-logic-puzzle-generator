@@ -27,18 +27,16 @@ import {
 import { bindGestures, suppressNativeZoom } from './gestures.js';
 import { render, renderMinimap, resizeCanvas, computeGutters, readPalette } from './renderer.js';
 import { createMirror } from './a11yMirror.js';
+import { nextMark } from '../markTool.js';
 
 const TAP_TOLERANCE_PX = 22;
 const PADDING = 6;
 /** Cell size the "comfortable" half of the fit toggle aims for. */
 const COMFY_CELL_PX = 30;
 
-/** Tool id -> the mark it writes. `null` erases. */
-const TOOL_MARK = { no: 'no', yes: 'yes', clear: null };
-
 export function createOverviewCanvas({
-    canvas, minimap, mirrorHost, readoutPair, readoutCats, markButtons, fitButton,
-    puzzle, cellKey, onSetMark, onSelect,
+    canvas, minimap, mirrorHost, readoutPair, readoutCats, fitButton,
+    puzzle, cellKey, currentTool, onSetMark, onSelect,
 }) {
     const layout = createLayout(puzzle, cellKey);
     const marks = new Map();
@@ -69,8 +67,6 @@ export function createOverviewCanvas({
     let pinchBaseScale = 1;
     let gutters = { left: 62, top: 52 };
     let colors = null;
-    /** Armed tool, or null for inspect-only. Crosses dominate, so start on one. */
-    let tool = 'no';
 
     for (const cell of layout.cells) byKey.set(cell.key, cell);
 
@@ -145,26 +141,10 @@ export function createOverviewCanvas({
         ));
     }
 
-    const TOOL_HINT = {
-        no: 'Tippen setzt ×',
-        yes: 'Tippen setzt ○',
-        clear: 'Tippen leert die Zelle',
-    };
-
-    function renderTools() {
-        for (const button of markButtons) {
-            const active = !disabled && button.dataset.tool === tool;
-            button.disabled = disabled;
-            button.classList.toggle('is-active', active);
-            button.setAttribute('aria-pressed', String(active));
-        }
-    }
-
     function renderReadout() {
-        renderTools();
         if (!selected) {
             readoutPair.textContent = 'Keine Zelle gewählt';
-            readoutCats.textContent = tool ? TOOL_HINT[tool] : 'Tippen wählt nur aus';
+            readoutCats.textContent = currentTool() ? 'Tippen markiert' : 'Tippen wählt nur aus';
             return;
         }
         const rowCategory = puzzle.categories[selected.rowCategoryIndex];
@@ -176,18 +156,12 @@ export function createOverviewCanvas({
         readoutCats.textContent = `${rowCategory.label} × ${colCategory.label}`;
     }
 
-    /**
-     * Selects the cell and, if a tool is armed, writes it.
-     *
-     * Armed on the value the cell already holds, the tap clears it instead -
-     * that is what makes each tool a switch and keeps a correction at one tap.
-     */
+    /** Selects the cell and writes whatever the armed tool says to write. */
     function applyTool(cell) {
         setSelected(cell);
-        if (!cell || !tool) return;
-        const next = TOOL_MARK[tool];
-        const current = marks.get(cell.key) ?? null;
-        onSetMark(cell.key, current === next && next !== null ? null : next);
+        if (!cell) return;
+        const mark = nextMark(marks.get(cell.key), currentTool());
+        if (mark !== undefined) onSetMark(cell.key, mark);
     }
 
     function setSelected(cell) {
@@ -229,15 +203,6 @@ export function createOverviewCanvas({
         exempt: '#clues-sheet',
         enabled: () => document.getElementById('screen-play')?.classList.contains('is-active'),
     });
-
-    for (const button of markButtons) {
-        button.addEventListener('click', () => {
-            if (disabled) return;
-            // Tapping the armed tool disarms it, which is the inspect mode.
-            tool = button.dataset.tool === tool ? null : button.dataset.tool;
-            renderReadout();
-        });
-    }
 
     fitButton?.addEventListener('click', fit);
 
@@ -295,8 +260,6 @@ export function createOverviewCanvas({
             mirror.setDisabled(next);
             renderReadout();
         },
-        /** The armed tool, exposed for tests. */
-        tool: () => tool,
         destroy() {
             observer.disconnect();
             window.visualViewport?.removeEventListener('resize', refit);

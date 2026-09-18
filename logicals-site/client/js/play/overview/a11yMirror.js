@@ -24,7 +24,7 @@
 import { CELL } from './geometry.js';
 import { worldToScreen } from './viewport.js';
 
-const MARK_TEXT = { yes: 'sichere Zuordnung', no: 'ausgeschlossen' };
+const MARK_TEXT = { yes: 'sichere Zuordnung', no: 'ausgeschlossen', maybe: 'vermutet' };
 
 export function createMirror(host, layout, puzzle, { onActivate }) {
     host.replaceChildren();

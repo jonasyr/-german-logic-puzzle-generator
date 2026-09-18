@@ -10,6 +10,7 @@ import { createOverviewCanvas } from './overview/overviewCanvas.js';
 import { loadPrefs } from './playPrefs.js';
 import { fingerprintPuzzle } from '../generation/canonicalPuzzle.ts';
 import { clearResume, saveResume } from './resumeStore.js';
+import { createMarkTool, nextMark } from './markTool.js';
 import { createCluesSheet } from './cluesSheet.js';
 import { askConfirm, closeConfirm } from '../ui/confirmDialog.js';
 import { createAuthoritativeTimer, createTimer, formatTime } from './playTimer.js';
@@ -18,7 +19,7 @@ import { flushOutbox, queueResult } from '../results/outbox.js';
 import { openDuelResult } from '../duel/duelResultController.js';
 import {
     MARK_SYMBOLS, createPlayState, storageKeyFor,
-    cycleMark, setMarkWith, undoMark, clearMarks, save, load, recordFailedCheck,
+    setMarkWith, undoMark, clearMarks, save, load, recordFailedCheck,
     resetForNewAttempt,
 } from './playState.js';
 
@@ -35,6 +36,8 @@ let sheet = null;
 let timer = null;
 /** Computed once per puzzle; the resume record needs it and it is not cheap. */
 let puzzleFingerprint = null;
+/** The armed marking tool, shared by the pager and the overview. */
+let tool = null;
 
 /* --- Painting ------------------------------------------------------------- */
 
@@ -117,6 +120,7 @@ function renderPauseState() {
     el('play-clear').disabled = paused;
     for (const button of pagerCells.values()) button.disabled = paused;
     for (const view of views) view.setDisabled(paused);
+    tool?.setDisabled(paused);
     renderUndo();
 }
 
@@ -175,9 +179,18 @@ function rememberForResume(elapsedMs) {
 
 /* --- Interaction ---------------------------------------------------------- */
 
+/**
+ * A tap in either view writes the armed tool.
+ *
+ * The pager used to cycle instead, which meant the two views disagreed about
+ * what a tap does - and once a note mark exists, the pager could neither place
+ * nor clear one.
+ */
 function onCellActivate(key) {
     if (state.solved || paused) return;
-    afterMarkChange(cycleMark(state, key, valueCount(), derivesCrosses()));
+    const mark = nextMark(state.marks.get(key), tool?.current());
+    if (mark === undefined) return;
+    afterMarkChange(setMarkWith(state, key, mark, valueCount(), derivesCrosses()));
 }
 
 /**
@@ -415,9 +428,8 @@ export function openPlay(puzzle, context) {
         mirrorHost: el('overview-mirror'),
         readoutPair: el('overview-readout-pair'),
         readoutCats: el('overview-readout-cats'),
-        markButtons: [el('overview-mark-no'), el('overview-mark-yes'), el('overview-mark-clear')],
         fitButton: el('overview-fit'),
-        puzzle, cellKey, onSetMark: setMark,
+        puzzle, cellKey, currentTool: () => tool.current(), onSetMark: setMark,
     });
     views = [overview];
 
@@ -449,6 +461,13 @@ export function openPlay(puzzle, context) {
 }
 
 export function initPlay() {
+    tool = createMarkTool({
+        buttons: [
+            el('overview-mark-no'), el('overview-mark-yes'),
+            el('overview-mark-maybe'), el('overview-mark-clear'),
+        ],
+    });
+
     sheet = createCluesSheet({
         sheet: el('clues-sheet'),
         handle: el('sheet-handle'),

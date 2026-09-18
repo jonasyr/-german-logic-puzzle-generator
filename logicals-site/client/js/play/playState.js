@@ -171,13 +171,6 @@ export function setMarkWith(state, key, mark, valueCount, deriveCrosses = true) 
     return marks.map(entry => entry.key);
 }
 
-/** Advances one cell through empty -> x -> o -> empty. */
-export function cycleMark(state, key, valueCount, deriveCrosses = true) {
-    const previous = state.marks.get(key);
-    const next = previous === undefined ? 'no' : previous === 'no' ? 'yes' : null;
-    return setMarkWith(state, key, next, valueCount, deriveCrosses);
-}
-
 /**
  * Reverts the last change as a whole.
  * @returns {string[]} the affected keys, empty when there was nothing to undo.
