@@ -55,6 +55,8 @@
     --grid-yes-fill: #e3f1ea;
     --grid-no: #8a8378;
     --grid-maybe: #9aa0ab;
+    --grid-conflict: #b8860b;
+    --grid-conflict-fill: #fdf3d6;
     --grid-no-fill: #f2f1ee;
     --grid-wrong: #c0392b;
     --grid-wrong-fill: #fbe9e7;
@@ -164,6 +166,8 @@
         --grid-yes-fill: #17352c;
         --grid-no: #9aa8c0;
         --grid-maybe: #7c8798;
+        --grid-conflict: #e0b64a;
+        --grid-conflict-fill: #33290f;
         --grid-no-fill: #222a38;
         --grid-wrong: #ff8f75;
         --grid-wrong-fill: #3d1f19;

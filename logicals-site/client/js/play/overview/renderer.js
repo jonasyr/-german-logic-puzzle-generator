@@ -134,6 +134,8 @@ const COLOR_TOKENS = {
     yesFill: '--grid-yes-fill',
     no: '--grid-no',
     maybe: '--grid-maybe',
+    conflict: '--grid-conflict',
+    conflictFill: '--grid-conflict-fill',
     noFill: '--grid-no-fill',
     wrong: '--grid-wrong',
     wrongFill: '--grid-wrong-fill',
@@ -146,7 +148,7 @@ const COLOR_TOKENS = {
 const FALLBACK = {
     gutter: '#FBFAF7', rule: '#D9D4CA', blockRule: '#8A8378', surface: '#FFFFFF',
     cellLine: '#E2DED6', yes: '#1B7A4B', yesFill: '#E3F1EA', no: '#8A8378',
-    noFill: '#F2F1EE', maybe: '#9AA0AB', wrong: '#C0392B', wrongFill: '#FBE9E7', text: '#172033',
+    noFill: '#F2F1EE', maybe: '#9AA0AB', conflict: '#B8860B', conflictFill: '#FDF3D6', wrong: '#C0392B', wrongFill: '#FBE9E7', text: '#172033',
     accent: '#C6492D', teal: '#227C78', crosshair: 'rgba(34,124,120,.13)',
 };
 
@@ -196,7 +198,7 @@ export function render(ctx, options) {
     drawHeaders(ctx, options);
 }
 
-function drawCells(ctx, { layout, view, marks, wrong, cssWidth, cssHeight, dpr, gutters, colors }) {
+function drawCells(ctx, { layout, view, marks, wrong, conflicts, cssWidth, cssHeight, dpr, gutters, colors }) {
     const size = CELL * view.scale;
     const glyphs = size >= GLYPH_MIN_CELL_PX;
     ctx.lineWidth = Math.max(0.5, Math.min(1, size / 34));
@@ -210,8 +212,13 @@ function drawCells(ctx, { layout, view, marks, wrong, cssWidth, cssHeight, dpr, 
 
         const mark = marks.get(cell.key);
         const isWrong = wrong.has(cell.key);
+        // `wrong` wins where both apply: red says "this contradicts the
+        // solution", which is the stronger statement than "these contradict
+        // each other".
+        const isConflict = !isWrong && conflicts.has(cell.key);
 
         ctx.fillStyle = isWrong ? colors.wrongFill
+            : isConflict ? colors.conflictFill
             : mark === 'yes' ? colors.yesFill
             : mark === 'no' ? colors.noFill
             : colors.surface;
@@ -221,6 +228,7 @@ function drawCells(ctx, { layout, view, marks, wrong, cssWidth, cssHeight, dpr, 
 
         if (!mark) continue;
         ctx.fillStyle = isWrong ? colors.wrong
+            : isConflict ? colors.conflict
             : mark === 'yes' ? colors.yes
             : mark === 'maybe' ? colors.maybe
             : colors.no;

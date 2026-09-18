@@ -422,18 +422,52 @@ test('a pinch that straddles the grid and its surroundings cannot zoom the page'
   expect(prevented.filter(entry => !entry.prevented)).toEqual([]);
 });
 
-test('the clue sheet keeps native zoom, so its text can still be magnified', async ({ page }) => {
+test('nothing on the play screen can pinch-zoom the page, clue sheet included', async ({ page }) => {
   test.setTimeout(120_000);
   await openPuzzle(page, 375, 812);
 
-  // Suppressing zoom across the whole document would trade WCAG 1.4.4 away for
-  // a grid that has its own zoom anyway. The text-heavy part keeps it.
+  // Accidentally zooming the page mid-puzzle happens constantly and cannot be
+  // undone without interrupting play, so the whole screen refuses it - the clue
+  // sheet too. The grid keeps its own zoom, which is the one that belongs here.
   const prevented = await page.evaluate(() => {
-    const event = new Event('gesturestart', { bubbles: true, cancelable: true });
-    document.getElementById('play-clue-list')!.dispatchEvent(event);
-    return event.defaultPrevented;
+    const targets = [
+      document.getElementById('clues-sheet')!,
+      document.getElementById('play-clue-list')!,
+      document.getElementById('sheet-body')!,
+    ];
+    return targets.map(target => {
+      const event = new Event('gesturestart', { bubbles: true, cancelable: true });
+      target.dispatchEvent(event);
+      target.dispatchEvent(new Event('gestureend', { bubbles: true, cancelable: true }));
+      return event.defaultPrevented;
+    });
   });
-  expect(prevented).toBe(false);
+  expect(prevented).toEqual([true, true, true]);
+
+  // And the declarative half: no element under the play screen resolves to a
+  // touch-action that still permits pinch-zoom.
+  const permits = await page.evaluate(() => {
+    const allows = (value: string) => value === 'auto' || value.includes('pinch-zoom')
+      || value === 'manipulation';
+    const bad: string[] = [];
+    for (const probe of [
+      document.getElementById('screen-play')!,
+      document.getElementById('play-goal')!,
+      document.getElementById('clues-sheet')!,
+      document.getElementById('play-clue-list')!,
+    ]) {
+      let node: Element | null = probe;
+      let blocked = false;
+      while (node) {
+        const value = getComputedStyle(node).touchAction;
+        if (!allows(value)) { blocked = true; break; }
+        node = node.parentElement;
+      }
+      if (!blocked) bad.push(probe.id || probe.tagName.toLowerCase());
+    }
+    return bad;
+  });
+  expect(permits).toEqual([]);
 });
 
 test('a release that never reaches the canvas cannot leave a ghost finger', async ({ page }) => {

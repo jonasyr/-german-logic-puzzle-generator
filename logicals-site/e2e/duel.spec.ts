@@ -123,8 +123,11 @@ test('two devices load the same runtime puzzle and enter play from one start ins
   const hostCell = host.locator('.overview-mirror__cell').first();
   const hostKey = await hostCell.getAttribute('data-key');
   const box = (await hostCell.boundingBox())!;
+  // The cross tool is armed on open, so the tap marks. Pressing #overview-mark-no
+  // here would DISARM it and leave every later tap inert - which is exactly what
+  // an earlier version of this test did, silently.
+  await expect(host.locator('#overview-mark-no')).toHaveAttribute('aria-pressed', 'true');
   await host.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-  await host.locator('#overview-mark-no').click();
   await expect(host.locator(`.overview-mirror__cell[data-key="${hostKey}"]`))
     .toHaveAttribute('aria-label', /ausgeschlossen/);
   await expect(guest.locator(`.overview-mirror__cell[data-key="${hostKey}"]`))
@@ -134,14 +137,45 @@ test('two devices load the same runtime puzzle and enter play from one start ins
     .toHaveAttribute('aria-label', /leer/);
 
   // Progress crosses as a COUNT and nothing else.
+  //
+  // Asserted as an exact number, not as the phrase: an earlier version of this
+  // checked only for 'Felder gesetzt', which a permanently-zero count satisfies
+  // too - and the count WAS permanently zero, because nothing was feeding the
+  // reporter. A test that a broken feature passes is worse than no test.
   const hostCells = host.locator('.overview-mirror__cell');
   for (const index of [0, 1, 2]) {
     const cellBox = (await hostCells.nth(index).boundingBox())!;
     await host.mouse.click(cellBox.x + cellBox.width / 2, cellBox.y + cellBox.height / 2);
   }
-  await expect(guest.locator('#duel-progress')).toContainText('Felder gesetzt', { timeout: 25_000 });
+  await expect(guest.locator('#duel-progress')).toHaveText('Gegner: 3 Felder gesetzt', { timeout: 25_000 });
+
+  // It keeps up as the host carries on.
+  const fourth = (await hostCells.nth(3).boundingBox())!;
+  await host.mouse.click(fourth.x + fourth.width / 2, fourth.y + fourth.height / 2);
+  await expect(guest.locator('#duel-progress')).toHaveText('Gegner: 4 Felder gesetzt', { timeout: 25_000 });
+
   // The guest's own grid is untouched by anything the host did.
   await expect(guest.locator('#play-undo')).toBeDisabled();
+  const guestMarked = await guest.locator('.overview-mirror__cell[aria-selected="true"]').count();
+  expect(guestMarked).toBe(0);
+
+  // And the host is told nothing about the guest, who has marked nothing.
+  await expect(host.locator('#duel-progress')).toHaveText('Gegner: 0 Felder gesetzt', { timeout: 25_000 });
+
+  // A duel is played on the same screen, so it refuses page zoom the same way.
+  for (const page of [host, guest]) {
+    const prevented = await page.evaluate(() => {
+      const event = new Event('gesturestart', { bubbles: true, cancelable: true });
+      document.getElementById('play-goal')!.dispatchEvent(event);
+      document.getElementById('play-goal')!.dispatchEvent(
+        new Event('gestureend', { bubbles: true, cancelable: true }),
+      );
+      const screen = getComputedStyle(document.getElementById('screen-play')!).touchAction;
+      return { prevented: event.defaultPrevented, screen };
+    });
+    expect(prevented.prevented).toBe(true);
+    expect(prevented.screen).not.toContain('pinch-zoom');
+  }
 
   const solve = async (page: Page) => {
     await page.locator('#play-solution-button').evaluate((button: HTMLButtonElement) => button.click());

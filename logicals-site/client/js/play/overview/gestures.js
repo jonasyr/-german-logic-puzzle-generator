@@ -245,10 +245,10 @@ export function bindGestures(element, { onTap, onPan, onPinchStart, onPinch }) {
  *
  * @param {Document|Element} root
  * @param {{ exempt?: string, enabled?: () => boolean }} options
- *   `exempt` is a selector whose subtree keeps native zoom - the clue sheet, so
- *   the one text-heavy part of the screen can still be magnified and WCAG 1.4.4
- *   is not traded away wholesale. `enabled` gates the whole thing, so leaving
- *   the play screen restores normal behaviour everywhere.
+ *   `enabled` gates the whole thing, so leaving the play screen restores normal
+ *   behaviour everywhere else in the app. `exempt` is a selector whose subtree
+ *   keeps native zoom; the play screen passes none, because a pinch there means
+ *   the grid and never the page.
  */
 export function suppressNativeZoom(root, { exempt, enabled } = {}) {
     // gestureend is documented to fire twice, so the latch keeps it idempotent.

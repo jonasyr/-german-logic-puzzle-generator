@@ -9,7 +9,25 @@
  * The switch is driven by CSS only; JS just keeps both views' marks painted.
  */
 
-.screen--play.is-active { display: flex; flex-direction: column; min-height: 0; }
+/*
+ * No page zoom at all while playing - solo or duel.
+ *
+ * `pan-x pan-y` is `manipulation` minus pinch-zoom: scrolling and tapping still
+ * work everywhere inside, the double-tap recogniser is gone, and a pinch can no
+ * longer scale the page. touch-action is intersected from the touched element up
+ * through its ancestors, so putting it on the screen covers everything in it.
+ *
+ * The grid keeps its own zoom, which is the one that belongs to this screen. The
+ * trade is real - browser text zoom is unavailable here - and it is deliberate:
+ * accidentally zooming the page mid-puzzle happens constantly and there is no
+ * way to undo it that does not interrupt play.
+ */
+.screen--play.is-active {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    touch-action: pan-x pan-y;
+}
 
 /* --- Sticky header + toolbar ---------------------------------------------- */
 

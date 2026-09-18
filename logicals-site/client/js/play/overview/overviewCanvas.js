@@ -41,6 +41,7 @@ export function createOverviewCanvas({
     const layout = createLayout(puzzle, cellKey);
     const marks = new Map();
     const wrong = new Set();
+    let conflicts = new Set();
     const context = canvas.getContext('2d');
     const minimapContext = minimap?.getContext('2d') ?? null;
     const byKey = new Map();
@@ -83,7 +84,7 @@ export function createOverviewCanvas({
             frame = 0;
             if (!cssWidth || !cssHeight) return;
             render(context, {
-                layout, view, puzzle, marks, wrong, selected,
+                layout, view, puzzle, marks, wrong, conflicts, selected,
                 cssWidth, cssHeight, dpr, gutters, colors,
             });
             if (minimapContext) {
@@ -200,7 +201,6 @@ export function createOverviewCanvas({
     // document, gated on the play screen being the active one, and exempting the
     // clue sheet so its text can still be magnified.
     const releaseNativeZoom = suppressNativeZoom(document, {
-        exempt: '#clues-sheet',
         enabled: () => document.getElementById('screen-play')?.classList.contains('is-active'),
     });
 
@@ -249,6 +249,8 @@ export function createOverviewCanvas({
         selectKey(key) {
             setSelected(byKey.get(key) ?? null);
         },
+        /** Recomputed by the controller after every change; 250 cells is nothing. */
+        setConflicts(next) { conflicts = next; schedule(); },
         paint(key, mark, isWrong) {
             if (mark) marks.set(key, mark); else marks.delete(key);
             if (isWrong) wrong.add(key); else wrong.delete(key);

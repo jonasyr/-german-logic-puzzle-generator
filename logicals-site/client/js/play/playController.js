@@ -24,7 +24,7 @@ import {
     resetForNewAttempt,
 } from './playState.js';
 
-const { cellKey, buildTruthSet, evaluate } = window.PlayLogic;
+const { cellKey, buildTruthSet, evaluate, findContradictions } = window.PlayLogic;
 
 const state = createPlayState();
 /** key -> the pager button representing it. */
@@ -41,6 +41,8 @@ let puzzleFingerprint = null;
 let tool = null;
 /** Duel only: reports this player's count and polls for the opponent's. */
 let progress = null;
+/** Recomputed after every change; 250 cells is nothing to scan. */
+let conflicts = new Set();
 
 /* --- Painting ------------------------------------------------------------- */
 
@@ -81,14 +83,27 @@ function derivesCrosses() {
 /** Shared tail of every mark change, however it was made. */
 function afterMarkChange(changed) {
     if (!changed.length) return;
+    refreshConflicts();
     clearWrongMarks();
     changed.forEach(paintCell);
     renderPairProgress();
     renderUndo();
     persist();
+    // The opponent sees a count, never which cells.
+    progress?.report(state.marks.size);
 
     if (evaluate(state.marks, state.truth).solved) handleSolved();
-    else setStatus('');
+    // Not a spoiler, so it needs no gate: it reports only that the player's own
+    // marks disagree with each other, never which one is wrong.
+    else if (conflicts.size > 0) {
+        const count = conflicts.size;
+        setStatus(`${count} ${count === 1 ? 'Markierung widerspricht' : 'Markierungen widersprechen'} sich.`);
+    } else setStatus('');
+}
+
+function refreshConflicts() {
+    conflicts = findContradictions(state.marks, state.puzzle.categories.length, valueCount());
+    for (const view of views) view.setConflicts(conflicts);
 }
 
 function clearWrongMarks() {
@@ -299,16 +314,21 @@ function onUndo() {
     if (paused || state.solved) return;
     const changed = undoMark(state);
     if (!changed.length) return;
+    refreshConflicts();
     clearWrongMarks();
     changed.forEach(paintCell);
     renderPairProgress();
     renderUndo();
     setStatus('');
     persist();
+    progress?.report(state.marks.size);
 }
 
 function onClear() {
     clearMarks(state);
+    conflicts = new Set();
+    for (const view of views) view.setConflicts(conflicts);
+    progress?.report(0);
     paintAll();
     renderPairProgress();
     renderUndo();
@@ -388,6 +408,7 @@ export function openPlay(puzzle, context) {
     state.failedChecks = 0;
     state.resultQueued = false;
     state.truth = buildTruthSet(puzzle);
+    conflicts = new Set();
     // Asynchronous, and only the resume record needs it, so the game does not
     // wait for it. Until it lands, rememberForResume simply skips.
     puzzleFingerprint = null;
