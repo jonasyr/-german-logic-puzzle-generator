@@ -506,6 +506,66 @@ test('a release that never reaches the canvas cannot leave a ghost finger', asyn
   expect(await scaleNow()).toBeCloseTo(before, 3);
 });
 
+test('a zoom survives the status line appearing and disappearing', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+
+  // Zoom in, the way a player would before working on one block.
+  await page.evaluate(() => {
+    const viewport = document.getElementById('overview-viewport')!;
+    const rect = viewport.getBoundingClientRect();
+    const send = (type: string, id: number, x: number, y: number) => viewport.dispatchEvent(
+      new PointerEvent(type, {
+        pointerId: id, isPrimary: id === 1, bubbles: true, pointerType: 'touch',
+        clientX: rect.left + x, clientY: rect.top + y,
+      }),
+    );
+    send('pointerdown', 1, 150, 300);
+    send('pointerdown', 2, 210, 300);
+    send('pointermove', 2, 330, 300);
+    send('pointerup', 2, 330, 300);
+    send('pointerup', 1, 150, 300);
+  });
+  await page.waitForTimeout(250);
+  const zoomed = await cellPx(page);
+  expect(zoomed).toBeGreaterThan(20);
+
+  // Mark something, then check: the status line appears, and the stage reflows
+  // by a line. That used to refit the grid and throw the zoom away.
+  const gut = await gutters(page);
+  const grid = (await page.locator('#overview-viewport').boundingBox())!;
+  await page.mouse.click(
+    grid.x + gut.left + (grid.width - gut.left) * 0.4,
+    grid.y + gut.top + (grid.height - gut.top) * 0.4,
+  );
+  await page.locator('#play-check').click();
+  await page.locator('#confirm-ok').click();
+  await expect(page.locator('#play-status')).not.toBeEmpty();
+  await page.waitForTimeout(300);
+  expect(await cellPx(page)).toBeCloseTo(zoomed, 1);
+
+  // And when the next mark clears the status line again.
+  await page.mouse.click(
+    grid.x + gut.left + (grid.width - gut.left) * 0.5,
+    grid.y + gut.top + (grid.height - gut.top) * 0.5,
+  );
+  await page.waitForTimeout(300);
+  expect(await cellPx(page)).toBeCloseTo(zoomed, 1);
+});
+
+test('a view left at fit scale still re-fits when the screen turns', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+  const before = await cellPx(page);
+
+  await page.setViewportSize({ width: 812, height: 375 });
+  await page.waitForTimeout(400);
+  // Untouched, so rotating should re-fill the screen rather than preserve a
+  // scale that no longer suits it.
+  expect(await cellPx(page)).not.toBeCloseTo(before, 1);
+  expect(await cellPx(page)).toBeGreaterThanOrEqual(12.5);
+});
+
 test.describe('dark mode', () => {
   test.use({ colorScheme: 'dark' });
 

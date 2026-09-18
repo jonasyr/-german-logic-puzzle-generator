@@ -217,17 +217,47 @@ export function createOverviewCanvas({
         refitFrame = requestAnimationFrame(() => {
             refitFrame = 0;
             const rect = surface.getBoundingClientRect();
-            // Only refit when the box genuinely changed size. Safari fires
-            // visualViewport resize for page pinch-zoom too, and the layout box
-            // does not move for that - refitting anyway threw the player's own
-            // zoom away mid-gesture and made the grid feel unresponsive.
+            // Only react when the box genuinely changed size. Safari fires
+            // visualViewport resize for page pinch-zoom too, where the layout box
+            // does not move.
             if (Math.abs(rect.width - cssWidth) < 0.5 && Math.abs(rect.height - cssHeight) < 0.5) {
                 return;
             }
-            const previous = selected;
-            fitWhole();
-            // Rotation and toolbar collapse must not lose the player's place.
-            if (previous) setSelected(previous);
+
+            /*
+             * Keep the player where they were.
+             *
+             * The grid resizes for reasons that have nothing to do with the
+             * player: the status line appears after Pruefen and disappears on the
+             * next mark, and each time the stage reflows by a line. Refitting on
+             * every one of those threw away whatever they had zoomed to, which
+             * made the view feel like it kept snapping back on its own.
+             *
+             * A view still at fit scale is re-fitted, because that is what the
+             * player is looking at and a rotation should re-fill the screen. A
+             * zoomed view keeps its scale and stays centred on the same part of
+             * the puzzle.
+             */
+            const wasFitted = cssWidth > 0
+                && Math.abs(view.scale - fitView(bounds()).scale) < 0.01;
+            const centre = cssWidth > 0
+                ? screenToWorld(view, (gutters.left + cssWidth) / 2, (gutters.top + cssHeight) / 2)
+                : null;
+
+            measure();
+
+            if (!centre || wasFitted) {
+                applyView(fitView(bounds()));
+            } else {
+                const x = (gutters.left + cssWidth) / 2;
+                const y = (gutters.top + cssHeight) / 2;
+                applyView({
+                    scale: view.scale,
+                    tx: x - centre.x * view.scale,
+                    ty: y - centre.y * view.scale,
+                });
+            }
+            if (selected) setSelected(selected);
         });
     };
 
