@@ -24,7 +24,7 @@ import { CELL, MIN_CELL_PX, createLayout, hitTest } from './geometry.js';
 import {
     MAX_SCALE, fitView, zoomTo, panBy, clampView, minScaleFor, screenToWorld,
 } from './viewport.js';
-import { bindGestures, suppressNativeZoom } from './gestures.js';
+import { bindGestures, suppressDoubleTapZoom, suppressNativeZoom } from './gestures.js';
 import { render, renderMinimap, resizeCanvas, computeGutters, readPalette } from './renderer.js';
 import { createMirror } from './a11yMirror.js';
 import { nextMark } from '../markTool.js';
@@ -200,6 +200,14 @@ export function createOverviewCanvas({
     // the canvas's listener, so Safari zoomed the page instead. Bound to the
     // document, gated on the play screen being the active one, and exempting the
     // clue sheet so its text can still be magnified.
+    // A third guard, across the whole play screen rather than just the board:
+    // rapid repeated tapping still nudged the page zoom on iOS even with
+    // touch-action and the gesture events both in place, and it does not come
+    // back by itself.
+    const releaseDoubleTap = suppressDoubleTapZoom(
+        document.getElementById('screen-play') ?? surface,
+    );
+
     const releaseNativeZoom = suppressNativeZoom(document, {
         enabled: () => document.getElementById('screen-play')?.classList.contains('is-active'),
     });
@@ -297,6 +305,7 @@ export function createOverviewCanvas({
             window.visualViewport?.removeEventListener('resize', refit);
             scheme.removeEventListener('change', onScheme);
             releaseGestures();
+            releaseDoubleTap();
             releaseNativeZoom();
             mirror.destroy();
             cancelAnimationFrame(frame);

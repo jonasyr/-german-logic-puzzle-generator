@@ -566,6 +566,58 @@ test('a view left at fit scale still re-fits when the screen turns', async ({ pa
   expect(await cellPx(page)).toBeGreaterThanOrEqual(12.5);
 });
 
+test('rapid tapping cannot be read as a double tap, anywhere on the screen', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+
+  const results = await page.evaluate(() => {
+    const fire = (target: Element) => {
+      const event = new Event('touchend', { bubbles: true, cancelable: true });
+      target.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+    const pairAt = (target: Element) => {
+      // Separate the pairs in time so one probe does not poison the next.
+      const start = performance.now();
+      while (performance.now() - start < 450) { /* wait out the window */ }
+      return { first: fire(target), second: fire(target) };
+    };
+    return {
+      board: pairAt(document.getElementById('overview-viewport')!),
+      goal: pairAt(document.getElementById('play-goal')!),
+      readout: pairAt(document.getElementById('overview-readout')!),
+      // A tool button needs its synthetic click, and already denies a double-tap
+      // zoom through touch-action: manipulation.
+      tool: pairAt(document.getElementById('overview-mark-no')!),
+    };
+  });
+
+  for (const where of ['board', 'goal', 'readout'] as const) {
+    expect(results[where].first, where).toBe(false);    // a normal tap goes through
+    expect(results[where].second, where).toBe(true);    // the pair is refused
+  }
+  expect(results.tool.second).toBe(false);              // clicks must survive
+});
+
+test('a slow second tap is still a normal tap', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+
+  const prevented = await page.evaluate(async () => {
+    const viewport = document.getElementById('overview-viewport')!;
+    const fire = () => {
+      const event = new Event('touchend', { bubbles: true, cancelable: true });
+      viewport.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+    fire();
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return fire();
+  });
+  // Half a second apart is deliberate tapping, not a double tap.
+  expect(prevented).toBe(false);
+});
+
 test.describe('dark mode', () => {
   test.use({ colorScheme: 'dark' });
 

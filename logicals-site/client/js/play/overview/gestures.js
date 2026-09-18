@@ -282,3 +282,41 @@ export function suppressNativeZoom(root, { exempt, enabled } = {}) {
         root.removeEventListener('gestureend', onEnd);
     };
 }
+
+/**
+ * Kills a double tap before the browser can read one.
+ *
+ * `touch-action: pan-x pan-y` on the play screen and the cancelled gesture
+ * events between them are supposed to be enough. They are not: rapid repeated
+ * tapping still nudges the page zoom on iOS, and once nudged it does not come
+ * back on its own, which is what makes it infuriating rather than merely odd.
+ *
+ * So the screen also refuses the second `touchend` of any pair that lands within
+ * `DOUBLE_TAP_MS`. That is the oldest and bluntest of the three, and it works
+ * even where the other two are disregarded.
+ *
+ * preventDefault on touchend suppresses the synthetic click that follows, so
+ * anything that needs one is left alone - the tool buttons, the clue list, the
+ * sheet header. Those carry `touch-action: manipulation` of their own, which
+ * already denies them a double-tap zoom. What is left is the inert space
+ * between them, which is where a stray double tap actually lands.
+ */
+const DOUBLE_TAP_MS = 400;
+const NEEDS_CLICK = 'button, a, input, select, textarea, label, summary, [role="button"], dialog';
+
+export function suppressDoubleTapZoom(element) {
+    let previous = 0;
+
+    const onTouchEnd = event => {
+        const now = event.timeStamp || Date.now();
+        const close = now - previous < DOUBLE_TAP_MS;
+        previous = now;
+        if (!close || event.cancelable === false) return;
+        const target = event.target;
+        if (target instanceof Element && target.closest(NEEDS_CLICK)) return;
+        event.preventDefault();
+    };
+
+    element.addEventListener('touchend', onTouchEnd, { passive: false });
+    return () => element.removeEventListener('touchend', onTouchEnd);
+}
