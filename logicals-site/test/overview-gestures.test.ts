@@ -4,7 +4,7 @@ import { createGestureState, reduce, MOVE_SLOP } from '../client/js/play/overvie
 type Ev = { type: 'down' | 'move' | 'up' | 'cancel'; id: number; x: number; y: number };
 
 function run(events: Ev[]) {
-  let state = createGestureState();
+  let state: any = createGestureState();
   const actions: any[] = [];
   for (const event of events) {
     const next = reduce(state, event);
@@ -109,6 +109,77 @@ describe('overview gesture arbitration', () => {
     ]);
     const pan = actions.filter(a => a.type === 'pan').pop();
     expect(pan).toEqual({ type: 'pan', dx: 30, dy: 10 });
+  });
+
+  it('ignores a third finger instead of letting it hijack the pinch', () => {
+    // A palm or a resting thumb turns two pointers into three. The pair is
+    // pinned to the two that started the gesture, so the newcomer neither moves
+    // the grid nor changes what the baseline means. Previously the baseline
+    // stayed while the measured pair silently became a different one, and the
+    // ratio then had no relation to any real gesture.
+    const { actions, state } = run([
+      { type: 'down', id: 1, x: 100, y: 200 },
+      { type: 'down', id: 2, x: 200, y: 200 },   // baseline 100
+      { type: 'move', id: 2, x: 300, y: 200 },   // ratio 2
+      { type: 'down', id: 3, x: 600, y: 200 },   // third finger
+      { type: 'move', id: 3, x: 900, y: 200 },   // and it wanders a long way
+    ]);
+    expect(state.pinch.a).toBe(1);
+    expect(state.pinch.b).toBe(2);
+    expect(actions.filter(a => a.type === 'pinchstart')).toHaveLength(1);
+
+    const ratios = actions.filter(a => a.type === 'pinch').map(a => a.scaleFromStart);
+    expect(ratios).toEqual([2]);   // the stray finger produced nothing at all
+  });
+
+  it('hands the pinch to the remaining pair when one of three lifts', () => {
+    const { actions, state } = run([
+      { type: 'down', id: 1, x: 100, y: 200 },
+      { type: 'down', id: 2, x: 200, y: 200 },
+      { type: 'down', id: 3, x: 800, y: 200 },
+      { type: 'up', id: 1, x: 100, y: 200 },     // pair becomes (2,3)
+      { type: 'move', id: 3, x: 810, y: 200 },
+    ]);
+    expect(state.pinch.a).toBe(2);
+    expect(state.pinch.b).toBe(3);
+    // Re-seeded on the handover, so the ratio stays near 1 rather than jumping
+    // to the 6x that the old baseline would have implied.
+    const last = actions.filter(a => a.type === 'pinch').pop();
+    expect(last.scaleFromStart).toBeGreaterThan(0.9);
+    expect(last.scaleFromStart).toBeLessThan(1.1);
+  });
+
+  it('re-seeds when one of the two pinching fingers is replaced', () => {
+    const { actions } = run([
+      { type: 'down', id: 1, x: 100, y: 200 },
+      { type: 'down', id: 2, x: 200, y: 200 },   // baseline 100
+      { type: 'up', id: 1, x: 100, y: 200 },
+      { type: 'down', id: 3, x: 900, y: 200 },   // pair is now (2,3), distance 700
+      { type: 'move', id: 3, x: 910, y: 200 },
+    ]);
+    const last = actions.filter(a => a.type === 'pinch').pop();
+    // Without re-seeding this would read as 7x and hurl the grid across the world.
+    expect(last.scaleFromStart).toBeGreaterThan(0.5);
+    expect(last.scaleFromStart).toBeLessThan(2);
+  });
+
+  it('measures the pair it seeded, not whichever two happen to be first', () => {
+    const { state } = run([
+      { type: 'down', id: 7, x: 100, y: 100 },
+      { type: 'down', id: 9, x: 200, y: 100 },
+    ]);
+    expect(state.pinch.a).toBe(7);
+    expect(state.pinch.b).toBe(9);
+    expect(state.pinch.startDistance).toBeCloseTo(100, 5);
+  });
+
+  it('forgets the pinch once fewer than two fingers remain', () => {
+    const { state } = run([
+      { type: 'down', id: 1, x: 100, y: 200 },
+      { type: 'down', id: 2, x: 200, y: 200 },
+      { type: 'up', id: 2, x: 200, y: 200 },
+    ]);
+    expect(state.pinch).toBeNull();
   });
 
   it('drops the whole gesture on cancel', () => {

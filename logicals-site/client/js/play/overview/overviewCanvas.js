@@ -197,7 +197,7 @@ export function createOverviewCanvas({
         schedule();
     }
 
-    bindGestures(surface, {
+    const releaseGestures = bindGestures(surface, {
         onTap({ x, y }) {
             if (disabled) return;
             // Taps inside the header gutters belong to the labels, not to a
@@ -301,6 +301,7 @@ export function createOverviewCanvas({
             observer.disconnect();
             window.visualViewport?.removeEventListener('resize', refit);
             scheme.removeEventListener('change', onScheme);
+            releaseGestures();
             releaseNativeZoom();
             mirror.destroy();
             cancelAnimationFrame(frame);

@@ -436,6 +436,42 @@ test('the clue sheet keeps native zoom, so its text can still be magnified', asy
   expect(prevented).toBe(false);
 });
 
+test('a release that never reaches the canvas cannot leave a ghost finger', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+
+  const scaleNow = () => cellPx(page);
+  const before = await scaleNow();
+
+  // iOS drops a pointerup often enough to matter. A pointer that is never
+  // released stays in the map; the next finger then pairs with the ghost, the
+  // pinch takes its baseline from a distance that no longer exists, and the grid
+  // leaps to a wild scale. Here the release is delivered to the window only,
+  // which is the wider net the binder listens on.
+  await page.evaluate(() => {
+    const viewport = document.getElementById('overview-viewport')!;
+    const rect = viewport.getBoundingClientRect();
+    const make = (type: string, id: number, x: number, y: number) => new PointerEvent(type, {
+      pointerId: id, isPrimary: id === 1, bubbles: true, pointerType: 'touch',
+      clientX: rect.left + x, clientY: rect.top + y,
+    });
+    viewport.dispatchEvent(make('pointerdown', 1, 120, 260));
+    viewport.dispatchEvent(make('pointerdown', 2, 200, 260));
+    // The canvas never hears about this one.
+    window.dispatchEvent(make('pointerup', 2, 200, 260));
+    window.dispatchEvent(make('pointerup', 1, 120, 260));
+
+    // A fresh single-finger drag must behave as a plain pan.
+    viewport.dispatchEvent(make('pointerdown', 3, 150, 300));
+    viewport.dispatchEvent(make('pointermove', 3, 170, 320));
+    viewport.dispatchEvent(make('pointerup', 3, 170, 320));
+  });
+  await page.waitForTimeout(200);
+
+  // Panning must not have changed the scale at all.
+  expect(await scaleNow()).toBeCloseTo(before, 3);
+});
+
 test.describe('dark mode', () => {
   test.use({ colorScheme: 'dark' });
 

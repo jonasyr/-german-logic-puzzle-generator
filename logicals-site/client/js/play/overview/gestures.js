@@ -22,15 +22,52 @@ export function createGestureState() {
     };
 }
 
-function midpoint(pointers) {
-    const [a, b] = [...pointers.values()];
+/**
+ * The two pointers a pinch is measured between, in the order they arrived.
+ *
+ * Which two matters, and it has to be remembered. Taking "whichever two the map
+ * yields first" silently changed the pair the moment a third finger landed or
+ * one of the two lifted - while the baseline distance stayed - and the ratio
+ * then had no relation to any real gesture. That is what threw the grid to a
+ * wild scale and position.
+ */
+function pinchIds(pointers) {
+    const ids = [...pointers.keys()];
+    return ids.length >= 2 ? [ids[0], ids[1]] : null;
+}
+
+function measurePair(pointers, [a, b]) {
+    const first = pointers.get(a);
+    const second = pointers.get(b);
     return {
-        x: (a.x + b.x) / 2,
-        y: (a.y + b.y) / 2,
+        x: (first.x + second.x) / 2,
+        y: (first.y + second.y) / 2,
         // Floored at 1: two fingers touching each other report a near-zero
         // distance, which makes the ratio explode.
-        distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
+        distance: Math.max(1, Math.hypot(first.x - second.x, first.y - second.y)),
     };
+}
+
+/** A fresh baseline for whichever pair is currently active. */
+function seedPinch(pointers) {
+    const ids = pinchIds(pointers);
+    if (!ids) return null;
+    const measured = measurePair(pointers, ids);
+    return { a: ids[0], b: ids[1], ...measured, startDistance: measured.distance };
+}
+
+const samePair = (pinch, ids) => Boolean(pinch && ids && pinch.a === ids[0] && pinch.b === ids[1]);
+
+/**
+ * Re-seeds whenever the active pair changes, and reports whether it did - the
+ * caller turns that into a `pinchstart`, so the component re-reads the scale the
+ * new gesture is measured from.
+ */
+function reconcilePinch(state, pointers) {
+    const ids = pinchIds(pointers);
+    if (!ids) return { pinch: null, reseeded: false };
+    if (samePair(state.pinch, ids)) return { pinch: state.pinch, reseeded: false };
+    return { pinch: seedPinch(pointers), reseeded: true };
 }
 
 export function reduce(state, event) {
@@ -39,19 +76,16 @@ export function reduce(state, event) {
     if (event.type === 'down') {
         pointers.set(event.id, { x: event.x, y: event.y });
         const multiTouch = state.multiTouch || pointers.size > 1;
-        // The reference distance is captured on the TRANSITION to two pointers,
-        // not on the first pointerdown - a second finger landing late is a
-        // well-known source of a jumping canvas.
-        const started = pointers.size === 2;
-        const centre = started ? midpoint(pointers) : null;
+        // A third finger - a palm, a resting thumb - changes which pair is being
+        // measured, so the baseline has to be taken again.
+        const { pinch, reseeded } = reconcilePinch(state, pointers);
         return {
             state: {
-                ...state, pointers, multiTouch,
-                pinch: started ? { ...centre, startDistance: centre.distance } : state.pinch,
+                ...state, pointers, multiTouch, pinch,
                 moved: state.moved,
                 origin: pointers.size === 1 ? { x: event.x, y: event.y } : state.origin,
             },
-            action: started ? { type: 'pinchstart' } : null,
+            action: reseeded ? { type: 'pinchstart' } : null,
         };
     }
 
@@ -60,21 +94,33 @@ export function reduce(state, event) {
         if (!previous) return { state, action: null };
         pointers.set(event.id, { x: event.x, y: event.y });
 
-        if (pointers.size >= 2 && state.pinch) {
-            const next = midpoint(pointers);
+        if (pointers.size >= 2) {
+            const { pinch, reseeded } = reconcilePinch(state, pointers);
+            if (reseeded) {
+                return {
+                    state: { ...state, pointers, pinch, moved: true },
+                    action: { type: 'pinchstart' },
+                };
+            }
+            // Only a pointer belonging to the measured pair moves the pinch; a
+            // third finger drifting must not drag the grid with it.
+            if (event.id !== pinch.a && event.id !== pinch.b) {
+                return { state: { ...state, pointers, moved: true }, action: null };
+            }
+            const next = measurePair(pointers, [pinch.a, pinch.b]);
             return {
                 state: {
                     ...state, pointers, moved: true,
-                    // startDistance is carried through untouched; only the
-                    // midpoint moves frame to frame.
-                    pinch: { ...next, startDistance: state.pinch.startDistance },
+                    // startDistance and the pair are carried through untouched;
+                    // only the midpoint moves frame to frame.
+                    pinch: { ...pinch, ...next },
                 },
                 action: {
                     type: 'pinch',
                     centerX: next.x, centerY: next.y,
-                    scaleFromStart: next.distance / state.pinch.startDistance,
-                    dx: next.x - state.pinch.x,
-                    dy: next.y - state.pinch.y,
+                    scaleFromStart: next.distance / pinch.startDistance,
+                    dx: next.x - pinch.x,
+                    dy: next.y - pinch.y,
                 },
             };
         }
@@ -94,15 +140,22 @@ export function reduce(state, event) {
     const wasLast = pointers.size === 0;
     const isTap = event.type === 'up' && wasLast && !state.multiTouch && !state.moved;
 
-    // Dropping from two pointers to one re-seeds the survivor: its stored
-    // position is its last real one, so the next pan delta is measured from the
-    // finger rather than from the vanished midpoint. Without this the view jumps
-    // by the midpoint-to-finger offset the moment a finger lifts.
-    const next = wasLast
-        ? createGestureState()
-        : { ...state, pointers, pinch: null, moved: true };
+    if (wasLast) {
+        return {
+            state: createGestureState(),
+            action: isTap ? { type: 'tap', x: event.x, y: event.y } : null,
+        };
+    }
 
-    return { state: next, action: isTap ? { type: 'tap', x: event.x, y: event.y } : null };
+    // Dropping to a single pointer re-seeds the survivor: its stored position is
+    // its last real one, so the next pan delta is measured from the finger
+    // rather than from the vanished midpoint. Dropping from three to two instead
+    // leaves a different PAIR, which needs a fresh baseline.
+    const { pinch, reseeded } = reconcilePinch(state, pointers);
+    return {
+        state: { ...state, pointers, pinch, moved: true },
+        action: reseeded ? { type: 'pinchstart' } : null,
+    };
 }
 
 /**
@@ -114,6 +167,11 @@ export function bindGestures(element, { onTap, onPan, onPinchStart, onPinch }) {
     let state = createGestureState();
 
     const dispatch = (type, event) => {
+        // A release for a pointer we are not tracking is noise - it would delete
+        // nothing and could emit a phantom tap. This matters because releases
+        // are now heard from two places, see below.
+        if (type !== 'down' && !state.pointers.has(event.pointerId)) return;
+
         const rect = element.getBoundingClientRect();
         const result = reduce(state, {
             type, id: event.pointerId,
@@ -142,11 +200,29 @@ export function bindGestures(element, { onTap, onPan, onPinchStart, onPinch }) {
     element.addEventListener('pointerup', onUp);
     element.addEventListener('pointercancel', onCancel);
 
+    /*
+     * A second, wider net for releases.
+     *
+     * iOS drops a pointerup often enough to matter - WebKit only fixed one such
+     * case in Safari 26.4 - and a pointer that is never released stays in the
+     * map as a ghost. The next finger down then pairs with the ghost, the pinch
+     * takes its baseline from a distance that no longer exists, and the grid
+     * leaps to a wild scale. Hearing releases on the window as well, and
+     * treating a lost capture as a cancel, means a stuck pointer needs BOTH
+     * routes to fail.
+     */
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onCancel);
+    element.addEventListener('lostpointercapture', onCancel);
+
     return () => {
         element.removeEventListener('pointerdown', onDown);
         element.removeEventListener('pointermove', onMove);
         element.removeEventListener('pointerup', onUp);
         element.removeEventListener('pointercancel', onCancel);
+        element.removeEventListener('lostpointercapture', onCancel);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onCancel);
     };
 }
 
