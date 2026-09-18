@@ -15,14 +15,19 @@
 
     <title>Logicals – Rätsel spielen</title>
 
-    <!-- Home Screen web app -->
-    <link rel="manifest" href="./manifest.webmanifest" />
+    <!-- Home Screen web app.
+         These live in client/public/ and are referenced root-absolute on
+         purpose. As ordinary files beside index.html, Vite hashed them into
+         /assets/ - and a manifest served from /assets/ resolves its own
+         relative start_url to /assets/, which holds JS chunks and no page. The
+         app launched from the Home Screen into a directory listing. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Logicals" />
-    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
-    <link rel="icon" href="./icons/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />
 
     <link rel="stylesheet" href="./styles/tokens.css" />
     <link rel="stylesheet" href="./styles/base.css" />
