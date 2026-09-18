@@ -8,6 +8,8 @@ import { showScreen, onLeave } from '../router.js';
 import { buildPager, categoryPairs } from './matrixView.js';
 import { createOverviewCanvas } from './overview/overviewCanvas.js';
 import { loadPrefs } from './playPrefs.js';
+import { fingerprintPuzzle } from '../generation/canonicalPuzzle.ts';
+import { clearResume, saveResume } from './resumeStore.js';
 import { createCluesSheet } from './cluesSheet.js';
 import { askConfirm, closeConfirm } from '../ui/confirmDialog.js';
 import { createAuthoritativeTimer, createTimer, formatTime } from './playTimer.js';
@@ -31,6 +33,8 @@ let overview = null;
 let paused = false;
 let sheet = null;
 let timer = null;
+/** Computed once per puzzle; the resume record needs it and it is not cheap. */
+let puzzleFingerprint = null;
 
 /* --- Painting ------------------------------------------------------------- */
 
@@ -137,7 +141,36 @@ function renderPairProgress() {
 /* --- Persistence ---------------------------------------------------------- */
 
 function persist() {
-    save(state, timer ? timer.elapsedMs() : 0);
+    const elapsedMs = timer ? timer.elapsedMs() : 0;
+    save(state, elapsedMs);
+    rememberForResume(elapsedMs);
+}
+
+/**
+ * Keeps the resume record in step with the live game.
+ *
+ * Solo only: a duel has its own session store, its own expiry, and a room that
+ * may be gone by the time anyone comes back. And a solved or empty grid is not
+ * something to come back TO, so both clear the record rather than leaving a
+ * button that leads nowhere interesting.
+ */
+function rememberForResume(elapsedMs) {
+    if (state.context?.mode !== 'solo' || !state.context?.player) return;
+    if (state.solved || state.marks.size === 0 || !puzzleFingerprint) {
+        clearResume();
+        return;
+    }
+    saveResume({
+        options: state.context.options,
+        puzzleIndex: state.context.puzzleIndex ?? 0,
+        fingerprint: puzzleFingerprint,
+        storageKey: state.storageKey,
+        playerId: state.context.player.id,
+        title: `${state.puzzle.number}. ${state.puzzle.title}`,
+        savedAt: new Date().toISOString(),
+        elapsedMs,
+        markCount: state.marks.size,
+    });
 }
 
 /* --- Interaction ---------------------------------------------------------- */
@@ -339,6 +372,12 @@ export function openPlay(puzzle, context) {
     state.failedChecks = 0;
     state.resultQueued = false;
     state.truth = buildTruthSet(puzzle);
+    // Asynchronous, and only the resume record needs it, so the game does not
+    // wait for it. Until it lands, rememberForResume simply skips.
+    puzzleFingerprint = null;
+    fingerprintPuzzle(puzzle)
+        .then(value => { puzzleFingerprint = value; })
+        .catch(() => { puzzleFingerprint = null; });
     paused = false;
 
     timer?.stop();
