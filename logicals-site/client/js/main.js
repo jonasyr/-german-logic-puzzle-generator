@@ -14,6 +14,10 @@ import { initPlay, openPlay } from './play/playController.js';
 import { createDuelForPuzzle, initDuelController, openRoomFromUrl } from './duel/lobbyController.js';
 import { initDuelResultController } from './duel/duelResultController.js';
 import { clearResume, loadResume } from './play/resumeStore.js';
+import {
+    berlinDate, dailyDifficulty, dailyOptions, dailySeed, dailyStreak, isDailyResult,
+} from './play/dailyPuzzle.js';
+import { listPlayerResults } from './players/playerApi.js';
 import { fingerprintPuzzle } from './generation/canonicalPuzzle.ts';
 
 const state = { options: null, booklet: null, limits: null, pdfAvailable: false };
@@ -65,7 +69,87 @@ function describeResume(record) {
     return `${record.title} · ${clock} · ${marks}`;
 }
 
-function refreshResumeButton() {
+const WEEKDAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+
+function describeDay(date) {
+    // Noon UTC, so neither end of a daylight-saving shift can move the weekday.
+    const moment = new Date(`${date}T12:00:00Z`);
+    const month = moment.toLocaleDateString('de-DE', { month: 'long', timeZone: 'UTC' });
+    return `${WEEKDAYS[moment.getUTCDay()]}, ${moment.getUTCDate()}. ${month}`;
+}
+
+function formatClock(milliseconds) {
+    const minutes = Math.floor(milliseconds / 60_000);
+    const seconds = Math.floor((milliseconds % 60_000) / 1000);
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+/**
+ * Opens today's puzzle.
+ *
+ * Generated rather than fetched: the seed is the date, so everybody gets the
+ * same puzzle without anything being stored or an endpoint being added.
+ */
+async function playDaily() {
+    const player = getSelectedPlayer();
+    if (!player) return;
+    const date = berlinDate();
+    const options = dailyOptions(date);
+
+    setBusy('Rätsel des Tages wird erzeugt …');
+    try {
+        const generated = await fetchBooklet(options);
+        const puzzle = generated.booklet.puzzles[0];
+        if (!puzzle) throw new Error('Das Rätsel des Tages konnte nicht erzeugt werden.');
+        setHint('start-hint', '');
+        openPlay(puzzle, { mode: 'solo', player, options, puzzleIndex: 0 });
+    } catch (error) {
+        setHint('start-hint', error.message, true);
+    } finally {
+        clearBusy();
+    }
+}
+
+/**
+ * Says what today holds, and what has already been done with it.
+ *
+ * The history call is best effort. Generating the daily puzzle needs no
+ * network, so a failure to read results must not leave the button unusable -
+ * it simply says less.
+ */
+async function refreshDailyButton() {
+    const button = el('daily-button');
+    const detail = el('daily-detail');
+    const player = getSelectedPlayer();
+    button.disabled = !player;
+    if (!player) { detail.hidden = true; return; }
+
+    const date = berlinDate();
+    detail.hidden = false;
+    button.textContent = 'Rätsel des Tages';
+    detail.textContent = `${describeDay(date)} · ${dailyDifficulty(date)}`;
+
+    // 100 explicitly: the client default is 50, and a streak must be able to
+    // reach further back than that. The Worker answers 400 above 100 rather
+    // than clamping, so 100 is both the maximum and the ceiling.
+    let results = [];
+    try { results = await listPlayerResults(player.id, 100); } catch { return; }
+
+    const seed = dailySeed(date);
+    const solved = results.find(result => isDailyResult(result) && result.seed === seed);
+    const streak = dailyStreak(results, date);
+    const series = streak > 0 ? ` · Serie: ${streak} ${streak === 1 ? 'Tag' : 'Tage'}` : '';
+
+    if (!solved) {
+        detail.textContent += series;
+        return;
+    }
+    // There is no other puzzle "nochmal" could mean: the seed is the day's.
+    button.textContent = 'Nochmal spielen';
+    detail.textContent = `Heute gelöst · ${formatClock(solved.elapsedMs)}${series}`;
+}
+
+function refreshStartScreen() {
     const button = el('resume-button');
     const player = getSelectedPlayer();
     const record = player ? loadResume(player.id) : null;
@@ -74,11 +158,19 @@ function refreshResumeButton() {
     detail.hidden = !record;
     if (record) detail.textContent = describeResume(record);
 
-    // Two primary buttons stacked compete with each other. When there is a game
-    // to go back to, that is the main action and starting a new one steps down.
+    el('stats-button').disabled = !player;
+
+    // Stacked primary buttons compete with each other, so exactly one is primary.
+    // An interrupted puzzle is a stronger claim on attention than a fresh one,
+    // and both outrank starting a new one from scratch.
+    const daily = el('daily-button');
+    daily.classList.toggle('btn--primary', !record);
+    daily.classList.toggle('btn--on-dark', Boolean(record));
     const start = el('start-button');
-    start.classList.toggle('btn--primary', !record);
-    start.classList.toggle('btn--on-dark', Boolean(record));
+    start.classList.remove('btn--primary');
+    start.classList.add('btn--on-dark');
+
+    refreshDailyButton().catch(() => { /* best effort; see above */ });
 }
 
 /**
@@ -93,7 +185,7 @@ function refreshResumeButton() {
 async function resumeSavedGame() {
     const player = getSelectedPlayer();
     const record = player ? loadResume(player.id) : null;
-    if (!record) { refreshResumeButton(); return; }
+    if (!record) { refreshStartScreen(); return; }
 
     setBusy('Gespeichertes Rätsel wird wiederhergestellt …');
     try {
@@ -113,7 +205,7 @@ async function resumeSavedGame() {
     } catch (error) {
         // A button that leads nowhere is worse than no button.
         clearResume();
-        refreshResumeButton();
+        refreshStartScreen();
         setHint('start-hint', error.message, true);
     } finally {
         clearBusy();
@@ -129,10 +221,11 @@ function wire() {
         showScreen('screen-config');
     });
     el('resume-button').addEventListener('click', resumeSavedGame);
+    el('daily-button').addEventListener('click', playDaily);
 
     // Coming back from a game is exactly when the offer changes: it appears
     // after the first mark, and disappears once the puzzle is solved.
-    onLeave(from => { if (from === 'screen-play') refreshResumeButton(); });
+    onLeave(from => { if (from === 'screen-play') refreshStartScreen(); });
 
     el('field-categoryCount').addEventListener('change', updateTargetOptions);
     el('field-palette').addEventListener('change', event => applyPalette(event.target.value));
@@ -157,6 +250,6 @@ wire();
 initResultOutbox();
 initPlayerController().then(() => {
     openRoomFromUrl();
-    refreshResumeButton();
+    refreshStartScreen();
 });
 loadOptions(state).catch(error => setHint('config-hint', error.message, true));
