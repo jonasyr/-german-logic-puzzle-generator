@@ -1,0 +1,487 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "6543a5ee-9419-44e5-b36e-abd4d79bb4ef",
+  "prevId": "8a3a6a3d-cfaf-4ada-b73b-8f25b846b0a0",
+  "tables": {
+    "players": {
+      "name": "players",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "normalized_name": {
+          "name": "normalized_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "players_normalized_name_unique": {
+          "name": "players_normalized_name_unique",
+          "columns": [
+            "normalized_name"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "results": {
+      "name": "results",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "player_id": {
+          "name": "player_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "room_id": {
+          "name": "room_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "attempt_key": {
+          "name": "attempt_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "puzzle_fingerprint": {
+          "name": "puzzle_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "puzzle_title": {
+          "name": "puzzle_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "theme_id": {
+          "name": "theme_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "difficulty": {
+          "name": "difficulty",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "seed": {
+          "name": "seed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "configuration_json": {
+          "name": "configuration_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "elapsed_ms": {
+          "name": "elapsed_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "failed_checks": {
+          "name": "failed_checks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "results_attempt_key_unique": {
+          "name": "results_attempt_key_unique",
+          "columns": [
+            "attempt_key"
+          ],
+          "isUnique": true
+        },
+        "uq_results_room_player": {
+          "name": "uq_results_room_player",
+          "columns": [
+            "room_id",
+            "player_id"
+          ],
+          "isUnique": true
+        },
+        "idx_results_player_completed": {
+          "name": "idx_results_player_completed",
+          "columns": [
+            "player_id",
+            "completed_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "results_player_id_players_id_fk": {
+          "name": "results_player_id_players_id_fk",
+          "tableFrom": "results",
+          "tableTo": "players",
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "results_room_id_rooms_id_fk": {
+          "name": "results_room_id_rooms_id_fk",
+          "tableFrom": "results",
+          "tableTo": "rooms",
+          "columnsFrom": [
+            "room_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "room_members": {
+      "name": "room_members",
+      "columns": {
+        "room_id": {
+          "name": "room_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "player_id": {
+          "name": "player_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "member_token_hash": {
+          "name": "member_token_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "loaded_at": {
+          "name": "loaded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "ready_at": {
+          "name": "ready_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "progress_filled": {
+          "name": "progress_filled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "progress_at": {
+          "name": "progress_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "joined_at": {
+          "name": "joined_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "uq_room_member_role": {
+          "name": "uq_room_member_role",
+          "columns": [
+            "room_id",
+            "role"
+          ],
+          "isUnique": true
+        },
+        "uq_room_member_token_hash": {
+          "name": "uq_room_member_token_hash",
+          "columns": [
+            "member_token_hash"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "room_members_room_id_rooms_id_fk": {
+          "name": "room_members_room_id_rooms_id_fk",
+          "tableFrom": "room_members",
+          "tableTo": "rooms",
+          "columnsFrom": [
+            "room_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "room_members_player_id_players_id_fk": {
+          "name": "room_members_player_id_players_id_fk",
+          "tableFrom": "room_members",
+          "tableTo": "players",
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "room_members_room_id_player_id_pk": {
+          "columns": [
+            "room_id",
+            "player_id"
+          ],
+          "name": "room_members_room_id_player_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "room_members_role_check": {
+          "name": "room_members_role_check",
+          "value": "\"room_members\".\"role\" in ('host', 'guest')"
+        }
+      }
+    },
+    "rooms": {
+      "name": "rooms",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "host_player_id": {
+          "name": "host_player_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "configuration_json": {
+          "name": "configuration_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "booklet_seed": {
+          "name": "booklet_seed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "puzzle_index": {
+          "name": "puzzle_index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "puzzle_fingerprint": {
+          "name": "puzzle_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "puzzle_title": {
+          "name": "puzzle_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "puzzle_theme_id": {
+          "name": "puzzle_theme_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "effective_puzzle_seed": {
+          "name": "effective_puzzle_seed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "rooms_code_unique": {
+          "name": "rooms_code_unique",
+          "columns": [
+            "code"
+          ],
+          "isUnique": true
+        },
+        "idx_rooms_expires_at": {
+          "name": "idx_rooms_expires_at",
+          "columns": [
+            "expires_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "rooms_host_player_id_players_id_fk": {
+          "name": "rooms_host_player_id_players_id_fk",
+          "tableFrom": "rooms",
+          "tableTo": "players",
+          "columnsFrom": [
+            "host_player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "rooms_state_check": {
+          "name": "rooms_state_check",
+          "value": "\"rooms\".\"state\" in ('waiting', 'countdown', 'active', 'complete', 'expired')"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

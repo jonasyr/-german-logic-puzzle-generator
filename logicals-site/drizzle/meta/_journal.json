@@ -8,6 +8,13 @@
       "when": 1789630002843,
       "tag": "0000_logicals_multiplayer",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789696822761,
+      "tag": "0001_duel_progress",
+      "breakpoints": true
     }
   ]
 }

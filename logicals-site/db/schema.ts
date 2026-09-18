@@ -43,6 +43,11 @@ export const roomMembers = sqliteTable('room_members', {
   memberTokenHash: text('member_token_hash').notNull(),
   loadedAt: text('loaded_at'),
   readyAt: text('ready_at'),
+  // Progress is a COUNT and nothing else. Which cells an opponent has filled
+  // would hand over deductions; how many is just tension. Nullable so an older
+  // client, and a room created before this column existed, both keep working.
+  progressFilled: integer('progress_filled'),
+  progressAt: text('progress_at'),
   joinedAt: text('joined_at').notNull(),
 }, table => [
   primaryKey({ columns: [table.roomId, table.playerId] }),
