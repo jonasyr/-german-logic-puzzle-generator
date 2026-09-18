@@ -348,6 +348,49 @@ test('rotation keeps the grid fitted and above the tap floor', async ({ page }) 
   await expect.poll(() => cellPx(page)).toBeGreaterThanOrEqual(12.5);
 });
 
+test('nothing on the play screen accepts a double-tap zoom', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+
+  // touch-action is NOT inherited, so a child reads 'auto' even under a body
+  // that forbids double-tap. What decides the gesture is the INTERSECTION along
+  // the ancestor chain up to the scrolling container, so that is what to check.
+  // Scoped to buttons and cells as it first was, a double tap on a heading or
+  // on the padding between controls still zoomed the page.
+  const offenders = await page.evaluate(() => {
+    const blocksDoubleTap = (value: string) =>
+      value === 'manipulation' || value === 'none'
+      || value.startsWith('pan-') || value === 'pinch-zoom';
+
+    const probes = [
+      document.body,
+      document.getElementById('app')!,
+      document.getElementById('screen-play')!,
+      document.querySelector('.play-bar h2')!,
+      document.getElementById('play-goal')!,
+      document.getElementById('overview-viewport')!,
+      document.querySelector('.overview-mirror__cell')!,
+      document.querySelector('.overview-actions')!,
+      document.getElementById('clues-sheet')!,
+    ].filter(Boolean);
+
+    const bad: string[] = [];
+    for (const probe of probes) {
+      let node: Element | null = probe;
+      let blocked = false;
+      while (node) {
+        if (blocksDoubleTap(getComputedStyle(node).touchAction)) { blocked = true; break; }
+        node = node.parentElement;
+      }
+      if (!blocked) {
+        bad.push(`${probe.tagName.toLowerCase()}${probe.id ? '#' + probe.id : ''}`);
+      }
+    }
+    return bad;
+  });
+  expect(offenders).toEqual([]);
+});
+
 test.describe('dark mode', () => {
   test.use({ colorScheme: 'dark' });
 

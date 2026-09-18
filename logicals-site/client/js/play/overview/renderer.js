@@ -24,29 +24,44 @@ import { worldToScreen } from './viewport.js';
  * where the room is needed most, and in portrait - where width, not height, is
  * the binding constraint - it is also the cheapest room in the layout.
  */
+/*
+ * Caps, not sizes. The gutters are measured from the labels that actually have
+ * to fit; these only stop a pathological label from eating the grid, and stop a
+ * short one from leaving the headers cramped.
+ */
 const GUTTER = {
-    // The row labels read horizontally, so their run is the gutter's WIDTH, and
-    // width is the binding axis on a phone - hence the tighter ratio.
-    left: { min: 62, ratio: 0.21, max: 112 },
-    // The column labels are rotated, so their run is the gutter's DEPTH. At 38px
-    // that left about 26px for words like "Flammkuchen" and everything arrived
-    // as "Fla...". Height is the cheap axis in portrait, so it can afford this.
-    // The 64px floor is set by the longest German compound the generator can
-    // produce ("Flammkuchen") at the smallest label size. Where height is that
-    // tight the grid is panning anyway, so the extra depth costs nothing real.
-    top: { min: 64, ratio: 0.22, max: 124 },
+    left: { min: 62, share: 0.32 },
+    top: { min: 52, share: 0.34 },
 };
 
-function clamp(value, { min, max }) {
-    return Math.round(Math.min(max, Math.max(min, value)));
+/**
+ * Gutters sized from the labels they have to hold.
+ *
+ * Fixed ratios sized the two gutters independently of their contents, so the
+ * row labels and the rotated column labels ended up at different sizes - the
+ * top noticeably smaller, because its ratio happened to give it less room for
+ * longer words. Measuring what each side must actually fit lets both use the
+ * same type size, which is what makes the header read as one thing.
+ */
+export function computeGutters(ctx, layout, puzzle, cssWidth, cssHeight) {
+    ctx.font = `400 ${LABEL_MAX_PX}px system-ui, sans-serif`;
+    const widest = texts => texts.reduce((max, text) => Math.max(max, ctx.measureText(text).width), 0);
+
+    const left = Math.min(
+        Math.max(GUTTER.left.min, widest(rowLabels(layout, puzzle)) + CATEGORY_STRIP + 10),
+        Math.max(GUTTER.left.min, cssWidth * GUTTER.left.share),
+    );
+    const top = Math.min(
+        Math.max(GUTTER.top.min, widest(columnLabels(layout, puzzle)) + 14),
+        Math.max(GUTTER.top.min, cssHeight * GUTTER.top.share),
+    );
+    return { left: Math.round(left), top: Math.round(top) };
 }
 
-export function computeGutters(cssWidth, cssHeight) {
-    return {
-        left: clamp(cssWidth * GUTTER.left.ratio, GUTTER.left),
-        top: clamp(cssHeight * GUTTER.top.ratio, GUTTER.top),
-    };
-}
+const rowLabels = (layout, puzzle) =>
+    layout.rows.flatMap(index => puzzle.categories[index].values);
+const columnLabels = (layout, puzzle) =>
+    layout.columns.flatMap(index => puzzle.categories[index].values);
 
 /** Far-left strip holding the rotated category name, clear of the values. */
 const CATEGORY_STRIP = 13;
@@ -267,11 +282,14 @@ function drawCrosshair(ctx, { layout, view, selected, gutters, colors }) {
 
 function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight, dpr, gutters, colors }) {
     const size = CELL * view.scale;
-    const basePx = labelFontPx(size);
-    const rowTexts = layout.rows.flatMap(index => puzzle.categories[index].values);
-    const colTexts = layout.columns.flatMap(index => puzzle.categories[index].values);
-    const rowPx = fontToFit(ctx, rowTexts, gutters.left - CATEGORY_STRIP - 8, basePx);
-    const colPx = fontToFit(ctx, colTexts, gutters.top - 12, basePx);
+    // ONE size for both sides. Sizing them separately is what made the column
+    // headers visibly smaller than the row headers.
+    const labelPx = fontToFit(
+        ctx,
+        [...rowLabels(layout, puzzle), ...columnLabels(layout, puzzle)],
+        Math.min(gutters.left - CATEGORY_STRIP - 8, gutters.top - 12),
+        labelFontPx(size),
+    );
 
     ctx.fillStyle = colors.gutter;
     ctx.fillRect(0, 0, gutters.left, cssHeight);
@@ -299,7 +317,7 @@ function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight,
             const active = selected?.rowBlock === rowBlock && selected?.rowValue === value;
             ctx.textAlign = 'right';
             ctx.fillStyle = active ? colors.accent : colors.text;
-            ctx.font = `${active ? 700 : 400} ${rowPx}px system-ui, sans-serif`;
+            ctx.font = `${active ? 700 : 400} ${labelPx}px system-ui, sans-serif`;
             // Values keep clear of the category strip on the far left, which is
             // what stopped the two colliding on a narrow gutter.
             ctx.fillText(
@@ -346,7 +364,7 @@ function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight,
             ctx.rotate(-Math.PI / 2);
             ctx.textAlign = 'left';
             ctx.fillStyle = active ? colors.accent : colors.text;
-            ctx.font = `${active ? 700 : 400} ${colPx}px system-ui, sans-serif`;
+            ctx.font = `${active ? 700 : 400} ${labelPx}px system-ui, sans-serif`;
             ctx.fillText(fitText(ctx, category.values[value], gutters.top - 12), 0, 0);
             ctx.restore();
         }

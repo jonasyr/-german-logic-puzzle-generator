@@ -34,9 +34,26 @@ body {
  * user-scalable=no / maximum-scale=1 in the viewport meta: Safari has ignored
  * that since iOS 10 and it is a WCAG 1.4.4 failure. Pinch-zoom keeps working.
  */
+/*
+ * The whole page, not just the controls.
+ *
+ * Scoped to buttons and cells, a double tap on anything else - a heading, the
+ * target question, the padding between them - still zoomed the page, and on a
+ * grid you tap repeatedly that happens constantly. `manipulation` is
+ * `pan-x pan-y pinch-zoom`: it removes only the double-tap recogniser and the
+ * ~300ms delay that comes with it. Pinch-zoom is untouched, so WCAG 1.4.4 is
+ * satisfied. The overview canvas narrows this further to `none` for itself,
+ * because it owns pinch as well.
+ */
+html,
+body {
+    touch-action: manipulation;
+}
+
 button,
 summary,
 [role="button"],
+[role="gridcell"],
 .cell,
 .tappable {
     touch-action: manipulation;

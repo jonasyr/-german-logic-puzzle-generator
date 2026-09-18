@@ -270,7 +270,12 @@
 
         <div class="play-toolbar">
             <button class="btn btn--primary btn--small" type="button" id="play-check">Prüfen</button>
-            <button class="btn btn--ghost btn--small btn--icon" type="button" id="play-undo" disabled aria-label="Letzte Markierung zurücknehmen">↶</button>
+            <button class="btn btn--ghost btn--small btn--icon" type="button" id="play-undo" disabled aria-label="Letzte Markierung zurücknehmen" title="Zurücknehmen">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M4 8h9.5a5.5 5.5 0 0 1 0 11H9" />
+                    <path d="M8 4 4 8l4 4" />
+                </svg>
+            </button>
             <button class="btn btn--ghost btn--small" type="button" id="play-pause">Pause</button>
             <button class="btn btn--ghost btn--small view-toggle" type="button" id="play-view">Gesamt</button>
             <button class="btn btn--ghost btn--small" type="button" id="play-clear">Löschen</button>

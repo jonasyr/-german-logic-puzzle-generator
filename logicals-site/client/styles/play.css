@@ -373,16 +373,22 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 8px 12px;
+    gap: 6px 10px;
 }
-.overview-readout { grid-column: 1; }
-.overview-fit { grid-column: 2; justify-self: end; }
+/* The readout takes the first row on its own - it is the one thing here that
+   can be long. The tools and the fit button share the second. */
+.overview-readout { grid-column: 1 / -1; }
 .overview-marks {
-    grid-column: 1 / -1;
+    /* Row pinned explicitly: with only the column set, auto-placement pushed the
+       fit button onto a third row and the bar grew instead of shrinking. */
+    grid-row: 2;
+    grid-column: 1;
+    justify-self: start;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(var(--tap-min), 86px));
     gap: 6px;
 }
+.overview-fit { grid-row: 2; grid-column: 2; justify-self: end; }
 .overview-readout { min-width: 0; }
 .overview-readout__pair {
     margin: 0; font-size: 15px; font-weight: 600;
@@ -395,8 +401,10 @@
 }
 .overview-mark {
     width: 100%;
-    min-width: 0;
-    min-height: 48px;
+    min-width: var(--tap-min);
+    /* Apple's 44pt floor exactly. They were 108x48 for a single glyph - width
+       the grid can use better, and the extra height bought nothing. */
+    min-height: var(--tap-min);
     border: 1px solid var(--line);
     border-radius: 12px;
     background: var(--surface);
@@ -640,8 +648,14 @@
         align-content: center;
         gap: 10px;
     }
-    .overview-actions .overview-readout,
-    .overview-actions .overview-fit { grid-column: 1; justify-self: stretch; }
+    .overview-actions .overview-readout { grid-row: auto; grid-column: 1; }
+    .overview-actions .overview-fit { grid-row: auto; grid-column: 1; justify-self: stretch; }
+    .overview-actions .overview-marks {
+        grid-row: auto;
+        grid-column: 1;
+        justify-self: stretch;
+        grid-template-columns: repeat(3, minmax(var(--tap-min), 1fr));
+    }
     .overview-minimap { width: 58px; height: 58px; }
     .clues-sheet { height: 92vh; height: 92svh; }
     .sheet-handle { padding: var(--space-1) 0 0; }

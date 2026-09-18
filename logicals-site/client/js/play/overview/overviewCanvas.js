@@ -67,7 +67,7 @@ export function createOverviewCanvas({
     let dpr = 1;
     let frame = 0;
     let pinchBaseScale = 1;
-    let gutters = computeGutters(0, 0);
+    let gutters = { left: 62, top: 52 };
     let colors = null;
     /** Armed tool, or null for inspect-only. Crosses dominate, so start on one. */
     let tool = 'no';
@@ -105,7 +105,7 @@ export function createOverviewCanvas({
         const rect = surface.getBoundingClientRect();
         cssWidth = rect.width;
         cssHeight = rect.height;
-        gutters = computeGutters(cssWidth, cssHeight);
+        gutters = computeGutters(context, layout, puzzle, cssWidth, cssHeight);
         colors = readPalette(surface);
         // Published so the DOM side - the minimap's placement, and the tests -
         // reads the same numbers the canvas draws with instead of guessing.

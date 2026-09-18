@@ -41,6 +41,30 @@
 .btn--small { padding: 0 14px; font-size: 15px; }
 .btn--icon { padding: 0; width: var(--tap-min); }
 
+/*
+ * A drawn icon rather than a text glyph.
+ *
+ * The undo arrow was the character U+21B6, which renders as a hairline at any
+ * weight the font happens to have - barely visible against a dark toolbar, and
+ * not obviously an undo arrow either. An inline SVG carries its own stroke
+ * weight and follows currentColor, so it matches the labelled buttons beside it
+ * in both themes.
+ */
+.icon {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: none;
+}
+.btn--icon .icon { display: block; margin: 0 auto; }
+/* Disabled is already dimmed by opacity; the stroke must not dim twice or the
+   arrow disappears entirely. */
+.btn:disabled .icon { stroke: currentColor; }
+
 /* --- Bars ----------------------------------------------------------------- */
 
 .bar {
