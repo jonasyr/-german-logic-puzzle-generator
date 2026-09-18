@@ -22,7 +22,12 @@ import {
 import { listPlayerResults } from './players/playerApi.js';
 import { fingerprintPuzzle } from './generation/canonicalPuzzle.ts';
 
-const state = { options: null, booklet: null, limits: null, pdfAvailable: false };
+/*
+ * The chosen options, kept so a finished puzzle can be recorded and resumed
+ * with the exact configuration that produced it. The booklet itself is not
+ * kept: exactly one puzzle is generated and it is played immediately.
+ */
+const state = { options: null };
 
 function setBusy(text) {
     el('overlay-text').textContent = text;
@@ -39,7 +44,6 @@ async function generate() {
     try {
         const data = await fetchBooklet(options);
         state.options = options;
-        state.booklet = data.booklet;
         renderBooklet(data.booklet, data.durationMs, {
             onPlay: (puzzle, puzzleIndex) => openPlay(puzzle, {
                 mode: 'solo',
@@ -260,4 +264,4 @@ initPlayerController().then(() => {
     openRoomFromUrl();
     refreshStartScreen();
 });
-loadOptions(state).catch(error => setHint('config-hint', error.message, true));
+loadOptions().catch(error => setHint('config-hint', error.message, true));

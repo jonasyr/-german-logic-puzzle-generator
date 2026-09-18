@@ -1,6 +1,5 @@
 import {
   BOOKLET_LIMITS,
-  DEFAULT_BOOKLET_COLORS,
   STANDARD_THEME_ID,
   generateGermanLogicBooklet,
   listGermanThemes,
@@ -31,9 +30,6 @@ self.addEventListener('message', (event: MessageEvent<WorkerRequest>) => {
             ...listGermanThemes(),
           ],
           limits: BOOKLET_LIMITS,
-          difficulties: ['leicht', 'mittel', 'schwer'],
-          defaultColors: DEFAULT_BOOKLET_COLORS,
-          pdfAvailable: false,
         },
       });
       return;

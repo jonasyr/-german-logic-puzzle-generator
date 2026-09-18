@@ -17,8 +17,3 @@ export async function fetchBooklet(options) {
         throw new Error(error.message || 'Erzeugung fehlgeschlagen.');
     }
 }
-
-export async function fetchPdf(options) {
-    void options;
-    throw new Error('PDF-Export ist in dieser Version noch nicht verfügbar.');
-}

@@ -38,11 +38,9 @@ export function ensureSeed() {
     if (!field.value.trim()) field.value = randomSeed();
 }
 
-export async function loadOptions(state) {
+export async function loadOptions() {
     ensureSeed();
     const data = await fetchOptions();
-    state.limits = data.limits;
-    state.pdfAvailable = data.pdfAvailable;
 
     // A fresh seed each visit, so the first booklet is not the same one everyone
     // else gets. Typing a seed back in still reproduces a specific heft.
