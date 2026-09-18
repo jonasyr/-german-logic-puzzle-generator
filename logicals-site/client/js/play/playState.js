@@ -14,20 +14,12 @@
  * touched, and one justified by two confirmations survives losing either.
  */
 
+import { fnv1a36 } from '../util/hash.js';
+
 const UNDO_LIMIT = 50;
 
 /** `maybe` is the player's own uncertainty; scoring ignores it by construction. */
 export const MARK_SYMBOLS = { yes: '○', no: '×', maybe: '·' };
-
-/** FNV-1a, 32 bit. Short, stable, and enough to tell two clue sets apart. */
-function fingerprint(text) {
-    let hash = 0x811c9dc5;
-    for (let index = 0; index < text.length; index++) {
-        hash ^= text.charCodeAt(index);
-        hash = Math.imul(hash, 0x01000193);
-    }
-    return (hash >>> 0).toString(36);
-}
 
 /**
  * Theme, seed and dimensions alone do not identify a puzzle: regenerating with a
@@ -38,7 +30,7 @@ function fingerprint(text) {
  */
 export function storageKeyFor(puzzle, context = {}) {
     const dimensions = `${puzzle.categories.length}x${puzzle.categories[0].values.length}`;
-    const clues = fingerprint(puzzle.clues.join('\0'));
+    const clues = fnv1a36(puzzle.clues.join('\0'));
     const mode = context.mode || 'solo';
     const player = context.player?.id || 'anonymous';
     const room = context.room?.id || 'none';
