@@ -63,12 +63,17 @@ function paintCell(key) {
         // over from before notes existed, and it made them invisible to anyone
         // using a screen reader even though the symbol was on screen.
         const description = MARK_DESCRIPTIONS[mark] ?? 'leer';
+        const conflicting = conflicts.has(key);
         button.textContent = mark ? MARK_SYMBOLS[mark] : '';
         button.classList.toggle('is-yes', mark === 'yes');
         button.classList.toggle('is-no', mark === 'no');
         button.classList.toggle('is-maybe', mark === 'maybe');
         button.classList.toggle('is-wrong', isWrong);
-        button.setAttribute('aria-label', `${button.dataset.label}: ${description}`);
+        button.classList.toggle('is-conflict', conflicting);
+        // Said as well as shown: the status line reports how many marks
+        // disagree, and there was no way at all to find out which.
+        button.setAttribute('aria-label', `${button.dataset.label}: ${description}`
+            + (conflicting ? ', widersprüchlich' : ''));
     }
 
     for (const view of views) view.paint(key, mark, isWrong);
@@ -94,27 +99,56 @@ function derivesCrosses() {
 /** Shared tail of every mark change, however it was made. */
 function afterMarkChange(changed) {
     if (!changed.length) return;
-    refreshConflicts();
+    applyChange(changed);
+    if (evaluate(state.marks, state.truth).solved) handleSolved();
+    else reportConflicts();
+}
+
+/**
+ * Recomputes the contradictions and says which cells changed their verdict.
+ *
+ * The canvas takes the whole set and repaints itself, but a pager cell is only
+ * repainted when it is one of the cells that just changed - and a contradiction
+ * always implicates cells nobody touched. Without this list the single-pair
+ * view showed the count in the status line and no way to find out which marks
+ * it meant.
+ *
+ * @returns {string[]} keys whose conflict state differs from before
+ */
+function refreshConflicts() {
+    const previous = conflicts;
+    conflicts = findContradictions(state.marks, state.puzzle.categories.length, valueCount());
+    for (const view of views) view.setConflicts(conflicts);
+
+    const flipped = [];
+    for (const key of previous) if (!conflicts.has(key)) flipped.push(key);
+    for (const key of conflicts) if (!previous.has(key)) flipped.push(key);
+    return flipped;
+}
+
+/**
+ * Says how many of the player's own marks disagree, or nothing.
+ *
+ * Not a spoiler, so it needs no gate: it reports only that the marks disagree
+ * with each other, never which one is wrong.
+ */
+function reportConflicts() {
+    const count = conflicts.size;
+    setStatus(count === 0 ? ''
+        : `${count} ${count === 1 ? 'Markierung widerspricht' : 'Markierungen widersprechen'} sich.`);
+}
+
+/** Repaint and bookkeeping shared by every mark change, however it was made. */
+function applyChange(changed) {
+    const flipped = refreshConflicts();
     clearWrongMarks();
-    changed.forEach(paintCell);
+    // A cell can be in both lists; a Set is cheaper than a guard.
+    new Set([...changed, ...flipped]).forEach(paintCell);
     renderPairProgress();
     renderUndo();
     persist();
     // The opponent sees a count, never which cells.
     progress?.report(state.marks.size);
-
-    if (evaluate(state.marks, state.truth).solved) handleSolved();
-    // Not a spoiler, so it needs no gate: it reports only that the player's own
-    // marks disagree with each other, never which one is wrong.
-    else if (conflicts.size > 0) {
-        const count = conflicts.size;
-        setStatus(`${count} ${count === 1 ? 'Markierung widerspricht' : 'Markierungen widersprechen'} sich.`);
-    } else setStatus('');
-}
-
-function refreshConflicts() {
-    conflicts = findContradictions(state.marks, state.puzzle.categories.length, valueCount());
-    for (const view of views) view.setConflicts(conflicts);
 }
 
 function clearWrongMarks() {
@@ -340,14 +374,10 @@ function onUndo() {
     if (paused || state.solved) return;
     const changed = undoMark(state);
     if (!changed.length) return;
-    refreshConflicts();
-    clearWrongMarks();
-    changed.forEach(paintCell);
-    renderPairProgress();
-    renderUndo();
-    setStatus('');
-    persist();
-    progress?.report(state.marks.size);
+    applyChange(changed);
+    // Undoing cannot solve the puzzle, but it can leave a contradiction standing.
+    // Clearing the status unconditionally used to hide one.
+    reportConflicts();
 }
 
 function onClear() {

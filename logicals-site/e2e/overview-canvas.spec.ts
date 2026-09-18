@@ -805,3 +805,59 @@ for (const width of [320, 375, 430]) {
     }
   });
 }
+
+/*
+ * Contradictions have to be visible in the single-pair view too.
+ *
+ * refreshConflicts fed only `views`, which holds the canvas alone, and
+ * afterMarkChange repainted only the cells that changed - but a contradiction
+ * always implicates cells nobody touched. The pager therefore reported "2
+ * Markierungen widersprechen sich" and offered no way to find out which.
+ */
+test('the single-pair view shows which marks contradict each other', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+  await page.locator('#play-view').click();
+  await page.waitForTimeout(300);
+
+  // Two confirmations in one row of the same block cannot both be true.
+  await page.locator('#overview-mark-yes').click();
+  const row = page.locator('.pair-page').first().locator('tbody tr').first();
+  const first = row.locator('.cell').nth(0);
+  const second = row.locator('.cell').nth(1);
+
+  await first.click();
+  await expect(page.locator('#play-status')).toHaveText('');
+
+  await second.click();
+  await expect(page.locator('#play-status')).toContainText('widersprechen sich');
+
+  // Both cells say so, including the one that was not just tapped.
+  await expect(first).toHaveClass(/is-conflict/);
+  await expect(second).toHaveClass(/is-conflict/);
+  expect(await first.getAttribute('aria-label')).toContain('widersprüchlich');
+
+  // The message must not come down on the tools: in the pager the action row
+  // floats up under the grid, while the overlay is placed from the stage foot.
+  const boxes = await page.evaluate(() => {
+    const box = (sel: string) => {
+      const r = document.querySelector(sel)!.getBoundingClientRect();
+      return { top: r.top, bottom: r.bottom };
+    };
+    return { status: box('#play-status'), bar: box('.overview-marks') };
+  });
+  expect(boxes.status.bottom).toBeLessThanOrEqual(boxes.bar.top);
+
+  // A marked cell keeps its colour under the finger. .cell:hover outscores a
+  // single state class, and on iOS that hover sticks after the tap.
+  await second.hover();
+  const fill = await second.evaluate(node => getComputedStyle(node).backgroundColor);
+  const other = await first.evaluate(node => getComputedStyle(node).backgroundColor);
+  expect(fill).toBe(other);
+
+  // Undo takes the contradiction away - and with it the marking on both cells.
+  await page.locator('#play-undo').click();
+  await expect(page.locator('#play-status')).toHaveText('');
+  await expect(first).not.toHaveClass(/is-conflict/);
+  await expect(second).not.toHaveClass(/is-conflict/);
+});

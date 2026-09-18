@@ -379,7 +379,28 @@
 /* A note is a guess, not a claim: visible, but quieter than a confirmation.
    Matches --grid-maybe, which the canvas already draws notes with. */
 .cell.is-maybe { color: var(--grid-maybe); font-weight: 700; }
-.cell.is-wrong {
+/*
+ * The player's own marks disagreeing with each other. Declared before
+ * .is-wrong so a checked error - which is a verdict about the solution, not
+ * about consistency - still wins when a cell is both.
+ *
+ * Same tokens the canvas already draws contradictions with, so the two views
+ * say the same thing in the same colour.
+ */
+.cell.is-conflict,
+.cell.is-conflict:hover:not(:disabled) {
+    background: var(--grid-conflict-fill);
+    border-color: var(--grid-conflict);
+}
+/*
+ * The :hover variants are not decoration. .cell:hover:not(:disabled) outscores
+ * a single state class, so the cell you just tapped lost its colour - and on
+ * iOS that hover sticks until you tap somewhere else, which is exactly when you
+ * are looking at it. This hit the checked-error colour too, long before
+ * contradictions existed.
+ */
+.cell.is-wrong,
+.cell.is-wrong:hover:not(:disabled) {
     background: var(--danger-bg);
     border-color: var(--danger-fg);
     color: var(--danger-fg);
@@ -697,6 +718,31 @@
      */
     .screen--play[data-view="pager"] .overview-actions { grid-template-columns: minmax(0, 1fr); }
     .screen--play[data-view="pager"] .overview-marks { justify-self: center; }
+
+    /*
+     * Both the tools and the status overlay are placed from the foot of the
+     * stage, so neither can land on the other.
+     *
+     * In the overview the viewport grows and pushes the tools down; with it
+     * hidden they floated up under the grid, while the overlay kept measuring
+     * from the foot - and came down on top of them. Pinning the row makes the
+     * two offsets comparable instead of one depending on content height.
+     * (A flex column with margin-top: auto does it in portrait but drops the
+     * row below the fold in landscape, where the pager already overflows.)
+     */
+    .screen--play[data-view="pager"] .overview-actions {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: var(--stage-foot);
+    }
+    .screen--play[data-view="pager"] .play-status {
+        bottom: calc(var(--stage-foot) + var(--tap-min) + var(--space-3));
+    }
+    /* Keeps the grid clear of the pinned row. */
+    .screen--play[data-view="pager"] .play-pager {
+        padding-bottom: calc(var(--tap-min) + var(--space-3));
+    }
 }
 .screen--play[data-view="overview"] .play-pager { display: none; }
 

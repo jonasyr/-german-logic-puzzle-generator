@@ -117,8 +117,24 @@ describe('progress is only ever a count', () => {
   it('is fed from the play controller on every change', () => {
     // This is the one that was missing: the reporter existed, was wired up, and
     // was never told anything - so it published a permanent zero.
+    //
+    // Asserting that every route into a mark change ends in the shared tail,
+    // rather than counting call sites: an earlier version counted three and
+    // broke the moment marking and undo were given one path instead of two,
+    // which changed nothing about whether the opponent sees the count.
     const source = readFileSync('client/js/play/playController.js', 'utf8');
-    const calls = source.match(/progress\?\.report\(/g) ?? [];
-    expect(calls.length).toBeGreaterThanOrEqual(3);   // marks, undo, clear
+
+    const applyChange = source.match(/function applyChange\([\s\S]*?\n}/)?.[0] ?? '';
+    expect(applyChange, 'applyChange must exist').not.toBe('');
+    expect(applyChange).toContain('progress?.report(state.marks.size)');
+
+    for (const caller of ['function afterMarkChange(', 'function onUndo(']) {
+      const body = source.slice(source.indexOf(caller));
+      expect(body.slice(0, body.indexOf('\n}')), caller).toContain('applyChange(');
+    }
+
+    // Clearing reports zero rather than the stale previous count.
+    const onClear = source.match(/function onClear\([\s\S]*?\n}/)?.[0] ?? '';
+    expect(onClear).toContain('progress?.report(0)');
   });
 });
