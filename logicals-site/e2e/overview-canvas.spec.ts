@@ -776,6 +776,21 @@ for (const width of [320, 375, 430]) {
         };
       }));
 
+    // The tools share the grid's axis, not the page's left edge. They are
+    // justify-self: start in the overview, where the fit button sits beside
+    // them; in the pager nothing does, so an uncentred bar is a bug.
+    const axes = await page.evaluate(() => {
+      const mid = (node: Element) => {
+        const box = node.getBoundingClientRect();
+        return (box.left + box.right) / 2;
+      };
+      return {
+        grid: mid(document.querySelector('.pair-page .matrix')!),
+        tools: mid(document.querySelector('.overview-marks')!),
+      };
+    });
+    expect(Math.abs(axes.grid - axes.tools)).toBeLessThanOrEqual(1);
+
     expect(pages.length).toBeGreaterThan(0);
     for (const pane of pages) {
       // Centred: the two margins match.

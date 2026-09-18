@@ -686,6 +686,17 @@
     .screen--play[data-view="pager"] .overview-viewport,
     .screen--play[data-view="pager"] .overview-readout,
     .screen--play[data-view="pager"] .overview-fit { display: none; }
+
+    /*
+     * Centred under the grid, which is itself centred in the same width.
+     *
+     * The tools are justify-self: start because in the overview they share a row
+     * with the fit button on the right. Nothing sits beside them here, so the
+     * second column would only be an empty track plus its gap - enough to pull
+     * the bar off centre by half the gap even after centring.
+     */
+    .screen--play[data-view="pager"] .overview-actions { grid-template-columns: minmax(0, 1fr); }
+    .screen--play[data-view="pager"] .overview-marks { justify-self: center; }
 }
 .screen--play[data-view="overview"] .play-pager { display: none; }
 
@@ -807,7 +818,9 @@
      */
     .screen--play[data-view="pager"] .play-overview { grid-template-columns: minmax(0, 1fr); }
     .screen--play[data-view="pager"] .overview-marks {
-        grid-template-columns: repeat(4, minmax(var(--tap-min), 1fr));
+        /* Capped rather than 1fr, so the row can centre instead of stretching
+           from edge to edge of a very wide short window. */
+        grid-template-columns: repeat(4, minmax(var(--tap-min), 72px));
     }
 
     .overview-minimap { width: 58px; height: 58px; }
