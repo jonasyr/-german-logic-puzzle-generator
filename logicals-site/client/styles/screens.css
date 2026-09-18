@@ -237,16 +237,22 @@
     .duel-result-list { grid-template-columns: 1fr; }
 }
 
-/* The resume button carries its own second line, so the player can tell which
-   game they are about to go back into before they commit to it. */
-.resume-button {
-    display: grid;
-    gap: 2px;
-    text-align: left;
-    padding: var(--space-3) var(--space-4);
+/*
+ * Which game you are about to go back into, as a caption under the button
+ * rather than a second line inside it.
+ *
+ * Inside, it forced the button to a taller box with left-aligned text and its
+ * own padding, which broke the pill shape and the centring every other button
+ * on this screen has. A control should look like the controls beside it.
+ */
+.start-note {
+    margin: calc(var(--space-2) * -1) 0 0;
+    font-size: 13px;
+    line-height: 1.35;
+    text-align: center;
+    color: var(--on-ink);
+    opacity: .72;
 }
-.resume-button__label { font-weight: 600; }
-.resume-button__detail { font-size: 13px; opacity: .85; }
-.resume-button[hidden] { display: none; }
-.start-hint { margin: 0; text-align: left; }
+.start-note[hidden] { display: none; }
+.start-hint { margin: 0; text-align: center; }
 .start-hint:empty { display: none; }

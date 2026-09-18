@@ -69,8 +69,10 @@ function refreshResumeButton() {
     const button = el('resume-button');
     const player = getSelectedPlayer();
     const record = player ? loadResume(player.id) : null;
+    const detail = el('resume-detail');
     button.hidden = !record;
-    if (record) el('resume-detail').textContent = describeResume(record);
+    detail.hidden = !record;
+    if (record) detail.textContent = describeResume(record);
 
     // Two primary buttons stacked compete with each other. When there is a game
     // to go back to, that is the main action and starting a new one steps down.
