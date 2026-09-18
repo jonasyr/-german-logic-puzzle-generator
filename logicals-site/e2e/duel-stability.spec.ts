@@ -70,6 +70,26 @@ test('a duel learned about from a poll still starts exactly once', async ({ brow
     'the clue sheet the player opened was closed again').toHaveAttribute('aria-expanded', 'true');
   await expect(guest.locator('#screen-play')).toHaveClass(/is-active/);
 
+  /*
+   * And the opponent's count arrives - the second half of the same bug.
+   *
+   * createProgressReporter first reports five seconds after play begins. While
+   * openPlay ran again every second the reporter was torn down and replaced
+   * before that tick could ever fire, so the count stayed invisible however
+   * long you waited. The existing duel spec asserts the counts, but only along
+   * the path where the countdown starts the game - which is exactly why a
+   * player whose clock lagged saw nothing and no test complained.
+   */
+  await expect(host.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 30_000 });
+  await expect(host.locator('#overview-canvas')).toBeVisible();
+  const hostCells = host.locator('.overview-mirror__cell');
+  for (const index of [0, 1]) {
+    const box = (await hostCells.nth(index).boundingBox())!;
+    await host.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  }
+  await expect(guest.locator('#duel-progress'))
+    .toHaveText('Gegner: 2 Felder gesetzt', { timeout: 30_000 });
+
   await hostContext.close();
   await guestContext.close();
 });
