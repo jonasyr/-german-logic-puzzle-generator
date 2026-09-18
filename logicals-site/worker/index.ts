@@ -19,6 +19,7 @@ import {
   joinRoom,
   markRoomLoaded,
   markRoomReady,
+  recordRoomProgress,
   resolveDuelResultContext,
 } from './services/rooms';
 import type { Env } from './types';
@@ -110,7 +111,7 @@ export function createApp(overrides: AppOverrides = {}) {
           return json(result, 201);
         }
 
-        const roomMatch = url.pathname.match(/^\/api\/rooms\/([^/]+)(?:\/(join|loaded|ready))?$/);
+        const roomMatch = url.pathname.match(/^\/api\/rooms\/([^/]+)(?:\/(join|loaded|ready|progress))?$/);
         if (roomMatch && request.method === 'GET' && !roomMatch[2]) {
           const room = await getRoomSnapshot(
             roomsFor(env, overrides), roomMatch[1], (overrides.nowMs ?? Date.now)(),
@@ -136,6 +137,9 @@ export function createApp(overrides: AppOverrides = {}) {
           }
           if (roomMatch[2] === 'ready') {
             return json({ room: await markRoomReady(repository, roomMatch[1], body, now) });
+          }
+          if (roomMatch[2] === 'progress') {
+            return json({ room: await recordRoomProgress(repository, roomMatch[1], body, now) });
           }
         }
 

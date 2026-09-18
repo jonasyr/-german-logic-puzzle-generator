@@ -27,6 +27,9 @@ export interface RoomMemberRecord {
   memberTokenHash: string;
   loadedAt: string | null;
   readyAt: string | null;
+  /** Cells filled, reported by the client and clamped by the service. */
+  progressFilled: number | null;
+  progressAt: string | null;
   joinedAt: string;
 }
 
@@ -36,7 +39,9 @@ export interface RoomAggregate {
 }
 
 export interface NewRoom extends Omit<RoomRecord, 'id'> {}
-export interface NewRoomMember extends Omit<RoomMemberRecord, 'roomId' | 'displayName'> {}
+/** A member joins with no progress; the columns start NULL. */
+export interface NewRoomMember
+  extends Omit<RoomMemberRecord, 'roomId' | 'displayName' | 'progressFilled' | 'progressAt'> {}
 
 export interface RoomRepository {
   create(room: NewRoom, host: NewRoomMember): Promise<boolean>;
@@ -45,6 +50,9 @@ export interface RoomRepository {
   tryJoin(code: string, member: NewRoomMember, fingerprint: string, now: string): Promise<boolean>;
   markLoaded(code: string, playerId: number, tokenHash: string, now: string): Promise<boolean>;
   markReady(code: string, playerId: number, tokenHash: string, now: string): Promise<boolean>;
+  recordProgress(
+    code: string, playerId: number, tokenHash: string, filled: number, now: string,
+  ): Promise<boolean>;
   tryStart(code: string, startsAt: string, now: string): Promise<boolean>;
   markActive(code: string, now: string): Promise<void>;
   markExpired(code: string, now: string): Promise<void>;
@@ -64,7 +72,9 @@ const MEMBER_COLUMNS = `
   rm.room_id AS roomId, rm.player_id AS playerId,
   p.display_name AS displayName, rm.role,
   rm.member_token_hash AS memberTokenHash,
-  rm.loaded_at AS loadedAt, rm.ready_at AS readyAt, rm.joined_at AS joinedAt
+  rm.loaded_at AS loadedAt, rm.ready_at AS readyAt,
+  rm.progress_filled AS progressFilled, rm.progress_at AS progressAt,
+  rm.joined_at AS joinedAt
 `;
 
 export function createRoomsRepository(db: D1Database): RoomRepository {
@@ -178,6 +188,21 @@ export function createRoomsRepository(db: D1Database): RoomRepository {
             WHERE code = ? AND expires_at > ? AND state IN ('waiting', 'countdown', 'active')
           )
       `).bind(now, playerId, tokenHash, code, now).run();
+      return (result.meta?.changes ?? 0) > 0;
+    },
+
+    async recordProgress(code, playerId, tokenHash, filled, now) {
+      // Only for a member of a room that is actually being played, and the
+      // token has to match - the same bar the ready and loaded updates clear.
+      const result = await db.prepare(`
+        UPDATE room_members
+        SET progress_filled = ?, progress_at = ?
+        WHERE player_id = ? AND member_token_hash = ?
+          AND room_id = (
+            SELECT id FROM rooms
+            WHERE code = ? AND expires_at > ? AND state IN ('countdown', 'active')
+          )
+      `).bind(filled, now, playerId, tokenHash, code, now).run();
       return (result.meta?.changes ?? 0) > 0;
     },
 

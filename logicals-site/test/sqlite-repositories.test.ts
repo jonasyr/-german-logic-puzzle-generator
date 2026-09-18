@@ -43,8 +43,12 @@ function adapter(database: any): D1Database {
 describe('D1 repository SQL', () => {
   it('creates and reads a room with canonical puzzle metadata', async () => {
     const database = new DatabaseSync(':memory:');
-    database.exec(readFileSync('drizzle/0000_logicals_multiplayer.sql', 'utf8')
-      .replaceAll('--> statement-breakpoint', ''));
+    // Every migration, in order - the same state production is in, rather than
+    // whichever one the test happened to be written against.
+    for (const migration of ['0000_logicals_multiplayer', '0001_duel_progress']) {
+      database.exec(readFileSync(`drizzle/${migration}.sql`, 'utf8')
+        .replaceAll('--> statement-breakpoint', ''));
+    }
     database.exec("INSERT INTO players (id, display_name, normalized_name, created_at) VALUES (1, 'Ada', 'ada', 'x')");
     const repository = createRoomsRepository(adapter(database));
     const created = await repository.create({

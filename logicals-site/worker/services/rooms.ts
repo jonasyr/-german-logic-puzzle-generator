@@ -133,6 +133,8 @@ function publicSnapshot(aggregate: RoomAggregate, serverNow: number) {
       role: member.role,
       loaded: Boolean(member.loadedAt),
       ready: Boolean(member.readyAt),
+      // A count, never which cells.
+      filled: member.progressFilled ?? null,
     })),
   };
 }
@@ -266,6 +268,57 @@ export function markRoomLoaded(repository: RoomRepository, rawCode: string, inpu
 
 export function markRoomReady(repository: RoomRepository, rawCode: string, input: unknown, now = Date.now()) {
   return authorizeUpdate(repository, codeFrom(rawCode), input, 'ready', now);
+}
+
+/** Cells in the full triangular matrix for a configuration. */
+export function cellCountFor(configuration: { categoryCount: number; valuesPerCategory: number }): number {
+  const categories = Number(configuration.categoryCount);
+  const values = Number(configuration.valuesPerCategory);
+  if (!Number.isFinite(categories) || !Number.isFinite(values)) return 0;
+  const blocks = (categories * (categories - 1)) / 2;
+  return Math.max(0, Math.floor(blocks * values * values));
+}
+
+/**
+ * A client may only report a count, and only a possible one.
+ *
+ * The other player sees this number, so a client must not be able to put
+ * nonsense in front of them - nor a value that implies a grid this room does
+ * not have.
+ */
+export function clampProgress(filled: unknown, cellCount: number): number {
+  const value = Number(filled);
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(cellCount, Math.floor(value)));
+}
+
+/**
+ * Records how many cells one member has filled.
+ *
+ * Deliberately NOT part of authorizeUpdate's loaded/ready pair: those advance
+ * the room's state machine and then try to start the game. Progress changes
+ * nothing about the room, so it must not run that path.
+ */
+export async function recordRoomProgress(
+  repository: RoomRepository,
+  rawCode: string,
+  rawInput: unknown,
+  now = Date.now(),
+) {
+  const code = codeFrom(rawCode);
+  const input = objectBody(rawInput);
+  const playerId = positiveInteger(input.playerId, 'Spieler');
+  const memberToken = text(input.memberToken, 'Raumzugriff', 200);
+  const tokenHash = await hashMemberToken(memberToken);
+
+  const aggregate = await refreshed(repository, code, now);
+  const filled = clampProgress(input.filled, cellCountFor(JSON.parse(aggregate.room.configurationJson)));
+
+  const updated = await repository.recordProgress(
+    code, playerId, tokenHash, filled, new Date(now).toISOString(),
+  );
+  if (!updated) roomError(403, 'MEMBER_FORBIDDEN', 'Der Raumzugriff ist nicht gültig.');
+  return publicSnapshot(await refreshed(repository, code, now), now);
 }
 
 export async function getRoomSnapshot(repository: RoomRepository, rawCode: string, now = Date.now()) {
