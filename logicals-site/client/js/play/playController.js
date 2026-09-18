@@ -439,14 +439,20 @@ export function openPlay(puzzle, context) {
             room: context.room,
             player: context.player,
             onOpponent: member => {
-                const node = el('duel-progress');
                 const filled = member.filled;
-                node.hidden = filled === null || filled === undefined;
-                if (!node.hidden) node.textContent = `Gegner: ${filled} Felder gesetzt`;
+                if (filled === null || filled === undefined) return;
+                // Only the text changes. The line itself is already in flow, so
+                // the first report cannot resize the grid mid-game.
+                el('duel-progress').textContent = `Gegner: ${filled} Felder gesetzt`;
             },
         })
         : null;
-    el('duel-progress').hidden = true;
+
+    // Present but empty for the whole duel; absent entirely in solo, where it
+    // would only cost a line that nothing is ever going to fill.
+    const progressNode = el('duel-progress');
+    progressNode.hidden = context.mode !== 'duel';
+    progressNode.textContent = '';
 
     timer?.stop();
     timer = context.mode === 'duel'

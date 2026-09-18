@@ -253,7 +253,7 @@ describe('the weekday rotation', () => {
 });
 
 describe('the options it generates with', () => {
-  it('fixes the shape so everyone\\'s time means the same thing', () => {
+  it('fixes the shape so everyone\'s time means the same thing', () => {
     const options = dailyOptions('2026-09-18');
     expect(options.categoryCount).toBe(DAILY_CATEGORIES);
     expect(options.valuesPerCategory).toBe(DAILY_VALUES);
@@ -275,7 +275,7 @@ describe('recognising a daily result', () => {
     }))).toBe(false);
   });
 
-  it('rejects yesterday\\'s seed played today', () => {
+  it('rejects yesterday\'s seed played today', () => {
     expect(isDailyResult(resultOn('2026-09-18', {
       seed: dailySeed('2026-09-17'),
     }))).toBe(false);
@@ -764,6 +764,12 @@ git commit -m "test(play): cover the daily puzzle, including two timezones"
 
 ### Task 5: Volatile text leaves the layout
 
+> **Amended during execution.** The CSS below was written before the approach was
+> tried, and it is wrong in two ways that only running it revealed. Both the
+> reasoning and the replacement are recorded at the end of this task; implement
+> the amendment, not the original snippet. The original is kept so the mistake
+> stays legible.
+
 **Files:**
 - Modify: `logicals-site/client/styles/play.css`
 - Modify: `logicals-site/client/styles/screens.css`
@@ -815,6 +821,36 @@ In `screens.css`, replace the `.start-hint` rule:
 }
 .start-hint:empty { display: none; }
 ```
+
+#### Amendment: what actually works
+
+Two faults surfaced on the first run.
+
+**Absolute positioning covers the grid.** `.play-head` sits directly on top of
+`.play-stage`, so a line anchored at its `top: 100%` lands over the canvas's
+column headers. That trades a reflow for something worse.
+
+**Reserving a line is not enough either.** The message after Prüfen reads
+"... rot hervorgehoben. Die Hervorhebung verschwindet, sobald du weiterspielst.",
+which wraps to two lines at 375px. Any fixed reservation is sometimes wrong, and
+the first attempt was off by exactly 1.40625px - `min-height: 1.4em` against an
+inherited `line-height: 1.5` - which is too small to see and large enough to fire
+the ResizeObserver.
+
+So `#play-status` **moves out of `.play-head` into `.play-stage`** and becomes an
+overlay pinned above the peeking clue sheet. It cannot resize anything, it is
+clear of the headers along the top edge, and it is `pointer-events: none` so it
+never swallows a tap. Moving it also fixes a quieter fault: landscape hides
+`.play-head` outright, so a Prüfen message was invisible there.
+
+`#duel-progress` stays in the head. It is always one short line, so reserving it
+works - provided `line-height` and `min-height` are the same number. It is held
+in flow for the whole duel and hidden outright in solo, where it never appears
+and therefore never reflows; `playController.js` sets that on open rather than
+toggling `hidden` when the first report lands mid-game.
+
+The `--sheet-peek` custom property on `.play-stage` exists so the padding and the
+overlay's offset cannot drift apart.
 
 **Deliberate deviation from spec §5.** The spec lists `#resume-detail` alongside the
 others. It is left in flow, and `#daily-detail` joins it there. Both are captions belonging

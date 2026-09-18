@@ -254,7 +254,20 @@
     opacity: .72;
 }
 .start-note[hidden] { display: none; }
-.start-hint { margin: 0; text-align: center; }
+/*
+ * Out of flow, unlike the play screen's status line: here there is nothing
+ * below the button stack to cover, so the message can sit under it without
+ * shifting the buttons every time it appears or clears.
+ */
+.start-actions { position: relative; }
+.start-hint {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    margin: var(--space-2) 0 0;
+    text-align: center;
+}
 .start-hint:empty { display: none; }
 
 /* A duel row says who won before it says anything else, because that is what

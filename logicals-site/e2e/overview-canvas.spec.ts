@@ -645,3 +645,56 @@ test.describe('dark mode', () => {
     expect(Math.abs(theme.cell - theme.page)).toBeLessThan(40);
   });
 });
+
+/*
+ * The regression that started the layout-stability rule.
+ *
+ * #play-status collapsed while empty, so Pruefen made it appear, the stage
+ * reflowed by a line, the ResizeObserver fired, and the refit discarded the
+ * player's zoom. Measuring the viewport across an appearance and a clearing is
+ * what would have caught it.
+ */
+test('showing and clearing the status line does not resize the grid', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+
+  const gridHeight = () => page.evaluate(() =>
+    document.getElementById('overview-viewport')!.getBoundingClientRect().height);
+
+  const before = await gridHeight();
+  expect(before).toBeGreaterThan(0);
+
+  await page.evaluate(() => { document.getElementById('play-status')!.textContent = 'Eine Meldung'; });
+  await page.waitForTimeout(200);
+  expect(await gridHeight()).toBeCloseTo(before, 1);
+
+  await page.evaluate(() => { document.getElementById('play-status')!.textContent = ''; });
+  await page.waitForTimeout(200);
+  expect(await gridHeight()).toBeCloseTo(before, 1);
+});
+
+/*
+ * The duel equivalent: the opponent's first report arrives mid-game, which is
+ * the worst possible moment for the grid to change size under a finger.
+ */
+test('the opponent progress line is in flow before the first report', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+
+  // Solo hides it outright - it never appears, so it can never reflow.
+  await expect(page.locator('#duel-progress')).toBeHidden();
+
+  const gridHeight = () => page.evaluate(() =>
+    document.getElementById('overview-viewport')!.getBoundingClientRect().height);
+
+  // Simulate the duel case: in flow, empty, then filled.
+  await page.evaluate(() => { document.getElementById('duel-progress')!.hidden = false; });
+  await page.waitForTimeout(200);
+  const reserved = await gridHeight();
+
+  await page.evaluate(() => {
+    document.getElementById('duel-progress')!.textContent = 'Gegner: 7 Felder gesetzt';
+  });
+  await page.waitForTimeout(200);
+  expect(await gridHeight()).toBeCloseTo(reserved, 1);
+});
