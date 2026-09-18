@@ -67,10 +67,6 @@
                 <h3 class="group__caption" id="caption-puzzle">Rätsel</h3>
                 <div class="rows" role="group" aria-labelledby="caption-puzzle">
                     <label class="row">
-                        <span class="row__label">Anzahl der Rätsel</span>
-                        <select class="row__control" name="puzzleCount" id="field-puzzleCount"></select>
-                    </label>
-                    <label class="row">
                         <span class="row__label">Anzahl Kategorien</span>
                         <select class="row__control" name="categoryCount" id="field-categoryCount"></select>
                     </label>
@@ -116,6 +112,14 @@
                         <span class="row__label">Triviale Kreuze automatisch setzen</span>
                         <input class="row__switch" type="checkbox" id="field-autoCross" checked />
                     </label>
+                    <label class="row">
+                        <span class="row__label">Uhr ausblenden</span>
+                        <input class="row__switch" type="checkbox" id="field-hideClock" />
+                    </label>
+                    <label class="row">
+                        <span class="row__label">Duell-Funktionen ausblenden</span>
+                        <input class="row__switch" type="checkbox" id="field-hideDuel" />
+                    </label>
                 </div>
                 <p class="group__note">
                     Setzt du eine sichere Zuordnung, werden die übrigen Felder ihrer Zeile und
@@ -123,41 +127,10 @@
                     Zuordnung zurücknimmst. Kreuze, die du selbst gesetzt hast, bleiben immer
                     erhalten.
                 </p>
-            </section>
-
-            <section class="group">
-                <h3 class="group__caption" id="caption-design">Darstellung</h3>
-                <div class="rows" role="group" aria-labelledby="caption-design">
-                    <label class="row row--stacked">
-                        <span class="row__label">Titel</span>
-                        <input class="row__control" type="text" name="title" id="field-title" maxlength="80"
-                               placeholder="Logik unter Hochdruck" autocomplete="off"
-                               autocapitalize="sentences" enterkeyhint="next" />
-                    </label>
-                    <label class="row row--stacked">
-                        <span class="row__label">Untertitel</span>
-                        <input class="row__control" type="text" name="subtitle" id="field-subtitle" maxlength="120"
-                               placeholder="wird automatisch erzeugt" autocomplete="off"
-                               autocapitalize="sentences" enterkeyhint="done" />
-                    </label>
-                    <label class="row">
-                        <span class="row__label">Farbschema</span>
-                        <select class="row__control" id="field-palette"></select>
-                    </label>
-                    <label class="row">
-                        <span class="row__label">Akzentfarbe</span>
-                        <input class="row__swatch" type="color" name="accent" id="field-accent" value="#C6492D" />
-                    </label>
-                    <label class="row">
-                        <span class="row__label">Zweitfarbe</span>
-                        <input class="row__swatch" type="color" name="secondary" id="field-secondary" value="#227C78" />
-                    </label>
-                    <label class="row">
-                        <span class="row__label">Textfarbe</span>
-                        <input class="row__swatch" type="color" name="ink" id="field-ink" value="#172033" />
-                    </label>
-                </div>
-                <p class="group__note">Titel, Untertitel und Farben gelten für dein erzeugtes Rätselheft.</p>
+                <p class="group__note">
+                    Die Uhr läuft weiter und die Zeit wird auch weiterhin gespeichert – sie wird
+                    nur nicht angezeigt.
+                </p>
             </section>
 
             <p class="hint" id="config-hint"></p>
@@ -264,6 +237,19 @@
         <p class="result-sub" id="history-player"></p>
         <div class="history-list" id="history-list"></div>
         <p class="hint" id="history-hint" role="status"></p>
+    </section>
+
+    <section class="screen screen--stats" id="screen-stats">
+        <header class="bar">
+            <button class="btn btn--ghost btn--back" type="button" data-goto="screen-start" aria-label="Zurück">
+                <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Zurück</span>
+            </button>
+            <h2>Statistik</h2>
+        </header>
+        <p class="result-sub" id="stats-player"></p>
+        <div id="stats-body"></div>
+        <p class="hint" id="stats-hint" role="status"></p>
+        <p class="stats-scope">Über die letzten 100 Rätsel.</p>
     </section>
 
     <!-- 8. Spielen -->

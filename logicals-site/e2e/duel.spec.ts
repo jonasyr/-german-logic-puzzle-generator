@@ -92,7 +92,6 @@ test('two devices load the same runtime puzzle and enter play from one start ins
 
   await host.goto('/');
   await host.locator('#start-button').click();
-  await host.locator('#field-puzzleCount').selectOption('1');
   await host.locator('#field-categoryCount').selectOption('3');
   await host.locator('#field-valuesPerCategory').selectOption('4');
   await host.locator('#field-difficulty').selectOption('leicht');

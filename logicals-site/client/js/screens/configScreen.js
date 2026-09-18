@@ -4,11 +4,13 @@ import { el, setHint, fillRange, fillOptions } from '../dom.js';
 import { fetchOptions } from '../api.js';
 import { loadPrefs, savePrefs } from '../play/playPrefs.js';
 
+/**
+ * Kept because collectOptions still sends colours to the generator, even though
+ * no screen offers a choice of them any more. Playing is unaffected by all of
+ * this; only a PDF would be.
+ */
 export const PALETTES = {
-    klassik: { label: 'Klassik', accent: '#C6492D', secondary: '#227C78', ink: '#172033' },
-    nacht: { label: 'Nacht', accent: '#7C3AED', secondary: '#0F766E', ink: '#111827' },
-    wald: { label: 'Wald', accent: '#2F6B3C', secondary: '#8A5A21', ink: '#1B2A20' },
-    beere: { label: 'Beere', accent: '#B0245B', secondary: '#3C5CA8', ink: '#231428' },
+    klassik: { accent: '#C6492D', secondary: '#227C78', ink: '#172033' },
 };
 
 export function updateTargetOptions() {
@@ -46,30 +48,36 @@ export async function loadOptions(state) {
     // else gets. Typing a seed back in still reproduces a specific heft.
     el('field-seed').value = randomSeed();
 
-    fillRange(el('field-puzzleCount'), data.limits.puzzleCount.min, data.limits.puzzleCount.max, 5);
     fillRange(el('field-categoryCount'), data.limits.categoryCount.min, data.limits.categoryCount.max, 5);
     fillRange(el('field-valuesPerCategory'), data.limits.valuesPerCategory.min, data.limits.valuesPerCategory.max, 5);
     updateTargetOptions();
 
     fillOptions(el('field-themeId'), data.themes.map(theme => ({ value: theme.id, label: theme.title })));
-    fillOptions(el('field-palette'), Object.entries(PALETTES).map(([value, palette]) => ({
-        value, label: palette.label,
-    })));
 
     // Play-time preferences are not booklet options: they are never sent to the
     // generator, and they outlive the puzzle chosen here.
-    const autoCross = el('field-autoCross');
-    autoCross.checked = loadPrefs().autoCross;
-    autoCross.addEventListener('change', () => savePrefs({ autoCross: autoCross.checked }));
+    const prefs = loadPrefs();
+    for (const key of ['autoCross', 'hideClock', 'hideDuel']) {
+        const field = el(`field-${key}`);
+        field.checked = prefs[key];
+        // Re-read on every change: another switch may have been flipped since.
+        field.addEventListener('change', () => savePrefs({ ...loadPrefs(), [key]: field.checked }));
+    }
 
     setHint('config-hint', '');
 }
 
+/**
+ * The options the generator is asked for.
+ *
+ * Title, subtitle and the three colours only ever reached the PDF, and the
+ * booklet produced up to ten puzzles of which exactly one was ever played. They
+ * are constants now rather than deletions, so the generator contract is
+ * untouched and a later PDF path can set them again.
+ */
 export function collectOptions() {
-    const title = el('field-title').value.trim();
-    const subtitle = el('field-subtitle').value.trim();
     return {
-        puzzleCount: Number(el('field-puzzleCount').value),
+        puzzleCount: 1,
         categoryCount: Number(el('field-categoryCount').value),
         valuesPerCategory: Number(el('field-valuesPerCategory').value),
         themeId: el('field-themeId').value,
@@ -78,24 +86,10 @@ export function collectOptions() {
         // An empty field means "surprise me", not "seed zero": zero is a real
         // seed that every empty field would share.
         seed: Number(el('field-seed').value.trim() || randomSeed()),
-        ...(title ? { title } : {}),
-        ...(subtitle ? { subtitle } : {}),
-        colors: {
-            accent: el('field-accent').value,
-            secondary: el('field-secondary').value,
-            ink: el('field-ink').value,
-        },
+        colors: { ...PALETTES.klassik },
     };
 }
 
 export function randomSeed() {
     return String(Math.floor(Math.random() * 100000));
-}
-
-export function applyPalette(key) {
-    const palette = PALETTES[key];
-    if (!palette) return;
-    el('field-accent').value = palette.accent;
-    el('field-secondary').value = palette.secondary;
-    el('field-ink').value = palette.ink;
 }

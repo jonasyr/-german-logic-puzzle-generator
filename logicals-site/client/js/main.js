@@ -7,13 +7,15 @@ import { initPlayerController } from './players/playerController.js';
 import { getSelectedPlayer } from './players/playerStore.js';
 import { initResultOutbox } from './results/outbox.js';
 import {
-    loadOptions, collectOptions, updateTargetOptions, applyPalette, randomSeed, ensureSeed,
+    loadOptions, collectOptions, updateTargetOptions, randomSeed, ensureSeed,
 } from './screens/configScreen.js';
 import { renderBooklet } from './screens/resultScreen.js';
+import { loadStatsScreen } from './screens/statsScreen.js';
 import { initPlay, openPlay } from './play/playController.js';
 import { createDuelForPuzzle, initDuelController, openRoomFromUrl } from './duel/lobbyController.js';
 import { initDuelResultController } from './duel/duelResultController.js';
 import { clearResume, loadResume } from './play/resumeStore.js';
+import { loadPrefs } from './play/playPrefs.js';
 import {
     berlinDate, dailyDifficulty, dailyOptions, dailySeed, dailyStreak, isDailyResult,
 } from './play/dailyPuzzle.js';
@@ -159,6 +161,7 @@ function refreshStartScreen() {
     if (record) detail.textContent = describeResume(record);
 
     el('stats-button').disabled = !player;
+    el('duel-join-button').hidden = loadPrefs().hideDuel;
 
     // Stacked primary buttons compete with each other, so exactly one is primary.
     // An interrupted puzzle is a stronger claim on attention than a fresh one,
@@ -222,13 +225,18 @@ function wire() {
     });
     el('resume-button').addEventListener('click', resumeSavedGame);
     el('daily-button').addEventListener('click', playDaily);
+    el('stats-button').addEventListener('click', () => {
+        const player = getSelectedPlayer();
+        if (!player) return;
+        showScreen('screen-stats');
+        loadStatsScreen(player);
+    });
 
     // Coming back from a game is exactly when the offer changes: it appears
     // after the first mark, and disappears once the puzzle is solved.
     onLeave(from => { if (from === 'screen-play') refreshStartScreen(); });
 
     el('field-categoryCount').addEventListener('change', updateTargetOptions);
-    el('field-palette').addEventListener('change', event => applyPalette(event.target.value));
     el('seed-random').addEventListener('click', () => { el('field-seed').value = randomSeed(); });
 
     el('config-form').addEventListener('submit', event => {

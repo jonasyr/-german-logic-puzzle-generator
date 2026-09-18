@@ -26,7 +26,6 @@ test('runtime generation opens a fitted, touch-safe mobile overview', async ({ p
   await selectedPlayer(page, 1, 'Ada');
   await page.goto('/');
   await page.locator('#start-button').click();
-  await page.locator('#field-puzzleCount').selectOption('1');
   await page.locator('#field-categoryCount').selectOption('5');
   await page.locator('#field-valuesPerCategory').selectOption('5');
   await page.locator('#field-difficulty').selectOption('leicht');

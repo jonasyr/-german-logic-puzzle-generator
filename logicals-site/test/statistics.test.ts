@@ -136,3 +136,51 @@ describe('head to head', () => {
     expect(headToHead([solo('leicht', 1000, 0, '2026-09-18T12:00:00.000Z')])).toEqual([]);
   });
 });
+
+/*
+ * The module orders the rows itself.
+ *
+ * The endpoint happens to serve them newest first, but a statistic that silently
+ * inverts when a caller sorts differently is a trap: "improving" and "getting
+ * worse" would swap without anything failing.
+ */
+describe('ordering is not the caller\'s job', () => {
+  const dated = (completedAt: string, failedChecks: number) => ({
+    roomId: null, difficulty: 'leicht', elapsedMs: 1000, failedChecks, completedAt,
+    seed: 1, configuration: { categoryCount: 5, valuesPerCategory: 5 },
+    opponentName: null, opponentElapsedMs: null, opponentFailedChecks: null,
+  });
+
+  it('reports the same trend whichever way the rows arrive', () => {
+    // Four early mistakes, none lately: improvement, in either order.
+    const newestFirst = [
+      dated('2026-09-18T12:00:00.000Z', 0), dated('2026-09-17T12:00:00.000Z', 0),
+      dated('2026-09-16T12:00:00.000Z', 4), dated('2026-09-15T12:00:00.000Z', 4),
+    ];
+    const oldestFirst = [...newestFirst].reverse();
+
+    const a = personalStats(newestFirst, '2026-09-18').failedChecksTrend;
+    const b = personalStats(oldestFirst, '2026-09-18').failedChecksTrend;
+    expect(a).toEqual({ later: 0, earlier: 4 });
+    expect(b).toEqual(a);
+  });
+
+  it('takes the genuinely most recent five duels for the strip', () => {
+    const duelOn = (completedAt: string, mine: number) => ({
+      roomId: 1, difficulty: 'mittel', elapsedMs: mine, failedChecks: 0, completedAt,
+      seed: 1, configuration: { categoryCount: 5, valuesPerCategory: 5 },
+      opponentName: 'Bo', opponentElapsedMs: 50_000, opponentFailedChecks: 0,
+    });
+    // Oldest first, and only the newest six are wins.
+    const rows = [
+      duelOn('2026-09-10T12:00:00.000Z', 90_000),   // a loss, and the oldest
+      duelOn('2026-09-11T12:00:00.000Z', 10_000),
+      duelOn('2026-09-12T12:00:00.000Z', 10_000),
+      duelOn('2026-09-13T12:00:00.000Z', 10_000),
+      duelOn('2026-09-14T12:00:00.000Z', 10_000),
+      duelOn('2026-09-15T12:00:00.000Z', 10_000),
+    ];
+    const [bo] = headToHead(rows);
+    expect(bo.recent).toEqual(['won', 'won', 'won', 'won', 'won']);
+  });
+});

@@ -27,6 +27,19 @@ function mean(values) {
     return values.reduce((total, value) => total + value, 0) / values.length;
 }
 
+/**
+ * Newest first, decided here rather than assumed of the caller.
+ *
+ * The history endpoint does order by completed_at DESC, but the trend below
+ * splits the list in half and compares the halves - so a caller that ever
+ * handed these rows over sorted the other way would not fail, it would report
+ * improvement as decline. Sorting costs nothing and removes the trap.
+ */
+function newestFirst(results) {
+    return [...results].sort((left, right) =>
+        Date.parse(right.completedAt) - Date.parse(left.completedAt));
+}
+
 export function personalStats(results, today) {
     const byDifficulty = DIFFICULTY_ORDER
         .map(difficulty => {
@@ -39,14 +52,15 @@ export function personalStats(results, today) {
         })
         .filter(entry => entry.solved > 0);
 
-    // Rows arrive newest first. Split in half and compare, which is enough to
-    // say "getting better" without pretending to a regression line.
+    // Split the history in half and compare, which is enough to say "getting
+    // better" without pretending to a regression line.
     let failedChecksTrend = null;
     if (results.length >= 2) {
-        const half = Math.floor(results.length / 2);
+        const ordered = newestFirst(results);
+        const half = Math.floor(ordered.length / 2);
         failedChecksTrend = {
-            later: mean(results.slice(0, half).map(result => result.failedChecks)),
-            earlier: mean(results.slice(half).map(result => result.failedChecks)),
+            later: mean(ordered.slice(0, half).map(result => result.failedChecks)),
+            earlier: mean(ordered.slice(half).map(result => result.failedChecks)),
         };
     }
 
@@ -65,7 +79,8 @@ export function personalStats(results, today) {
 export function headToHead(results) {
     const byOpponent = new Map();
 
-    for (const result of results) {
+    // Newest first, so the "last five" strip really is the last five.
+    for (const result of newestFirst(results)) {
         // A duel the other side has not finished has nothing to compare.
         if (!result.roomId || !result.opponentName) continue;
         if (typeof result.opponentElapsedMs !== 'number') continue;

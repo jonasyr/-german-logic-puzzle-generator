@@ -470,6 +470,9 @@ export function openPlay(puzzle, context) {
     }
     if (!state.attemptKey) state.attemptKey = crypto.randomUUID();
 
+    // The timer keeps running and the result still records the time; this only
+    // removes the sight of it.
+    el('play-timer').hidden = loadPrefs().hideClock;
     el('play-title').textContent = `${puzzle.number}. ${puzzle.title}`;
     el('play-story').textContent = puzzle.story;
     el('play-goal').textContent = `Zielfrage: ${puzzle.targetQuestion}`;

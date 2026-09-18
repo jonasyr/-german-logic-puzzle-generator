@@ -43,12 +43,15 @@ for (const device of devices) {
     expect(undersized).toEqual([]);
 
     await page.locator('#start-button').click();
-    const firstSelect = page.locator('#field-puzzleCount');
+    const firstSelect = page.locator('#field-categoryCount');
     await firstSelect.focus();
     expect(await firstSelect.evaluate(node => Number.parseFloat(getComputedStyle(node).borderRadius))).toBeGreaterThan(0);
-    const titleInput = page.locator('#field-title');
-    await titleInput.focus();
-    expect(await titleInput.evaluate(node => Number.parseFloat(getComputedStyle(node).borderRadius))).toBeGreaterThan(0);
+    // The seed field is the only free-text input left on this screen now that
+    // the print fields are gone, and it is the one that still has to keep its
+    // rounding when focused.
+    const seedInput = page.locator('#field-seed');
+    await seedInput.focus();
+    expect(await seedInput.evaluate(node => Number.parseFloat(getComputedStyle(node).borderRadius))).toBeGreaterThan(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
     await page.locator('[data-goto="screen-start"]').first().click();

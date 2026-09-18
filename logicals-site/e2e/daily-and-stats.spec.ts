@@ -134,3 +134,115 @@ test('an unreachable history still leaves the daily puzzle playable', async ({ p
   await page.locator('#daily-button').click();
   await expect(page.locator('#overview-canvas')).toBeVisible({ timeout: 60_000 });
 });
+
+/** Writes preferences before the app boots, the way a returning player has them. */
+async function withPrefs(page: Page, prefs: Record<string, boolean>) {
+  await page.addInitScript(value => localStorage.setItem('logicals.prefs.v1', JSON.stringify(value)),
+    { autoCross: true, hideClock: false, hideDuel: false, ...prefs });
+}
+
+test('hiding the clock keeps recording the time', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await withPlayer(page);
+  await withPrefs(page, { hideClock: true });
+  await page.goto('/');
+  await page.locator('#daily-button').click();
+  await expect(page.locator('#overview-canvas')).toBeVisible({ timeout: 60_000 });
+
+  await expect(page.locator('#play-timer')).toBeHidden();
+  // Still running underneath: a hidden clock must not cost the result its time.
+  await page.waitForTimeout(1600);
+  expect(await page.locator('#play-timer').textContent()).not.toBe('0:00');
+});
+
+test('hiding the duel removes every way into one', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await withPlayer(page);
+  await withPrefs(page, { hideDuel: true });
+  await page.goto('/');
+  await expect(page.locator('#duel-join-button')).toBeHidden();
+
+  // And not just the lobby button - the result screen's duel action too.
+  await page.locator('#start-button').click();
+  await page.locator('#field-categoryCount').selectOption('5');
+  await page.locator('#field-valuesPerCategory').selectOption('5');
+  await page.locator('#field-difficulty').selectOption('leicht');
+  await page.locator('#generate-button').click();
+  await expect(page.locator('.puzzle')).toHaveCount(1, { timeout: 60_000 });
+  await expect(page.getByRole('button', { name: 'Duell', exact: true })).toHaveCount(0);
+});
+
+test('the settings screen offers nothing that does not affect playing', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await withPlayer(page);
+  await page.goto('/');
+  await page.locator('#start-button').click();
+
+  for (const gone of ['#field-puzzleCount', '#field-title', '#field-subtitle',
+                      '#field-palette', '#field-accent', '#field-secondary', '#field-ink']) {
+    await expect(page.locator(gone)).toHaveCount(0);
+  }
+  // One puzzle is generated, and it is the one that gets played.
+  await page.locator('#generate-button').click();
+  await expect(page.locator('.puzzle')).toHaveCount(1, { timeout: 60_000 });
+});
+
+const STATS_HISTORY: Result[] = [
+  {
+    id: 4, playerId: 1, roomId: 1, attemptKey: 'd', puzzleFingerprint: 'f',
+    puzzleTitle: 'Duell', themeId: 'standard', difficulty: 'mittel', seed: 99,
+    configuration: { categoryCount: 5, valuesPerCategory: 5 },
+    elapsedMs: 60_000, failedChecks: 1, completedAt: '2026-09-18T12:00:00.000Z',
+    opponentName: 'Bo', opponentElapsedMs: 75_000, opponentFailedChecks: 3,
+  },
+  {
+    id: 3, playerId: 1, roomId: null, attemptKey: 'c', puzzleFingerprint: 'f',
+    puzzleTitle: 'Solo', themeId: 'standard', difficulty: 'leicht', seed: 98,
+    configuration: { categoryCount: 5, valuesPerCategory: 5 },
+    elapsedMs: 240_000, failedChecks: 0, completedAt: '2026-09-17T12:00:00.000Z',
+    opponentName: null, opponentElapsedMs: null, opponentFailedChecks: null,
+  },
+  {
+    id: 2, playerId: 1, roomId: null, attemptKey: 'b', puzzleFingerprint: 'f',
+    puzzleTitle: 'Solo', themeId: 'standard', difficulty: 'leicht', seed: 97,
+    configuration: { categoryCount: 5, valuesPerCategory: 5 },
+    elapsedMs: 260_000, failedChecks: 4, completedAt: '2026-09-16T12:00:00.000Z',
+    opponentName: null, opponentElapsedMs: null, opponentFailedChecks: null,
+  },
+];
+
+test('the statistics screen reports development and the head-to-head', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await withPlayer(page, STATS_HISTORY);
+  await page.goto('/');
+  await page.locator('#stats-button').click();
+
+  const body = page.locator('#stats-body');
+  // The median of 240s and 260s - a mean of all three would say something else.
+  await expect(body).toContainText('4:10');
+  await expect(body).toContainText('2 gelöst');
+  await expect(body).toContainText('Fehlprüfungen');
+  await expect(body).toContainText('Serie');
+
+  await expect(body).toContainText('Gegen Bo');
+  await expect(body).toContainText('1 – 0 – 0');
+  await expect(body).toContainText('0:15');            // 15s ahead
+  await expect(body).toContainText('du bist schneller');
+
+  // And it never implies it covers everything.
+  await expect(page.locator('.stats-scope')).toContainText('letzten 100');
+});
+
+test('an empty history says so instead of showing zeroes', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await withPlayer(page, []);
+  await page.goto('/');
+  await page.locator('#stats-button').click();
+  await expect(page.locator('#stats-hint')).toContainText('Noch keine');
+  await expect(page.locator('#stats-body')).toBeEmpty();
+});

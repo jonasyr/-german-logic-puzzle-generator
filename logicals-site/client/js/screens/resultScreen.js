@@ -9,6 +9,7 @@
 
 import { el, make, clear, setHint } from '../dom.js';
 import { askConfirm } from '../ui/confirmDialog.js';
+import { loadPrefs } from '../play/playPrefs.js';
 
 function solutionTable(puzzle) {
     const labels = puzzle.categories.map(category => category.label);
@@ -77,13 +78,17 @@ function renderPuzzle(puzzle, puzzleIndex, onPlay, onDuel) {
         attrs: { type: 'button' },
     });
     playButton.addEventListener('click', () => onPlay(puzzle, puzzleIndex));
-    const duelButton = make('button', {
-        className: 'btn btn--ghost btn--block',
-        text: 'Duell',
-        attrs: { type: 'button' },
-    });
-    duelButton.addEventListener('click', () => onDuel(puzzle, puzzleIndex));
-    actions.append(playButton, duelButton);
+    actions.append(playButton);
+    // Hiding the duel means hiding every way into one, not just the lobby button.
+    if (!loadPrefs().hideDuel) {
+        const duelButton = make('button', {
+            className: 'btn btn--ghost btn--block',
+            text: 'Duell',
+            attrs: { type: 'button' },
+        });
+        duelButton.addEventListener('click', () => onDuel(puzzle, puzzleIndex));
+        actions.append(duelButton);
+    }
     article.append(actions);
 
     const details = make('details', { className: 'puzzle__details' });

@@ -40,7 +40,6 @@ async function openPuzzle(page: Page, width: number, height: number, autoCross =
   })));
   await page.goto('/');
   await page.locator('#start-button').click();
-  await page.locator('#field-puzzleCount').selectOption('1');
   await page.locator('#field-categoryCount').selectOption('5');
   await page.locator('#field-valuesPerCategory').selectOption('5');
   await page.locator('#field-difficulty').selectOption('leicht');

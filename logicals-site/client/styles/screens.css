@@ -282,3 +282,37 @@
 .history-card__duel.is-verloren strong { color: var(--danger-fg); }
 .history-card__duel.is-unentschieden strong { color: var(--muted); }
 .history-card__duel.is-pending { color: var(--muted); font-style: italic; }
+
+/* --- Statistics ----------------------------------------------------------- */
+
+.stats-section { margin-bottom: var(--space-5); }
+.stats-section h3 {
+    margin: 0 0 var(--space-2);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--teal);
+}
+.stats-list { margin: 0; }
+.stats-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
+    border-bottom: var(--hairline) solid var(--line);
+}
+.stats-row dt { color: var(--muted); }
+.stats-row dd {
+    margin: 0;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+.stats-strip { margin: var(--space-3) 0 0; letter-spacing: .3em; color: var(--text); }
+.stats-legend { margin: var(--space-1) 0 0; font-size: 11px; color: var(--muted); }
+/* The player's name needs air before the first heading crowds it. */
+#stats-body { margin-top: var(--space-4); }
+/* Says what it covers rather than implying it covers everything. */
+.stats-scope { margin-top: var(--space-5); font-size: 12px; color: var(--muted); }
