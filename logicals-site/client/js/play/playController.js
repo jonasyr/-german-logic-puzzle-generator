@@ -17,6 +17,7 @@ import { createAuthoritativeTimer, createTimer, formatTime } from './playTimer.j
 import { createCompletionSubmission } from '../results/completion.js';
 import { flushOutbox, queueResult } from '../results/outbox.js';
 import { openDuelResult } from '../duel/duelResultController.js';
+import { createProgressReporter } from '../duel/progressReporter.js';
 import {
     MARK_SYMBOLS, createPlayState, storageKeyFor,
     setMarkWith, undoMark, clearMarks, save, load, recordFailedCheck,
@@ -38,6 +39,8 @@ let timer = null;
 let puzzleFingerprint = null;
 /** The armed marking tool, shared by the pager and the overview. */
 let tool = null;
+/** Duel only: reports this player's count and polls for the opponent's. */
+let progress = null;
 
 /* --- Painting ------------------------------------------------------------- */
 
@@ -393,6 +396,21 @@ export function openPlay(puzzle, context) {
         .catch(() => { puzzleFingerprint = null; });
     paused = false;
 
+    progress?.stop();
+    progress = context.mode === 'duel'
+        ? createProgressReporter({
+            room: context.room,
+            player: context.player,
+            onOpponent: member => {
+                const node = el('duel-progress');
+                const filled = member.filled;
+                node.hidden = filled === null || filled === undefined;
+                if (!node.hidden) node.textContent = `Gegner: ${filled} Felder gesetzt`;
+            },
+        })
+        : null;
+    el('duel-progress').hidden = true;
+
     timer?.stop();
     timer = context.mode === 'duel'
         ? createAuthoritativeTimer(context.room.startsAt - context.room.serverOffset, renderTimer)
@@ -489,6 +507,8 @@ export function initPlay() {
     // Leaving the play screen must stop the clock and flush progress.
     onLeave(from => {
         if (from !== 'screen-play') return;
+        progress?.stop();
+        progress = null;
         timer.stop();
         persist();
         sheet.collapse();

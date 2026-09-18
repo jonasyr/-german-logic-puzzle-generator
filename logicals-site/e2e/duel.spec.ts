@@ -70,6 +70,12 @@ test('two devices load the same runtime puzzle and enter play from one start ins
         }
         return json({ room: { ...state.room, serverNow: Date.now(), members: state.members } });
       }
+      if (url.pathname.endsWith('/progress')) {
+        const member = state.members.find(candidate => candidate.playerId === body.playerId)!;
+        // A count and nothing else, exactly as the Worker stores it.
+        member.filled = body.filled;
+        return json({ room: { ...state.room, serverNow: Date.now(), members: state.members } });
+      }
       if (request.method() === 'GET' && url.pathname === '/api/rooms/ABC234') {
         return json({ room: { ...state.room, serverNow: Date.now(), members: state.members } });
       }
@@ -126,6 +132,16 @@ test('two devices load the same runtime puzzle and enter play from one start ins
   await host.locator('#play-undo').click();
   await expect(host.locator(`.overview-mirror__cell[data-key="${hostKey}"]`))
     .toHaveAttribute('aria-label', /leer/);
+
+  // Progress crosses as a COUNT and nothing else.
+  const hostCells = host.locator('.overview-mirror__cell');
+  for (const index of [0, 1, 2]) {
+    const cellBox = (await hostCells.nth(index).boundingBox())!;
+    await host.mouse.click(cellBox.x + cellBox.width / 2, cellBox.y + cellBox.height / 2);
+  }
+  await expect(guest.locator('#duel-progress')).toContainText('Felder gesetzt', { timeout: 25_000 });
+  // The guest's own grid is untouched by anything the host did.
+  await expect(guest.locator('#play-undo')).toBeDisabled();
 
   const solve = async (page: Page) => {
     await page.locator('#play-solution-button').evaluate((button: HTMLButtonElement) => button.click());

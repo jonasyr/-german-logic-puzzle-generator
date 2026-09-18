@@ -32,6 +32,10 @@ export function markDuelLoaded(code, payload) {
     return request(`/api/rooms/${code}/loaded`, jsonPost(payload));
 }
 
+export function reportDuelProgress(code, payload) {
+    return request(`/api/rooms/${code}/progress`, jsonPost(payload));
+}
+
 export function markDuelReady(code, payload) {
     return request(`/api/rooms/${code}/ready`, jsonPost(payload));
 }

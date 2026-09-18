@@ -138,6 +138,8 @@
 /* Reserved a line and a half of height even with nothing to say. */
 #play-status { min-height: 0; }
 #play-status:empty { display: none; }
+.duel-progress { font-variant-numeric: tabular-nums; color: var(--muted); }
+.duel-progress[hidden] { display: none; }
 /* A flex column, so the overview below it has a definite height to fill. As a
    plain block the stage was auto-height, the 1fr grid row inside resolved
    against nothing, and the viewport collapsed to 2px. */
