@@ -341,6 +341,9 @@
 
 .cell.is-yes { color: var(--good); font-weight: 700; border-color: var(--good); }
 .cell.is-no { color: var(--muted); }
+/* A note is a guess, not a claim: visible, but quieter than a confirmation.
+   Matches --grid-maybe, which the canvas already draws notes with. */
+.cell.is-maybe { color: var(--grid-maybe); font-weight: 700; }
 .cell.is-wrong {
     background: var(--danger-bg);
     border-color: var(--danger-fg);
@@ -632,7 +635,23 @@
 
 /* --- View switching ------------------------------------------------------- */
 
-.screen--play[data-view="pager"] .play-overview { display: none; }
+/*
+ * The tool bar belongs to the screen, not to one of its views.
+ *
+ * A tap writes the armed tool in the pager exactly as it does on the canvas -
+ * playController's onCellActivate reads the same tool for both. Hiding the
+ * whole .play-overview took the bar with it, so the pager was left permanently
+ * armed with x and no way to switch tool or clear a mark.
+ *
+ * Only the canvas-specific parts go: the viewport, the readout that describes a
+ * canvas selection, and a fit button with nothing to fit. Scoped below 900px
+ * because above it the pager does not exist and the overview is always whole.
+ */
+@media (max-width: 899px) {
+    .screen--play[data-view="pager"] .overview-viewport,
+    .screen--play[data-view="pager"] .overview-readout,
+    .screen--play[data-view="pager"] .overview-fit { display: none; }
+}
 .screen--play[data-view="overview"] .play-pager { display: none; }
 
 /* --- Tablet / desktop ----------------------------------------------------- */
@@ -746,6 +765,16 @@
            and every button keeps its 44px floor. */
         grid-template-columns: repeat(2, minmax(var(--tap-min), 1fr));
     }
+    /*
+     * In the pager there is no side column to fit into, so the tools take a
+     * full-width row of four rather than the 2x2 that suits 150px. Halves what
+     * the bar costs in a window this short.
+     */
+    .screen--play[data-view="pager"] .play-overview { grid-template-columns: minmax(0, 1fr); }
+    .screen--play[data-view="pager"] .overview-marks {
+        grid-template-columns: repeat(4, minmax(var(--tap-min), 1fr));
+    }
+
     .overview-minimap { width: 58px; height: 58px; }
     .clues-sheet { height: 92vh; height: 92svh; }
     .sheet-handle { padding: var(--space-1) 0 0; }

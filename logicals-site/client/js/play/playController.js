@@ -47,16 +47,26 @@ let conflicts = new Set();
 
 /* --- Painting ------------------------------------------------------------- */
 
+const MARK_DESCRIPTIONS = {
+    yes: 'sichere Zuordnung',
+    no: 'ausgeschlossen',
+    maybe: 'vermutet',
+};
+
 function paintCell(key) {
     const mark = state.marks.get(key);
     const isWrong = state.wrong.has(key);
 
     const button = pagerCells.get(key);
     if (button) {
-        const description = mark === 'yes' ? 'sichere Zuordnung' : mark === 'no' ? 'ausgeschlossen' : 'leer';
+        // A note is a mark like any other. Reading it out as "leer" was left
+        // over from before notes existed, and it made them invisible to anyone
+        // using a screen reader even though the symbol was on screen.
+        const description = MARK_DESCRIPTIONS[mark] ?? 'leer';
         button.textContent = mark ? MARK_SYMBOLS[mark] : '';
         button.classList.toggle('is-yes', mark === 'yes');
         button.classList.toggle('is-no', mark === 'no');
+        button.classList.toggle('is-maybe', mark === 'maybe');
         button.classList.toggle('is-wrong', isWrong);
         button.setAttribute('aria-label', `${button.dataset.label}: ${description}`);
     }

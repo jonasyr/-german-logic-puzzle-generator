@@ -697,3 +697,49 @@ test('the opponent progress line is in flow before the first report', async ({ p
   await page.waitForTimeout(200);
   expect(await gridHeight()).toBeCloseTo(reserved, 1);
 });
+
+/*
+ * The tool bar belongs to the screen, not to the overview.
+ *
+ * cycleMark was removed when the tool model arrived, so a tap writes whatever
+ * is armed. The bar lived inside .play-overview, which the pager view hides
+ * wholesale - leaving the single-pair view permanently armed with x, with no
+ * way to place a confirmation, place a note, or clear anything. Every existing
+ * marking test ran in the overview, so nothing caught it.
+ */
+test('the single-pair view has the tool bar, and it works', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+
+  await page.locator('#play-view').click();
+  await expect(page.locator('#screen-play')).toHaveAttribute('data-view', 'pager');
+
+  // All four tools reachable, and the canvas-only controls gone with the canvas.
+  await expect(page.locator('.overview-marks')).toBeVisible();
+  for (const tool of ['no', 'yes', 'maybe', 'clear']) {
+    await expect(page.locator(`#overview-mark-${tool}`)).toBeVisible();
+  }
+  await expect(page.locator('#overview-fit')).toBeHidden();
+  await expect(page.locator('#overview-readout')).toBeHidden();
+
+  const cell = page.locator('.pair-page .cell').first();
+
+  // Arming a different tool must actually change what a tap writes.
+  await page.locator('#overview-mark-yes').click();
+  await expect(page.locator('#overview-mark-yes')).toHaveAttribute('aria-pressed', 'true');
+  await cell.click();
+  await expect(cell).toHaveText('○');
+  await expect(cell).toHaveClass(/is-yes/);
+
+  // A note is a mark like any other, and it must say so out loud.
+  await page.locator('#overview-mark-maybe').click();
+  await cell.click();
+  await expect(cell).toHaveText('·');
+  expect(await cell.getAttribute('aria-label')).toContain('vermutet');
+
+  // And clearing has to be reachable too - it was the tool the pager could
+  // never reach at all once a mark existed.
+  await page.locator('#overview-mark-clear').click();
+  await cell.click();
+  await expect(cell).toHaveText('');
+});
