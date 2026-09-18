@@ -277,3 +277,68 @@ test('the results list settles each duel and leaves solo rows alone', async ({ p
   await expect(open).toContainText('das andere Ergebnis fehlt noch');
   await expect(open).toHaveClass(/is-pending/);
 });
+
+/** Plants a duel session for player 1 and answers the room API with `state`. */
+async function withStaleDuel(page: Page, state: string) {
+  await page.route('**/api/rooms/**', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      room: {
+        id: 5, code: 'ABC234', state, serverNow: Date.now(), startsAt: null,
+        expiresAt: Date.now() + 86_400_000, configuration: {}, bookletSeed: 41,
+        puzzleIndex: 0, puzzleFingerprint: 'mismatch', puzzleTitle: 'Museum',
+        puzzleThemeId: 'museum', effectivePuzzleSeed: 41,
+        members: [{ playerId: 1, displayName: 'Ada', role: 'host', loaded: true, ready: true }],
+        results: [],
+      },
+    }),
+  }));
+  await page.addInitScript(() => {
+    const session = {
+      code: 'ABC234', memberToken: 't',
+      player: { id: 1, displayName: 'Ada' },
+      options: {},
+      puzzle: { categories: [], clues: [], targetQuestion: '', solutionRows: [] },
+    };
+    localStorage.setItem('logicals.duel.v1:ABC234:1', JSON.stringify(session));
+    localStorage.setItem('logicals.duel.active.v1:1', 'ABC234');
+  });
+}
+
+for (const state of ['expired', 'complete', 'waiting']) {
+  test(`a reload with a stale ${state} duel still lands on the start screen`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await withPlayer(page);
+    await withStaleDuel(page, state);
+
+    await page.goto('/');
+    await page.waitForTimeout(1200);
+
+    // Nobody asked for a room: reloading the app must not drag you onto the duel
+    // screens, whatever the stored session turns out to be.
+    await expect(page.locator('#screen-start')).toHaveClass(/is-active/);
+    await expect(page.locator('#screen-duel-entry')).not.toHaveClass(/is-active/);
+    await expect(page.locator('#screen-duel-result')).not.toHaveClass(/is-active/);
+
+    // And it does not come back on the next reload either.
+    await page.reload();
+    await page.waitForTimeout(1200);
+    await expect(page.locator('#screen-start')).toHaveClass(/is-active/);
+  });
+}
+
+test('a room link still opens the duel, which is what it is for', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await withPlayer(page);
+  await withStaleDuel(page, 'expired');
+
+  await page.goto('/?room=ABC234');
+  await page.waitForTimeout(1200);
+  // Arriving on a link is a deliberate request for that room, so the error
+  // belongs on screen rather than being swallowed.
+  await expect(page.locator('#screen-duel-entry')).toHaveClass(/is-active/);
+  await expect(page.locator('#duel-entry-hint')).not.toBeEmpty();
+});

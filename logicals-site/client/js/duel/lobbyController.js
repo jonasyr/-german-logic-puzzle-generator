@@ -145,7 +145,13 @@ export async function joinDuel(code) {
     }, response.room);
 }
 
-async function resumeDuelSession(session) {
+/**
+ * @param {{ explicit: boolean }} options `explicit` means the player arrived on a
+ *   room link and therefore asked for this room. Without one, a stale session is
+ *   just clutter: it gets cleared and the app stays where it was, rather than
+ *   dragging every reload onto the duel screens.
+ */
+async function resumeDuelSession(session, { explicit } = { explicit: true }) {
     const sentAt = Date.now();
     const response = await getDuelRoom(session.code);
     const room = response.room;
@@ -161,11 +167,16 @@ async function resumeDuelSession(session) {
     serverOffset = serverClockOffset(room.serverNow, response.sentAt ?? sentAt, response.receivedAt ?? Date.now());
     if (room.state === 'expired') {
         clearDuelSession(session.code, session.player.id);
+        if (!explicit) return;
         showDuelEntry(session.code);
         setHint('duel-entry-hint', 'Dieser Duellraum ist abgelaufen.', true);
         return;
     }
     if (room.state === 'complete') {
+        // A finished duel is history, and it is in the results list. Only a
+        // deliberate room link reopens the comparison.
+        clearDuelSession(session.code, session.player.id);
+        if (!explicit) return;
         openDuelResult({ room, player: session.player });
         return;
     }
@@ -208,9 +219,14 @@ export async function openRoomFromUrl() {
         ? loadDuelSession(code.toUpperCase(), player.id)
         : loadActiveDuelSession(player.id);
     if (session) {
-        try { await resumeDuelSession(session); }
+        const explicit = Boolean(code);
+        try { await resumeDuelSession(session, { explicit }); }
         catch (error) {
-            showDuelEntry(code?.toUpperCase() || session.code);
+            // Without a room link nobody asked to be here, so a stale or
+            // unreachable session must not hijack the start screen.
+            clearDuelSession(session.code, session.player.id);
+            if (!explicit) return;
+            showDuelEntry(code.toUpperCase());
             setHint('duel-entry-hint', error.message, true);
         }
         return;
