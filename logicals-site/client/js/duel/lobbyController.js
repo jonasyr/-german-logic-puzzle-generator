@@ -18,6 +18,8 @@ let activeSession = null;
 let pollController = null;
 let pollTimer = null;
 let countdownTimer = null;
+/** Guards startGame, which several callers can reach for the same room. */
+let gameStarted = false;
 let openPlay = null;
 let serverOffset = 0;
 
@@ -31,7 +33,10 @@ function stopLobby() {
 }
 
 function startGame(room) {
-    if (!activeSession) return;
+    // Once only. Both the countdown tick and a polled snapshot can reach this,
+    // and re-entering would tear down the play screen and build it again.
+    if (!activeSession || gameStarted) return;
+    gameStarted = true;
     stopLobby();
     openPlay(activeSession.puzzle, {
         mode: 'duel',
@@ -77,22 +82,40 @@ function applySnapshot(room, sentAt, receivedAt) {
     if (room.startsAt) watchCountdown(room);
 }
 
+/**
+ * Polls the room until the lobby ends.
+ *
+ * The reschedule is conditional, and that is the whole point: applySnapshot can
+ * end the lobby - the game starts, or the room expires or completes - and
+ * stopLobby clears the timer to say so. Rescheduling regardless brought the
+ * loop straight back, so a second later the snapshot still read 'active' and
+ * startGame ran again, rebuilding the entire play screen. The grid blinked out
+ * and back, the clue sheet closed, any highlight was lost, and the progress
+ * reporter was replaced before its first five-second tick could ever fire -
+ * which is why the opponent's count never appeared either.
+ *
+ * Identity, not a boolean: stopLobby drops the controller, so a poll whose
+ * controller is no longer the current one knows it has been superseded.
+ */
 async function poll() {
     if (!activeSession) return;
-    pollController = new AbortController();
+    const controller = new AbortController();
+    pollController = controller;
     try {
-        const response = await getDuelRoom(activeSession.code, pollController.signal);
+        const response = await getDuelRoom(activeSession.code, controller.signal);
         applySnapshot(response.room, response.sentAt, response.receivedAt);
-        pollTimer = setTimeout(poll, 1000);
     } catch (error) {
         if (error.name === 'AbortError') return;
         setHint('duel-lobby-hint', 'Verbindung unterbrochen – erneuter Versuch …', true);
-        pollTimer = setTimeout(poll, 3000);
+        if (pollController === controller) pollTimer = setTimeout(poll, 3000);
+        return;
     }
+    if (pollController === controller) pollTimer = setTimeout(poll, 1000);
 }
 
 async function enterLobby(session, room) {
     stopLobby();
+    gameStarted = false;
     activeSession = session;
     saveDuelSession(session);
     el('duel-share-link').value = `${location.origin}${location.pathname}?room=${room.code}`;
@@ -164,6 +187,7 @@ async function resumeDuelSession(session, { explicit } = { explicit: true }) {
         throw new Error('Das gespeicherte Rätsel stimmt nicht mehr mit dem Raum überein.');
     }
     activeSession = { ...session, room };
+    gameStarted = false;
     serverOffset = serverClockOffset(room.serverNow, response.sentAt ?? sentAt, response.receivedAt ?? Date.now());
     if (room.state === 'expired') {
         clearDuelSession(session.code, session.player.id);

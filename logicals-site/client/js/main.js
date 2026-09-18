@@ -258,7 +258,22 @@ function wire() {
     initDuelResultController();
 }
 
+/*
+ * Offline support. Registered after load so it never competes with the first
+ * render, and guarded because a page opened over file:// or an old browser has
+ * no serviceWorker at all - neither is a reason to fail to start.
+ */
+function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {
+            // Playing works without it; only the offline launch is lost.
+        });
+    });
+}
+
 wire();
+registerServiceWorker();
 initResultOutbox();
 initPlayerController().then(() => {
     openRoomFromUrl();

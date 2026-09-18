@@ -20,6 +20,20 @@ type Manifest = {
   icons: { src: string; sizes: string; type: string; purpose?: string }[];
 };
 
+/**
+ * Waits for a worker to take control, and gives up loudly.
+ *
+ * navigator.serviceWorker.ready simply never settles when nothing registers,
+ * so without the race a regression would hang the suite instead of failing it.
+ */
+async function serviceWorkerReady(page: import('@playwright/test').Page) {
+  await page.evaluate(() => Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise((_, reject) => setTimeout(
+      () => reject(new Error('no service worker took control of the page')), 10_000)),
+  ]));
+}
+
 async function manifest(request: import('@playwright/test').APIRequestContext) {
   const response = await request.get('/manifest.webmanifest');
   expect(response.status(), 'the manifest itself must be served').toBe(200);
@@ -73,4 +87,45 @@ test('the iOS home screen icon and standalone flag are in place', async ({ page,
   // Without this iOS opens a Safari window with chrome instead of a web app.
   await expect(page.locator('meta[name="apple-mobile-web-app-capable"]'))
     .toHaveAttribute('content', 'yes');
+});
+
+/*
+ * The reason a Home Screen app needs one at all: a standalone window has no
+ * address bar, so a moment of bad signal is a blank screen the player cannot
+ * retry from. Puzzles are generated in the browser, so there is nothing about
+ * solo play that actually requires the network.
+ */
+test('the app still starts with no network at all', async ({ page, context }) => {
+  test.setTimeout(120_000);
+  await page.goto('/');
+  await expect(page.locator('#screen-start')).toHaveClass(/is-active/);
+
+  // Registration happens on load, so the very first visit is fetched before the
+  // worker controls the page. One online reload after it takes over is what
+  // fills the cache - exactly what happens on a real second visit.
+  await serviceWorkerReady(page);
+  await page.reload();
+  await serviceWorkerReady(page);
+  await expect(page.locator('#screen-start')).toHaveClass(/is-active/);
+
+  await context.setOffline(true);
+  try {
+    await page.reload();
+    await expect(page.locator('#screen-start')).toHaveClass(/is-active/);
+    // Not just the shell: the scripts have to be there too, or the buttons are
+    // inert decoration.
+    await expect(page.locator('#daily-button')).toBeVisible();
+    await expect(page.locator('#start-button')).toBeVisible();
+  } finally {
+    await context.setOffline(false);
+  }
+});
+
+test('the API is never served from the cache', async ({ page }) => {
+  await page.goto('/');
+  await serviceWorkerReady(page);
+  // A duel played against a cached snapshot of the room would be worse than an
+  // error, so /api/ is left to the network on purpose.
+  const source = await (await page.request.get('/sw.js')).text();
+  expect(source).toContain("url.pathname.startsWith('/api/')");
 });
