@@ -391,6 +391,51 @@ test('nothing on the play screen accepts a double-tap zoom', async ({ page }) =>
   expect(offenders).toEqual([]);
 });
 
+test('a pinch that straddles the grid and its surroundings cannot zoom the page', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+
+  // WebKit's gesture events are proprietary, so Chromium will not synthesise a
+  // real one - but the handler only cares that it is cancelled, and that is
+  // exactly what this asserts. The targets matter: a two-finger gesture reports
+  // the element under the first touch, or the common ancestor when the fingers
+  // straddle two. Bound to the canvas alone, everything but the first of these
+  // escaped and Safari zoomed the whole page.
+  const prevented = await page.evaluate(() => {
+    const targets = [
+      document.getElementById('overview-viewport')!,
+      document.querySelector('.play-overview')!,
+      document.getElementById('play-stage')!,
+      document.getElementById('screen-play')!,
+      document.getElementById('play-goal')!,
+      document.body,
+    ];
+    return targets.map(target => {
+      const event = new Event('gesturestart', { bubbles: true, cancelable: true });
+      target.dispatchEvent(event);
+      const result = { target: target.id || target.tagName.toLowerCase(), prevented: event.defaultPrevented };
+      const end = new Event('gestureend', { bubbles: true, cancelable: true });
+      target.dispatchEvent(end);
+      return result;
+    });
+  });
+  expect(prevented.filter(entry => !entry.prevented)).toEqual([]);
+});
+
+test('the clue sheet keeps native zoom, so its text can still be magnified', async ({ page }) => {
+  test.setTimeout(120_000);
+  await openPuzzle(page, 375, 812);
+
+  // Suppressing zoom across the whole document would trade WCAG 1.4.4 away for
+  // a grid that has its own zoom anyway. The text-heavy part keeps it.
+  const prevented = await page.evaluate(() => {
+    const event = new Event('gesturestart', { bubbles: true, cancelable: true });
+    document.getElementById('play-clue-list')!.dispatchEvent(event);
+    return event.defaultPrevented;
+  });
+  expect(prevented).toBe(false);
+});
+
 test.describe('dark mode', () => {
   test.use({ colorScheme: 'dark' });
 

@@ -219,9 +219,16 @@ export function createOverviewCanvas({
         },
     });
 
-    // touch-action: none is necessary but not sufficient on iOS; the
-    // proprietary gesture events have to be cancelled as well.
-    const releaseNativeZoom = suppressNativeZoom(surface);
+    // touch-action: none is necessary but not sufficient on iOS, and binding the
+    // gesture events to the canvas was not enough either: a pinch straddling the
+    // grid and the space beside it targets a common ancestor and never reached
+    // the canvas's listener, so Safari zoomed the page instead. Bound to the
+    // document, gated on the play screen being the active one, and exempting the
+    // clue sheet so its text can still be magnified.
+    const releaseNativeZoom = suppressNativeZoom(document, {
+        exempt: '#clues-sheet',
+        enabled: () => document.getElementById('screen-play')?.classList.contains('is-active'),
+    });
 
     for (const button of markButtons) {
         button.addEventListener('click', () => {

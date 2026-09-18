@@ -151,32 +151,58 @@ export function bindGestures(element, { onTap, onPan, onPinchStart, onPinch }) {
 }
 
 /**
- * Cancels WebKit's proprietary gesture events over the viewport.
+ * Cancels WebKit's proprietary gesture events so Safari cannot zoom the page.
  *
- * `touch-action: none` does not on its own stop Safari's page pinch-zoom, and a
- * passive listener cannot cancel anything - hence { passive: false }. We only
- * cancel; `event.scale` is deliberately unused, because on iOS these fire
- * alongside the pointer events for the same pinch and acting on both produces
- * conflicting state. tldraw and Excalidraw both took this exact route.
+ * Bound to the DOCUMENT, not to the canvas. A two-finger gesture targets the
+ * element under the first touch - or the common ancestor when the fingers
+ * straddle two elements - so a pinch that starts half on the grid and half on
+ * the padding beside it never reached a listener on the canvas, and Safari
+ * zoomed the whole page. That is the failure that makes the board look like it
+ * has exploded: the layout has not changed at all, you are just looking at a
+ * magnified, cropped page.
+ *
+ * `touch-action: none` does not cover this on its own, and a passive listener
+ * cannot cancel anything - hence { passive: false }. We only cancel;
+ * `event.scale` is deliberately unused, because on iOS these fire alongside the
+ * pointer events for the same pinch and acting on both produces conflicting
+ * state. tldraw and Excalidraw both took this route.
+ *
+ * @param {Document|Element} root
+ * @param {{ exempt?: string, enabled?: () => boolean }} options
+ *   `exempt` is a selector whose subtree keeps native zoom - the clue sheet, so
+ *   the one text-heavy part of the screen can still be magnified and WCAG 1.4.4
+ *   is not traded away wholesale. `enabled` gates the whole thing, so leaving
+ *   the play screen restores normal behaviour everywhere.
  */
-export function suppressNativeZoom(element) {
+export function suppressNativeZoom(root, { exempt, enabled } = {}) {
     // gestureend is documented to fire twice, so the latch keeps it idempotent.
     let active = false;
+
+    const applies = event => {
+        if (enabled && !enabled()) return false;
+        if (!exempt) return true;
+        const target = event.target;
+        return !(target instanceof Element) || !target.closest(exempt);
+    };
 
     const cancel = event => {
         if (event.cancelable !== false) event.preventDefault();
     };
-    const onStart = event => { active = true; cancel(event); };
+    const onStart = event => {
+        if (!applies(event)) return;
+        active = true;
+        cancel(event);
+    };
     const onChange = event => { if (active) cancel(event); };
     const onEnd = event => { if (!active) return; active = false; cancel(event); };
 
-    element.addEventListener('gesturestart', onStart, { passive: false });
-    element.addEventListener('gesturechange', onChange, { passive: false });
-    element.addEventListener('gestureend', onEnd, { passive: false });
+    root.addEventListener('gesturestart', onStart, { passive: false });
+    root.addEventListener('gesturechange', onChange, { passive: false });
+    root.addEventListener('gestureend', onEnd, { passive: false });
 
     return () => {
-        element.removeEventListener('gesturestart', onStart);
-        element.removeEventListener('gesturechange', onChange);
-        element.removeEventListener('gestureend', onEnd);
+        root.removeEventListener('gesturestart', onStart);
+        root.removeEventListener('gesturechange', onChange);
+        root.removeEventListener('gestureend', onEnd);
     };
 }
