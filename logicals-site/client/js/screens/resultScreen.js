@@ -76,7 +76,7 @@ function renderPuzzle(puzzle, puzzleIndex, onPlay, onDuel) {
         text: 'Spielen',
         attrs: { type: 'button' },
     });
-    playButton.addEventListener('click', () => onPlay(puzzle));
+    playButton.addEventListener('click', () => onPlay(puzzle, puzzleIndex));
     const duelButton = make('button', {
         className: 'btn btn--ghost btn--block',
         text: 'Duell',

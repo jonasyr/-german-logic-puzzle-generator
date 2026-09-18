@@ -236,3 +236,17 @@
     .duel-entry { padding: var(--space-4); }
     .duel-result-list { grid-template-columns: 1fr; }
 }
+
+/* The resume button carries its own second line, so the player can tell which
+   game they are about to go back into before they commit to it. */
+.resume-button {
+    display: grid;
+    gap: 2px;
+    text-align: left;
+    padding: var(--space-3) var(--space-4);
+}
+.resume-button__label { font-weight: 600; }
+.resume-button__detail { font-size: 13px; opacity: .85; }
+.resume-button[hidden] { display: none; }
+.start-hint { margin: 0; text-align: left; }
+.start-hint:empty { display: none; }
