@@ -221,3 +221,59 @@ test('solving a puzzle is acknowledged, with a way back to the start', async ({ 
   // A solved puzzle is not something to come back to.
   await expect(page.locator('#resume-button')).toBeHidden();
 });
+
+/** One duel row, one solo row, and one duel the opponent has not finished. */
+const HISTORY = [
+  {
+    id: 3, playerId: 1, roomId: null, attemptKey: 'c', puzzleFingerprint: 'f',
+    puzzleTitle: 'Allein im Museum', themeId: 'museum', difficulty: 'leicht',
+    seed: 4711, configuration: {}, elapsedMs: 50_000, failedChecks: 0,
+    completedAt: '2026-09-18T02:00:00Z',
+    opponentName: null, opponentElapsedMs: null, opponentFailedChecks: null,
+  },
+  {
+    id: 2, playerId: 1, roomId: 5, attemptKey: 'b', puzzleFingerprint: 'f',
+    puzzleTitle: 'Duell gewonnen', themeId: 'museum', difficulty: 'mittel',
+    seed: 41, configuration: {}, elapsedMs: 61_000, failedChecks: 2,
+    completedAt: '2026-09-18T01:00:00Z',
+    opponentName: 'Bo', opponentElapsedMs: 75_000, opponentFailedChecks: 4,
+  },
+  {
+    id: 1, playerId: 1, roomId: 9, attemptKey: 'a', puzzleFingerprint: 'f',
+    puzzleTitle: 'Duell offen', themeId: 'museum', difficulty: 'schwer',
+    seed: 7, configuration: {}, elapsedMs: 90_000, failedChecks: 1,
+    completedAt: '2026-09-18T00:00:00Z',
+    opponentName: null, opponentElapsedMs: null, opponentFailedChecks: null,
+  },
+];
+
+test('the results list settles each duel and leaves solo rows alone', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await withPlayer(page);
+  await page.route('**/api/players/1/results*', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ results: HISTORY }),
+  }));
+  await page.goto('/');
+  await page.locator('#history-button').click();
+
+  const cards = page.locator('.history-card');
+  await expect(cards).toHaveCount(3);
+
+  // A solo result says nothing about a duel.
+  const solo = cards.filter({ hasText: 'Allein im Museum' });
+  await expect(solo.locator('.history-card__duel')).toHaveCount(0);
+
+  // A finished duel says who won, against whom, and by how much.
+  const won = cards.filter({ hasText: 'Duell gewonnen' }).locator('.history-card__duel');
+  await expect(won).toContainText('Duell gewonnen');
+  await expect(won).toContainText('gegen Bo');
+  await expect(won).toContainText('1:15');          // the opponent's time
+  await expect(won).toContainText('0:14 Unterschied');
+  await expect(won).toHaveClass(/is-gewonnen/);
+
+  // A duel the other side has not finished says so rather than showing a blank.
+  const open = cards.filter({ hasText: 'Duell offen' }).locator('.history-card__duel');
+  await expect(open).toContainText('das andere Ergebnis fehlt noch');
+  await expect(open).toHaveClass(/is-pending/);
+});

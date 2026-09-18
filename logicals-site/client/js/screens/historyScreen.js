@@ -6,6 +6,38 @@ function formatDuration(milliseconds) {
     return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
+/**
+ * Who won, and by how much.
+ *
+ * Only the two numbers that decide it - the time settles the duel, the failed
+ * checks say how it was won. A duel whose other side has not finished yet says
+ * so rather than showing a blank.
+ */
+function duelVerdict(result) {
+    const row = make('p', { className: 'history-card__duel' });
+    if (!result.opponentName) {
+        row.classList.add('is-pending');
+        row.textContent = 'Duell · das andere Ergebnis fehlt noch';
+        return row;
+    }
+
+    const mine = result.elapsedMs;
+    const theirs = result.opponentElapsedMs;
+    const outcome = mine < theirs ? 'gewonnen' : mine > theirs ? 'verloren' : 'unentschieden';
+    row.classList.add(`is-${outcome}`);
+
+    const gap = Math.abs(mine - theirs);
+    const margin = outcome === 'unentschieden' ? '' : ` · ${formatDuration(gap)} Unterschied`;
+    row.append(
+        make('strong', { text: `Duell ${outcome}` }),
+        make('span', {
+            text: ` gegen ${result.opponentName} — ${formatDuration(theirs)}`
+                + ` · ${result.opponentFailedChecks} Fehlversuche${margin}`,
+        }),
+    );
+    return row;
+}
+
 function resultCard(result) {
     const card = make('article', { className: 'history-card' });
     card.append(make('h3', { text: result.puzzleTitle }));
@@ -13,6 +45,7 @@ function resultCard(result) {
         className: 'history-card__score',
         text: `${formatDuration(result.elapsedMs)} · ${result.failedChecks} Fehlversuche`,
     }));
+    if (result.roomId) card.append(duelVerdict(result));
     card.append(make('p', {
         className: 'history-card__meta',
         text: `${result.difficulty} · Seed ${result.seed} · ${new Date(result.completedAt).toLocaleDateString('de-DE')}`,

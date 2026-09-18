@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
 import { createRoomsRepository } from '../worker/repositories/rooms';
+import { createResultsRepository } from '../worker/repositories/results';
 import type { D1Database, D1PreparedStatement, D1Result } from '../worker/types';
 
 class SqliteStatement implements D1PreparedStatement {
@@ -64,5 +65,84 @@ describe('D1 repository SQL', () => {
       puzzleThemeId: 'museum', effectivePuzzleSeed: 1041,
     }));
     database.close();
+  });
+});
+
+describe('duel results in the history', () => {
+  /** A database with two players, one duel room, and one solo result each. */
+  function seeded() {
+    const database = new DatabaseSync(':memory:');
+    for (const migration of ['0000_logicals_multiplayer', '0001_duel_progress']) {
+      database.exec(readFileSync(`drizzle/${migration}.sql`, 'utf8')
+        .replaceAll('--> statement-breakpoint', ''));
+    }
+    database.exec(`
+      INSERT INTO players (id, display_name, normalized_name, created_at)
+      VALUES (1, 'Ada', 'ada', 'x'), (2, 'Bo', 'bo', 'x');
+      INSERT INTO rooms (
+        id, code, host_player_id, configuration_json, booklet_seed, puzzle_index,
+        puzzle_fingerprint, puzzle_title, puzzle_theme_id, effective_puzzle_seed,
+        state, starts_at, expires_at, created_at
+      ) VALUES (
+        5, 'ABC234', 1, '{}', 41, 0, 'f', 'Museum', 'museum', 41,
+        'complete', '2026-09-18T00:00:00Z', '2026-09-19T00:00:00Z', '2026-09-18T00:00:00Z'
+      );
+    `);
+    const insert = (id: number, playerId: number, roomId: number | null, elapsed: number, checks: number, at: string) =>
+      database.exec(`
+        INSERT INTO results (
+          id, player_id, room_id, attempt_key, puzzle_fingerprint, puzzle_title,
+          theme_id, difficulty, seed, configuration_json, elapsed_ms, failed_checks, completed_at
+        ) VALUES (
+          ${id}, ${playerId}, ${roomId === null ? 'NULL' : roomId}, 'k${id}', 'f', 'Museum',
+          'museum', 'mittel', 41, '{}', ${elapsed}, ${checks}, '${at}'
+        );
+      `);
+    insert(1, 1, 5, 61_000, 2, '2026-09-18T01:00:00Z');   // Ada, in the duel
+    insert(2, 2, 5, 75_000, 4, '2026-09-18T01:01:00Z');   // Bo, same duel
+    insert(3, 1, null, 50_000, 0, '2026-09-18T02:00:00Z'); // Ada, solo
+    return database;
+  }
+
+  it('carries the opponent alongside a duel result', async () => {
+    const repository = createResultsRepository(adapter(seeded()));
+    const rows = await repository.listByPlayer(1, 50) as any[];
+
+    const duel = rows.find(row => row.roomId === 5)!;
+    expect(duel.opponentName).toBe('Bo');
+    expect(duel.opponentElapsedMs).toBe(75_000);
+    expect(duel.opponentFailedChecks).toBe(4);
+  });
+
+  it('leaves a solo result without an opponent rather than inventing one', async () => {
+    const repository = createResultsRepository(adapter(seeded()));
+    const rows = await repository.listByPlayer(1, 50) as any[];
+
+    const solo = rows.find(row => row.roomId === null)!;
+    expect(solo.opponentName ?? null).toBeNull();
+    expect(solo.opponentElapsedMs ?? null).toBeNull();
+  });
+
+  it('never joins a player to their own result', async () => {
+    const repository = createResultsRepository(adapter(seeded()));
+    for (const row of await repository.listByPlayer(1, 50) as any[]) {
+      expect(row.opponentName ?? null).not.toBe('Ada');
+    }
+  });
+
+  it('returns exactly one row per result, not one per opponent', async () => {
+    const repository = createResultsRepository(adapter(seeded()));
+    const rows = await repository.listByPlayer(1, 50) as any[];
+    // Ada has two results; a careless join would duplicate the duel one.
+    expect(rows).toHaveLength(2);
+    expect(new Set(rows.map(row => row.id)).size).toBe(2);
+  });
+
+  it('shows each side their own opponent', async () => {
+    const repository = createResultsRepository(adapter(seeded()));
+    const bo = await repository.listByPlayer(2, 50) as any[];
+    expect(bo).toHaveLength(1);
+    expect(bo[0].opponentName).toBe('Ada');
+    expect(bo[0].opponentElapsedMs).toBe(61_000);
   });
 });

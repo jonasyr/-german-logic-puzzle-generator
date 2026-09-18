@@ -256,3 +256,16 @@
 .start-note[hidden] { display: none; }
 .start-hint { margin: 0; text-align: center; }
 .start-hint:empty { display: none; }
+
+/* A duel row says who won before it says anything else, because that is what
+   you came to the list for. */
+.history-card__duel {
+    margin: var(--space-2) 0 0;
+    font-size: 14px;
+    line-height: 1.35;
+}
+.history-card__duel strong { font-weight: 700; }
+.history-card__duel.is-gewonnen strong { color: var(--good); }
+.history-card__duel.is-verloren strong { color: var(--danger-fg); }
+.history-card__duel.is-unentschieden strong { color: var(--muted); }
+.history-card__duel.is-pending { color: var(--muted); font-style: italic; }

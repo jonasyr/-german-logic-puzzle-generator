@@ -150,6 +150,10 @@ export function publicResult(result: ResultRecord) {
     elapsedMs: result.elapsedMs,
     failedChecks: result.failedChecks,
     completedAt: result.completedAt,
+    // Null on solo rows, and on a duel the other side has not finished yet.
+    opponentName: result.opponentName ?? null,
+    opponentElapsedMs: result.opponentElapsedMs ?? null,
+    opponentFailedChecks: result.opponentFailedChecks ?? null,
   };
 }
 

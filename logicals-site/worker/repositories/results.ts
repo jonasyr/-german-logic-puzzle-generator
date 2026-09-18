@@ -14,6 +14,10 @@ export interface ResultRecord {
   elapsedMs: number;
   failedChecks: number;
   completedAt: string;
+  /** Present only on duel rows, and only once the opponent has finished. */
+  opponentName?: string | null;
+  opponentElapsedMs?: number | null;
+  opponentFailedChecks?: number | null;
 }
 
 export type NewResult = Omit<ResultRecord, 'id'>;
@@ -86,11 +90,38 @@ export function createResultsRepository(db: D1Database): ResultRepository {
     },
 
     async listByPlayer(playerId, limit) {
+      /*
+       * The opponent comes along for duel rows.
+       *
+       * A room holds exactly two members and results carry a unique
+       * (room_id, player_id) index, so this join can match at most one row and
+       * cannot duplicate a result. `results.room_id IS NOT NULL` keeps solo rows
+       * out of it entirely rather than relying on the player comparison alone.
+       */
       const result = await db.prepare(`
-        SELECT ${SELECT_COLUMNS}
-        FROM results
-        WHERE player_id = ?
-        ORDER BY completed_at DESC, id DESC
+        SELECT
+          r.id,
+          r.player_id AS playerId,
+          r.room_id AS roomId,
+          r.attempt_key AS attemptKey,
+          r.puzzle_fingerprint AS puzzleFingerprint,
+          r.puzzle_title AS puzzleTitle,
+          r.theme_id AS themeId,
+          r.difficulty,
+          r.seed,
+          r.configuration_json AS configurationJson,
+          r.elapsed_ms AS elapsedMs,
+          r.failed_checks AS failedChecks,
+          r.completed_at AS completedAt,
+          op.display_name AS opponentName,
+          o.elapsed_ms AS opponentElapsedMs,
+          o.failed_checks AS opponentFailedChecks
+        FROM results r
+        LEFT JOIN results o
+          ON r.room_id IS NOT NULL AND o.room_id = r.room_id AND o.player_id <> r.player_id
+        LEFT JOIN players op ON op.id = o.player_id
+        WHERE r.player_id = ?
+        ORDER BY r.completed_at DESC, r.id DESC
         LIMIT ?
       `).bind(playerId, limit).all<ResultRecord>();
       return result.results ?? [];
