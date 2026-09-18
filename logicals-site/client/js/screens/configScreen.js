@@ -23,7 +23,21 @@ export function updateTargetOptions() {
     select.value = String(Math.min(previous, categoryCount - 2));
 }
 
+/**
+ * Gives the seed field a value before anything can be generated with it.
+ *
+ * loadOptions fills it too, but only after awaiting the generator options - and
+ * on a phone that await is long enough to open the settings and press generate.
+ * An empty field used to become seed 0, which is both a degenerate booklet and
+ * a nonsense entry in the results list.
+ */
+export function ensureSeed() {
+    const field = el('field-seed');
+    if (!field.value.trim()) field.value = randomSeed();
+}
+
 export async function loadOptions(state) {
+    ensureSeed();
     const data = await fetchOptions();
     state.limits = data.limits;
     state.pdfAvailable = data.pdfAvailable;
@@ -61,7 +75,9 @@ export function collectOptions() {
         themeId: el('field-themeId').value,
         difficulty: el('field-difficulty').value,
         targetCategoryIndex: Number(el('field-targetCategoryIndex').value),
-        seed: Number(el('field-seed').value) || 0,
+        // An empty field means "surprise me", not "seed zero": zero is a real
+        // seed that every empty field would share.
+        seed: Number(el('field-seed').value.trim() || randomSeed()),
         ...(title ? { title } : {}),
         ...(subtitle ? { subtitle } : {}),
         colors: {

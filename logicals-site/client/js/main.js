@@ -7,7 +7,7 @@ import { initPlayerController } from './players/playerController.js';
 import { getSelectedPlayer } from './players/playerStore.js';
 import { initResultOutbox } from './results/outbox.js';
 import {
-    loadOptions, collectOptions, updateTargetOptions, applyPalette, randomSeed,
+    loadOptions, collectOptions, updateTargetOptions, applyPalette, randomSeed, ensureSeed,
 } from './screens/configScreen.js';
 import { renderBooklet } from './screens/resultScreen.js';
 import { initPlay, openPlay } from './play/playController.js';
@@ -122,7 +122,12 @@ async function resumeSavedGame() {
 
 function wire() {
     wireBackButtons();
-    el('start-button').addEventListener('click', () => showScreen('screen-config'));
+    el('start-button').addEventListener('click', () => {
+        // Opening the settings before the generator options have loaded must not
+        // leave the seed field empty.
+        ensureSeed();
+        showScreen('screen-config');
+    });
     el('resume-button').addEventListener('click', resumeSavedGame);
 
     // Coming back from a game is exactly when the offer changes: it appears

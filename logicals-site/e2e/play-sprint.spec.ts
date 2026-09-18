@@ -177,3 +177,47 @@ test('a note is never reported as a wrong mark', async ({ page }) => {
   await expect(page.locator('#play-status')).not.toContainText('stimmt nicht');
   await expect(page.locator('#play-status')).not.toContainText('stimmen nicht');
 });
+
+test('solving a puzzle is acknowledged, with a way back to the start', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await withPlayer(page);
+  await page.route('**/api/results', route => route.fulfill({
+    status: 201, contentType: 'application/json', body: '{"result":{}}',
+  }));
+  await page.goto('/');
+  await generateAndPlay(page);
+
+  // Solve it from the solution table, the way the duel spec does.
+  await page.locator('#play-solution-button').evaluate((button: HTMLButtonElement) => button.click());
+  await page.locator('#confirm-ok').click();
+  const labels = await page.locator('#play-solution-table').evaluate(container => {
+    const headers = [...container.querySelectorAll('th')].map(cell => cell.textContent || '');
+    return [...container.querySelectorAll('tbody tr')].flatMap(row => {
+      const values = [...row.querySelectorAll('td')].map(cell => cell.textContent || '');
+      return headers.flatMap((_, left) => headers.slice(left + 1).map((__, offset) =>
+        `${values[left]} / ${values[left + offset + 1]}`));
+    });
+  });
+  await page.locator('#overview-mark-yes').evaluate((button: HTMLButtonElement) => button.click());
+  await page.locator('.play-pager .cell').evaluateAll((cells, wanted) => {
+    for (const label of wanted as string[]) {
+      const cell = cells.find(c => (c as HTMLElement).dataset.label === label) as HTMLButtonElement;
+      cell.click();
+    }
+  }, labels);
+
+  const solved = page.locator('#solved-dialog');
+  await expect(solved).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('#solved-title')).toHaveText('Geschafft!');
+  await expect(page.locator('#solved-puzzle')).not.toBeEmpty();
+  // The numbers worth keeping, not just a cheer.
+  await expect(page.locator('#solved-time')).toHaveText(/^\d+:\d{2}$/);
+  await expect(page.locator('#solved-checks')).toHaveText(/^\d+$/);
+  await expect(page.locator('#solved-marks')).toHaveText(/^\d+$/);
+
+  await page.locator('#solved-home').click();
+  await expect(page.locator('#screen-start')).toHaveClass(/is-active/);
+  // A solved puzzle is not something to come back to.
+  await expect(page.locator('#resume-button')).toBeHidden();
+});

@@ -369,6 +369,31 @@
         </form>
     </dialog>
 
+    <dialog class="confirm solved" id="solved-dialog" aria-labelledby="solved-title">
+        <p class="solved__kicker">Gelöst</p>
+        <h3 class="confirm__title" id="solved-title">Geschafft!</h3>
+        <p class="solved__puzzle" id="solved-puzzle"></p>
+        <dl class="solved__stats">
+            <div class="solved__stat">
+                <dt>Zeit</dt>
+                <dd id="solved-time">0:00</dd>
+            </div>
+            <div class="solved__stat">
+                <dt>Fehlprüfungen</dt>
+                <dd id="solved-checks">0</dd>
+            </div>
+            <div class="solved__stat">
+                <dt>Markierungen</dt>
+                <dd id="solved-marks">0</dd>
+            </div>
+        </dl>
+        <p class="confirm__text" id="solved-note"></p>
+        <form method="dialog" class="confirm__actions">
+            <button class="btn btn--ghost" type="submit" value="stay" id="solved-stay">Rätsel ansehen</button>
+            <button class="btn btn--primary" type="submit" value="home" id="solved-home" autofocus>Zur Startseite</button>
+        </form>
+    </dialog>
+
     <div class="overlay" id="overlay" hidden>
         <div class="spinner"></div>
         <p id="overlay-text">Rätsel werden erzeugt …</p>

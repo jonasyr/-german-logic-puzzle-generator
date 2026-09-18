@@ -13,6 +13,7 @@ import { clearResume, saveResume } from './resumeStore.js';
 import { createMarkTool, nextMark } from './markTool.js';
 import { createCluesSheet } from './cluesSheet.js';
 import { askConfirm, closeConfirm } from '../ui/confirmDialog.js';
+import { closeSolved, showSolved } from '../ui/solvedDialog.js';
 import { createAuthoritativeTimer, createTimer, formatTime } from './playTimer.js';
 import { createCompletionSubmission } from '../results/completion.js';
 import { flushOutbox, queueResult } from '../results/outbox.js';
@@ -232,6 +233,21 @@ function handleSolved() {
     renderUndo();
     persist();
     queueCompletion(elapsedMs).catch(error => console.error('Completion queue failed', error));
+
+    // A duel has its own result screen, with the other player on it. Solo had
+    // nothing at all - the moment the whole screen is built for passed with a
+    // line of status text and no way back to the start.
+    if (state.context?.mode === 'duel') return;
+    showSolved({
+        title: `${state.puzzle.number}. ${state.puzzle.title}`,
+        time: formatTime(elapsedMs),
+        failedChecks: state.failedChecks,
+        marks: state.marks.size,
+        note: state.failedChecks === 0
+            ? 'Ohne eine einzige Fehlprüfung.'
+            : 'Das Ergebnis steht in deinen Ergebnissen.',
+        onHome: () => showScreen('screen-start'),
+    });
 }
 
 async function queueCompletion(elapsedMs) {
@@ -475,6 +491,7 @@ export function openPlay(puzzle, context) {
     sheet.render(puzzle.clues, state.usedClues, persist);
     sheet.collapse();
     closeConfirm();
+    closeSolved();
     // The solution starts hidden behind its confirmation on every open.
     clear(el('play-solution-table'));
     el('play-solution-button').hidden = false;
@@ -534,6 +551,7 @@ export function initPlay() {
         persist();
         sheet.collapse();
         closeConfirm();
+        closeSolved();
     });
 
     // iOS suspends timers when the tab is hidden; re-derive from timestamps on
