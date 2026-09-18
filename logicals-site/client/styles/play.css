@@ -135,7 +135,7 @@
      * definition, and the sheet peek is already named, so the offset is built
      * from those two rather than from a measured constant that would rot.
      */
-    bottom: calc(var(--sheet-peek) + var(--tap-min) + var(--space-2) * 2);
+    bottom: calc(var(--stage-foot) + var(--tap-min) + var(--space-2) * 2);
     z-index: 4;                 /* under the "Pausiert" veil at 5 */
     margin: 0;
     padding: var(--space-2) var(--space-3);
@@ -619,12 +619,15 @@
 /*
  * Keeps the end of the page clear of the peeking sheet.
  *
- * Named, because the status overlay has to sit above the same sheet and two
- * copies of this number would drift apart.
+ * Named, because the status overlay has to clear the same foot and two copies
+ * of this number would drift apart. NOT called --sheet-peek: that name is
+ * already the clue sheet's own, measured from its real chrome by
+ * js/play/cluesSheet.js, and the sheet is a descendant of this element - so
+ * redefining it here would shadow a value the sheet depends on.
  */
 .play-stage {
-    --sheet-peek: calc(88px + var(--safe-bottom));
-    padding-bottom: var(--sheet-peek);
+    --stage-foot: calc(88px + var(--safe-bottom));
+    padding-bottom: var(--stage-foot);
 }
 
 /* --- View switching ------------------------------------------------------- */
@@ -720,7 +723,7 @@
        edge, because the bar and toolbar are not part of that guess. */
     /* Still clear of the peeking clue sheet, which is fixed to the bottom across
        the full width and would otherwise cover the foot of the action bar. */
-    .play-stage { flex: 1 1 auto; min-height: 0; padding-bottom: calc(50px + var(--safe-bottom)); }
+    .play-stage { flex: 1 1 auto; min-height: 0; }
     .play-overview {
         grid-template-columns: minmax(0, 1fr) 150px;
         align-items: stretch;
@@ -751,7 +754,17 @@
         padding-top: 0;
         padding-bottom: calc(var(--space-2) + var(--safe-bottom));
     }
-    .play-stage { padding-bottom: calc(60px + var(--safe-bottom)); }
+    /*
+     * A shorter foot, and the action bar is in the 150px side column rather
+     * than under the grid - so the overlay reserves no room for it vertically
+     * and stops short of it horizontally instead. Reusing the portrait offset
+     * here put the message in the middle of the grid, over the row labels.
+     */
+    .play-stage { --stage-foot: calc(60px + var(--safe-bottom)); }
+    .play-status {
+        bottom: calc(var(--stage-foot) + var(--space-2));
+        right: calc(150px + var(--space-3));
+    }
 
     /*
      * A 375px-tall window has no room for the story, the target question and the
