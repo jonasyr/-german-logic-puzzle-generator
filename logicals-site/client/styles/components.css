@@ -19,6 +19,10 @@
                 opacity var(--dur-fast) var(--ease-out),
                 transform var(--dur-fast) var(--ease-out);
 }
+/* `display: inline-flex` above beats the `hidden` attribute's own display: none,
+   so any .btn toggled with `hidden` stayed visible. That silently affected the
+   solution button too, which is meant to disappear once the solution is shown. */
+.btn[hidden] { display: none; }
 .btn:active:not(:disabled) { transform: scale(.97); }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
 
