@@ -34,15 +34,32 @@ let openThemeId = null;
  * Zurückhaltung, sondern eine Falschaussage: der Spieler hat vielleicht
  * vierzig gelöst, nur weiß dieses Gerät es noch nicht.
  */
-export function renderCollectionNote(player) {
+export async function renderCollectionNote(player) {
     const note = el('collection-detail');
     if (!player) { note.hidden = true; return; }
+    activePlayer = player;
+
+    const show = () => {
+        const total = totalProgress(solved);
+        note.hidden = total.solved === 0;
+        note.textContent = `${total.solved} von ${total.total} gelöst`;
+    };
+
+    // Erst der Zwischenspeicher, damit sofort etwas dasteht.
     solved = cachedSolvedSeeds(player.id);
-    known = solved.size > 0;
-    if (!known) { note.hidden = true; return; }
-    const total = totalProgress(solved);
-    note.hidden = false;
-    note.textContent = `${total.solved} von ${total.total} gelöst`;
+    show();
+
+    /*
+     * Und dann wirklich nachfragen.
+     *
+     * Ohne das stünde der Fortschritt auf einem frischen Gerät erst da,
+     * nachdem man die Sammlung einmal geöffnet hat - also ausgerechnet dort
+     * nicht, wo er hingehört. Die Abfrage ist eine Liste Zahlen und läuft
+     * neben der ohnehin stattfindenden Ergebnisabfrage für das Tagesrätsel.
+     */
+    solved = await loadSolvedSeeds(player.id);
+    known = true;
+    show();
 }
 
 function chapterRow(chapter) {

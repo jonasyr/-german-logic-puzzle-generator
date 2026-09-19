@@ -27,14 +27,11 @@ async function ada(page: Page, solvedSeeds: number[] = []) {
   }));
 }
 
-test('der Startbildschirm zeigt den Stand, sobald einer bekannt ist', async ({ page }) => {
+test('der Startbildschirm zeigt den Stand, ohne dass man erst hineingeht', async ({ page }) => {
+  // Auf einem frischen Gerät ist der Zwischenspeicher leer. Stünde der Stand
+  // erst nach dem ersten Besuch der Sammlung da, fehlte er ausgerechnet dort,
+  // wo er hingehört.
   await ada(page, [1000001, 1000002]);
-  await page.goto('/');
-  await page.locator('#collection-button').click();
-  await expect(page.locator('#collection-total')).toContainText('2 von 120');
-
-  // Und beim nächsten Start steht er schon auf dem Startbildschirm - aus dem
-  // Zwischenspeicher, ohne auf das Netz zu warten.
   await page.goto('/');
   await expect(page.locator('#collection-detail')).toContainText('2 von 120');
 });

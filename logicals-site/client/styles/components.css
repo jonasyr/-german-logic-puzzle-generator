@@ -318,6 +318,19 @@ input[type="number"] {
     border-top: var(--hairline) solid var(--line);
 }
 .action-bar--split { grid-auto-flow: column; grid-auto-columns: 1fr; }
+
+/*
+ * Browser-gesteuertes Scrollen muss die klebende Leiste einrechnen.
+ *
+ * Gemessen bei 320x568: tippt man das Seed-Feld an, scrollt iOS es "ins Bild"
+ * und legt es dabei unter die Leiste - Unterkante 497, Leistenoberkante 447.
+ * Erreichbar ist es (bei vollem Scrollen liegt es frei), nur zielt der Browser
+ * daneben. scroll-padding verschiebt genau dieses Ziel.
+ *
+ * Grosszuegig bemessen, weil die Leiste zwei gestapelte Knoepfe tragen kann
+ * und ihre Hoehe damit nicht fest ist.
+ */
+html { scroll-padding-bottom: calc(var(--tap-min) * 2 + var(--space-5) * 2 + var(--safe-bottom)); }
 .btn--block { width: 100%; }
 
 .hint { margin: 0; color: var(--muted); font-size: 14px; min-height: 1.2em; }

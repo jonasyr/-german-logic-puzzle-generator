@@ -183,7 +183,7 @@ function refreshStartScreen() {
     start.classList.remove('btn--primary');
     start.classList.add('btn--on-dark');
 
-    renderCollectionNote(player);
+    renderCollectionNote(player).catch(() => { /* best effort, wie die Serie */ });
     refreshDailyButton().catch(() => { /* best effort; see above */ });
 }
 
