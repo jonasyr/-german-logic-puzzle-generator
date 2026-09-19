@@ -61,6 +61,8 @@
                     <h2 class="start-group__caption" id="start-group-play">Spielen</h2>
                     <button class="btn btn--primary btn--large btn--block" type="button" id="daily-button" disabled>Rätsel des Tages</button>
                     <p class="start-note" id="daily-detail" hidden></p>
+                    <button class="btn btn--on-dark btn--block" type="button" id="collection-button">Sammlung</button>
+                    <p class="start-note" id="collection-detail" hidden></p>
                     <button class="btn btn--primary btn--large btn--block" type="button" id="resume-button" hidden>Weiterspielen</button>
                     <p class="start-note" id="resume-detail" hidden></p>
                     <p class="hint start-hint" id="start-hint" role="status" aria-live="polite"></p>
@@ -274,6 +276,34 @@
                 </p>
             </section>
         </div>
+    </section>
+
+    <!-- Die Sammlung: Kapitelübersicht und ein Kapitel. -->
+    <section class="screen screen--history" id="screen-collection">
+        <header class="bar">
+            <button class="btn btn--ghost btn--back" type="button" aria-label="Zurück">
+                <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Zurück</span>
+            </button>
+            <h2>Sammlung</h2>
+        </header>
+        <p class="result-sub" id="collection-total"></p>
+        <p class="hint" id="collection-hint" role="status"></p>
+        <!-- Die erste Handlung ist Weiterspielen, nicht Suchen. Ohne das kostet
+             der nächste Eintrag einen Blick durch zehn Kapitel. -->
+        <button class="btn btn--primary btn--large btn--block" type="button" id="collection-continue" hidden></button>
+        <div class="history-list" id="chapter-list"></div>
+    </section>
+
+    <section class="screen screen--history" id="screen-chapter">
+        <header class="bar">
+            <button class="btn btn--ghost btn--back" type="button" aria-label="Zurück">
+                <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Zurück</span>
+            </button>
+            <h2 id="chapter-title">Kapitel</h2>
+        </header>
+        <p class="result-sub" id="chapter-progress"></p>
+        <p class="hint" id="chapter-hint" role="status"></p>
+        <div class="history-list" id="entry-list"></div>
     </section>
 
     <!-- 8. Spielen -->

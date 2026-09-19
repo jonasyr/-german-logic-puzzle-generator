@@ -1,6 +1,7 @@
 /** Bootstraps the app and wires the screens together. */
 
 import { el, setHint } from './dom.js';
+import { clearBusy, setBusy } from './ui/busy.js';
 import { onLeave, showScreen, wireBackButtons } from './router.js';
 import { fetchBooklet } from './api.js';
 import { initPlayerController } from './players/playerController.js';
@@ -10,6 +11,9 @@ import {
     loadOptions, collectOptions, updateTargetOptions, randomSeed, ensureSeed,
 } from './screens/configScreen.js';
 import { initSettingsScreen } from './screens/settingsScreen.js';
+import {
+    initCollection, openCollection, renderCollectionNote,
+} from './screens/collectionScreen.js';
 import { initPlay, openPlay } from './play/playController.js';
 import { createDuelForPuzzle, initDuelController, openRoomFromUrl } from './duel/lobbyController.js';
 import { initDuelResultController } from './duel/duelResultController.js';
@@ -27,15 +31,6 @@ import { fingerprintPuzzle } from './generation/canonicalPuzzle.ts';
  * kept: exactly one puzzle is generated and it is played immediately.
  */
 const state = { options: null };
-
-function setBusy(text) {
-    el('overlay-text').textContent = text;
-    el('overlay').hidden = false;
-}
-
-function clearBusy() {
-    el('overlay').hidden = true;
-}
 
 /**
  * Erzeugt das eingestellte Rätsel und öffnet es unmittelbar.
@@ -188,6 +183,7 @@ function refreshStartScreen() {
     start.classList.remove('btn--primary');
     start.classList.add('btn--on-dark');
 
+    renderCollectionNote(player);
     refreshDailyButton().catch(() => { /* best effort; see above */ });
 }
 
@@ -262,6 +258,12 @@ function wire() {
     // Zwei Wege hinein: vom Start, und aus dem laufenden Spiel. Der Weg aus dem
     // Spiel läuft nicht über die Duell-Rückfrage - man verlässt das Duell dabei
     // nicht, man schaut nur kurz weg, und onLeave hält Uhr und Fortschritt an.
+    initCollection({ onOpenPlay: openPlay });
+    el('collection-button').addEventListener('click', () => {
+        const player = getSelectedPlayer();
+        if (player) openCollection(player);
+    });
+
     initSettingsScreen();
     el('settings-button').addEventListener('click', () => showScreen('screen-settings'));
     el('play-settings').addEventListener('click', () => showScreen('screen-settings'));

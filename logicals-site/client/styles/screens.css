@@ -297,3 +297,41 @@
 #stats-body { margin-top: var(--space-4); }
 /* Says what it covers rather than implying it covers everything. */
 .stats-scope { margin-top: var(--space-5); font-size: 12px; color: var(--muted); }
+
+/* --- Sammlung ------------------------------------------------------------- */
+
+/*
+ * Eine Listenzeile ist ein Knopf, keine Karte.
+ *
+ * Als <button> erbt sie aus base.css, was auf iOS zählt: touch-action
+ * manipulation (kein Doppeltipp-Zoom, keine 300-ms-Verzögerung), kein grauer
+ * Aufblitzer, kein Lange-drücken-Menü. Ein <article> mit Klickhandler hätte
+ * nichts davon, und genau daran ist in dieser Codebasis schon einmal der
+ * Doppeltipp-Zoom hängen geblieben.
+ */
+.list-row {
+    width: 100%;
+    min-height: var(--tap-min);
+    display: grid;
+    gap: var(--space-1);
+    text-align: left;
+    border: var(--hairline) solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: var(--space-4) var(--space-5);
+    transition: background var(--dur-fast) var(--ease-out);
+}
+/* Sichtbare Rückmeldung: der Tipp arbeitet danach bis zu 2,4 Sekunden. */
+.list-row:active { background: var(--surface-sunken); }
+.list-row h3 { margin: 0; font-size: var(--text-body); }
+.list-row .list-row__meta { margin: 0; color: var(--muted); font-size: var(--text-caption); }
+.list-row .list-row__score { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.list-row.is-solved h3 { color: var(--muted); }
+.list-row.is-solved .list-row__score { color: var(--teal); }
+
+/* Überziehen bewegt die Liste, nicht die Seite darunter. */
+#chapter-list,
+#entry-list { overscroll-behavior: contain; }
+
+/* Der Weiter-Knopf steht über der Liste und hat Luft zu ihr. */
+#collection-continue { margin: var(--space-4) 0 var(--space-2); }
