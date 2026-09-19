@@ -44,7 +44,51 @@
     color: color-mix(in srgb, var(--on-ink) 84%, transparent);
     font-size: 15px;
 }
-.start-actions { width: min(320px, 100%); margin: 0 auto; display: grid; gap: var(--space-2); }
+.start-actions { width: min(320px, 100%); margin: 0 auto; display: grid; gap: var(--gap-lg); }
+
+/*
+ * Gruppen statt einer Reihe.
+ *
+ * Sieben gleich aussehende Knöpfe untereinander sagen nicht, welcher wozu
+ * gehört: spielen, beitreten, nachschlagen und einstellen standen gleichwertig
+ * da. Die Überschriften sind klein und zurückhaltend - sie sollen die Knöpfe
+ * ordnen, nicht mit ihnen um Aufmerksamkeit ringen.
+ */
+.start-group { display: grid; gap: var(--space-2); text-align: left; }
+.start-group__caption {
+    margin: 0 0 var(--space-1);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #c9cfdb;   /* fallback before Safari 16.2 gained color-mix */
+    color: color-mix(in srgb, var(--on-ink) 62%, transparent);
+}
+
+/*
+ * Wer spielt: eine Zustandszeile, kein Hauptknopf.
+ *
+ * Sie stand als erster großer Knopf über allem anderen und damit vor dem Grund,
+ * die App überhaupt zu öffnen. Die Tapfläche bleibt bei 44 pt - zurückhaltend
+ * heißt nicht schwer zu treffen.
+ */
+.start-who {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--tap-min);
+    margin: 0 auto var(--gap-lg);
+    padding: 0 16px;
+    border-radius: var(--radius-pill);
+    background: #2b3648;   /* fallback before Safari 16.2 gained color-mix */
+    background: color-mix(in srgb, var(--on-ink) 14%, transparent);
+    color: #dde1ea;
+    color: color-mix(in srgb, var(--on-ink) 88%, transparent);
+    font-size: 14px;
+    font-weight: 500;
+}
 
 /* --- Result --------------------------------------------------------------- */
 

@@ -94,3 +94,54 @@ test('der Fokus wandert auf die Ueberschrift des neuen Bildschirms', async ({ pa
   expect(await page.evaluate(() => document.activeElement?.closest('.screen')?.id))
     .toBe('screen-config');
 });
+
+/*
+ * Der Startbildschirm ist gruppiert.
+ *
+ * Er trug sieben gleich aussehende Knoepfe untereinander: spielen, beitreten,
+ * nachschlagen und einstellen in einer Reihe, ohne dass etwas sagte, welcher
+ * wozu gehoert. Die Identitaet ("Spieler auswaehlen") stand dabei ganz oben und
+ * damit vor dem, weswegen man die App oeffnet.
+ */
+test('der Startbildschirm ordnet seine Knoepfe in benannte Gruppen', async ({ page }) => {
+  await withPlayer(page);
+  await page.goto('/');
+  await expect(page.locator('#start-button')).toBeEnabled({ timeout: 30_000 });
+
+  const groups = page.locator('#screen-start .start-group');
+  await expect(groups).toHaveCount(2);
+  await expect(groups.nth(0)).toContainText('Spielen');
+  await expect(groups.nth(1)).toContainText('Mehr');
+
+  // Spielen zuerst, und zwar alle vier Wege ins Raetsel.
+  const play = groups.nth(0);
+  for (const id of ['#daily-button', '#start-button', '#duel-join-button']) {
+    await expect(play.locator(id)).toHaveCount(1);
+  }
+  // Nachschlagen und Einstellen gehoeren nicht dazwischen.
+  const more = groups.nth(1);
+  for (const id of ['#history-button', '#settings-button']) {
+    await expect(more.locator(id)).toHaveCount(1);
+  }
+
+  // Die Identitaet steht nicht mehr vor dem Spielen, sondern als Zeile am Kopf.
+  const playerBox = (await page.locator('#player-button').boundingBox())!;
+  const dailyBox = (await page.locator('#daily-button').boundingBox())!;
+  expect(playerBox.height, 'der Spielerknopf ist kein Hauptknopf mehr')
+    .toBeLessThan(dailyBox.height);
+});
+
+test('die Gruppen ueberleben das Ausblenden der Duell-Funktionen', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('logicals.prefs.v1', JSON.stringify({
+    autoCross: true, hideClock: false, hideDuel: true,
+  })));
+  await withPlayer(page);
+  await page.goto('/');
+  await expect(page.locator('#start-button')).toBeEnabled({ timeout: 30_000 });
+
+  await expect(page.locator('#duel-join-button')).toBeHidden();
+  // Eine leere Gruppe waere schlimmer als keine: die Ueberschrift bleibt nur,
+  // solange noch etwas darunter steht.
+  await expect(page.locator('#screen-start .start-group')).toHaveCount(2);
+  await expect(page.locator('#daily-button')).toBeVisible();
+});

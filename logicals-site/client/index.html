@@ -43,17 +43,29 @@
             <p class="start-kicker">Deutsche Logikrätsel</p>
             <h1 class="start-title">LOGICALS</h1>
             <p class="start-sub">Neue Rätsel im Browser erzeugen, lösen und deine Ergebnisse speichern.</p>
+            <!-- Wer spielt, steht als Zeile am Kopf statt als Hauptknopf: es ist
+                 eine Angabe über den Zustand, nicht der Grund, die App zu öffnen. -->
+            <button class="start-who" id="player-button" type="button">Spieler auswählen</button>
+
             <div class="start-actions">
-                <button class="btn btn--on-dark btn--block" id="player-button" type="button">Spieler auswählen</button>
-                <button class="btn btn--primary btn--large btn--block" type="button" id="daily-button" disabled>Rätsel des Tages</button>
-                <p class="start-note" id="daily-detail" hidden></p>
-                <button class="btn btn--primary btn--large btn--block" type="button" id="resume-button" hidden>Weiterspielen</button>
-                <p class="start-note" id="resume-detail" hidden></p>
-                <p class="hint start-hint" id="start-hint" role="status" aria-live="polite"></p>
-                <button class="btn btn--primary btn--large btn--block" id="start-button" type="button" disabled>Rätsel erstellen</button>
-                <button class="btn btn--on-dark btn--block" id="duel-join-button" type="button" disabled>Duell beitreten</button>
-                <button class="btn btn--on-dark btn--block" id="history-button" type="button" disabled>Ergebnisse &amp; Statistik</button>
-                <button class="btn btn--on-dark btn--block" id="settings-button" type="button">Einstellungen</button>
+                <!-- Gruppiert, weil sieben gleich aussehende Knöpfe untereinander
+                     nicht sagen, welcher wozu gehört. Spielen zuerst. -->
+                <section class="start-group" aria-labelledby="start-group-play">
+                    <h2 class="start-group__caption" id="start-group-play">Spielen</h2>
+                    <button class="btn btn--primary btn--large btn--block" type="button" id="daily-button" disabled>Rätsel des Tages</button>
+                    <p class="start-note" id="daily-detail" hidden></p>
+                    <button class="btn btn--primary btn--large btn--block" type="button" id="resume-button" hidden>Weiterspielen</button>
+                    <p class="start-note" id="resume-detail" hidden></p>
+                    <p class="hint start-hint" id="start-hint" role="status" aria-live="polite"></p>
+                    <button class="btn btn--primary btn--large btn--block" id="start-button" type="button" disabled>Rätsel erstellen</button>
+                    <button class="btn btn--on-dark btn--block" id="duel-join-button" type="button" disabled>Duell beitreten</button>
+                </section>
+
+                <section class="start-group" aria-labelledby="start-group-more">
+                    <h2 class="start-group__caption" id="start-group-more">Mehr</h2>
+                    <button class="btn btn--on-dark btn--block" id="history-button" type="button" disabled>Ergebnisse &amp; Statistik</button>
+                    <button class="btn btn--on-dark btn--block" id="settings-button" type="button">Einstellungen</button>
+                </section>
             </div>
         </div>
     </section>

@@ -34,7 +34,8 @@ function duelVerdict(result) {
         make('strong', { text: `Duell ${outcome}` }),
         make('span', {
             text: ` gegen ${result.opponentName} — ${formatDuration(theirs)}`
-                + ` · ${result.opponentFailedChecks} Fehlversuche${margin}`,
+                + ` · ${result.opponentFailedChecks} `
+                + `${result.opponentFailedChecks === 1 ? 'Fehlprüfung' : 'Fehlprüfungen'}${margin}`,
         }),
     );
     return row;
@@ -45,7 +46,8 @@ function resultCard(result) {
     card.append(make('h3', { text: result.puzzleTitle }));
     card.append(make('p', {
         className: 'history-card__score',
-        text: `${formatDuration(result.elapsedMs)} · ${result.failedChecks} Fehlversuche`,
+        text: `${formatDuration(result.elapsedMs)} · ${result.failedChecks} `
+            + `${result.failedChecks === 1 ? 'Fehlprüfung' : 'Fehlprüfungen'}`,
     }));
     if (result.roomId) card.append(duelVerdict(result));
     card.append(make('p', {
