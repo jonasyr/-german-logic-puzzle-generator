@@ -28,6 +28,14 @@ export interface ResultRepository {
   insert(input: NewResult): Promise<boolean>;
   listByPlayer(playerId: number, limit: number): Promise<ResultRecord[]>;
   listByRoom(roomId: number): Promise<ResultRecord[]>;
+  /**
+   * Die Seeds, die dieser Spieler aus dem Katalogbereich gelöst hat.
+   *
+   * Eigene Abfrage statt listByPlayer, weil die Sammlung 120 Zustände braucht
+   * und die Ergebnisliste bei 100 gedeckelt ist - und weil hier nur Zahlen
+   * gebraucht werden, keine Ergebniszeilen.
+   */
+  listSolvedSeeds(playerId: number, minSeed: number): Promise<number[]>;
 }
 
 const SELECT_COLUMNS = `
@@ -135,6 +143,15 @@ export function createResultsRepository(db: D1Database): ResultRepository {
         ORDER BY completed_at ASC, id ASC
       `).bind(roomId).all<ResultRecord>();
       return result.results ?? [];
+    },
+
+    async listSolvedSeeds(playerId, minSeed) {
+      const { results } = await db.prepare(`
+        SELECT DISTINCT seed FROM results
+        WHERE player_id = ? AND seed >= ?
+        ORDER BY seed
+      `).bind(playerId, minSeed).all<{ seed: number }>();
+      return (results ?? []).map(row => row.seed);
     },
   };
 }

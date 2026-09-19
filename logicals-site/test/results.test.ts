@@ -38,6 +38,13 @@ class MemoryResults implements ResultRepository {
   async listByRoom(roomId: number) {
     return this.results.filter(result => result.roomId === roomId);
   }
+
+  async listSolvedSeeds(playerId: number, minSeed: number) {
+    const seeds = this.results
+      .filter(result => result.playerId === playerId && result.seed >= minSeed)
+      .map(result => result.seed);
+    return [...new Set(seeds)].sort((a, b) => a - b);
+  }
 }
 
 const submission = {

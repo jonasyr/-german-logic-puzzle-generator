@@ -81,6 +81,15 @@ export function createApp(overrides: AppOverrides = {}) {
           return json({ results: results.map(publicResult) });
         }
 
+        const solvedMatch = url.pathname.match(/^\/api\/players\/(\d+)\/solved-seeds$/);
+        if (solvedMatch && request.method === 'GET') {
+          // Nur der Katalogbereich: das freie Spiel würfelt in 0…99.999, und
+          // seine Seeds gehen die Sammlung nichts an.
+          const seeds = await resultsFor(env, overrides)
+            .listSolvedSeeds(Number(solvedMatch[1]), 1_000_000);
+          return json({ seeds });
+        }
+
         if (url.pathname === '/api/results' && request.method === 'POST') {
           const repository = resultsFor(env, overrides);
           const body = await readJson(request);
