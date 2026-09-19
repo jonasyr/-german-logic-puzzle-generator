@@ -93,9 +93,19 @@ function mayLeave() {
  * home instead.
  */
 export function goBack() {
+    /*
+     * Das Veto läuft nur an einer Stelle.
+     *
+     * Hier zu fragen UND `history.back()` auszulösen hieße, es zweimal zu
+     * fragen - der popstate-Handler fragt ohnehin. Heute kostet das nichts,
+     * weil die Antwort dieselbe ist; ein Handler mit Nebenwirkung, etwa einer,
+     * der einen Dialog öffnet, würde ihn zweimal öffnen.
+     */
+    if (depth > 0) { history.back(); return; }
+
+    // Ohne eigenen Eintrag gibt es kein popstate, das fragen könnte.
     if (!mayLeave()) return;
-    if (depth === 0) { showScreen('screen-start'); return; }
-    history.back();
+    showScreen('screen-start');
 }
 
 export function wireBackButtons() {
