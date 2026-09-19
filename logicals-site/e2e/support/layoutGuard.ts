@@ -35,8 +35,19 @@ export const CELL_SELECTORS = {
  * dem Rand. Das ist Beschneidung durch Schwenken, nicht Verdeckung - dieselbe
  * Kategorie wie "ausserhalb des Fensters".
  */
-const CELL_CONTEXT: Record<string, { root: string; surface: string }> = {
+const CELL_CONTEXT: Record<string, { root: string; surface?: string }> = {
   [CELL_SELECTORS.overview]: { root: '#overview-viewport', surface: '#overview-canvas' },
+  /*
+   * Die Seite des Pagers ist ihr eigener Scroll-Container, und im Querformat
+   * nutzt sie das: gemessen 263px Inhalt in einem 135px hohen Fenster. Vier
+   * Zeilen passen dort schlicht nicht - dieselbe Enge, derentwegen die
+   * Canvas-Uebersicht schwenkt statt zu schrumpfen.
+   *
+   * Eine weggescrollte Zelle ist erreichbar. Eine verdeckte nicht. Nur um die
+   * zweite Sorte geht es hier. Die Zelle ist hier ein echter <button> und damit
+   * selbst das Tippziel, also gibt es keine Malflaeche, die fuer sie einspringt.
+   */
+  [CELL_SELECTORS.pager]: { root: '.pair-page' },
 };
 
 export type Occlusion = { index: number; label: string; covering: string };
@@ -75,7 +86,7 @@ export async function findOccludedCells(page: Page, selector: string): Promise<O
       const top = document.elementFromPoint(x, y);
       if (top === cell || cell.contains(top)) return;
       // Die Malflaeche der Ansicht zaehlt als die Zelle selbst.
-      if (context && top && top.matches(context.surface)) return;
+      if (context?.surface && top && top.matches(context.surface)) return;
       found.push({
         index,
         label: cell.getAttribute('aria-label') ?? (cell.textContent ?? '').trim(),

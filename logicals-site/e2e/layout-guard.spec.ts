@@ -72,3 +72,43 @@ test('der Waechter schlaegt bei einem gepflanzten Verstoss aus', async ({ page }
   expect(await findOccludedCells(page, CELL_SELECTORS.overview),
     'ein Overlay mit pointer-events:none darf nicht gemeldet werden').toEqual([]);
 });
+
+/*
+ * Dieselbe Probe fuer die Einzelansicht, und zwar im Querformat.
+ *
+ * Dort gilt eine Nachsicht, die es sonst nicht gibt: die Seite des Pagers
+ * scrollt, weil vier Zeilen in ein 390px hohes Fenster nicht passen, und eine
+ * weggescrollte Zelle wird nicht gemeldet. Genau diese Nachsicht koennte eine
+ * echte Verdeckung mit durchlassen - also wird hier belegt, dass sie es nicht
+ * tut. Der Pager war die Ansicht, in der die letzten Fehler steckten.
+ */
+test('der Waechter schlaegt auch in der Einzelansicht quer aus', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize(PHONES[2].viewport);
+  await openSoloPuzzle(page);
+  await page.locator('#play-view').click();
+  await expect(page.locator('#screen-play')).toHaveAttribute('data-view', 'pager');
+  expect(await findOccludedCells(page, CELL_SELECTORS.pager)).toEqual([]);
+
+  // Auf eine Zelle, die wirklich zu sehen ist - sonst pruefte die Probe nur
+  // die Beschneidung, die ohnehin uebersprungen wird.
+  const covered = await page.evaluate(() => {
+    const page0 = document.querySelector('.pair-page')!.getBoundingClientRect();
+    const cell = [...document.querySelectorAll('.cell')].find(node => {
+      const rect = node.getBoundingClientRect();
+      return rect.top >= page0.top && rect.bottom <= page0.bottom;
+    })!;
+    const rect = cell.getBoundingClientRect();
+    const node = document.createElement('p');
+    node.id = 'planted-pager';
+    node.textContent = 'Werkzeugleiste ueber dem Gitter';
+    node.style.cssText = 'position:fixed;z-index:99;background:#fff;margin:0;'
+      + `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;`;
+    document.body.append(node);
+    return cell.getAttribute('aria-label');
+  });
+
+  const caught = await findOccludedCells(page, CELL_SELECTORS.pager);
+  expect(caught.map(entry => entry.label), `${covered} muss auffallen`).toContain(covered);
+  expect(caught[0].covering).toContain('#planted-pager');
+});

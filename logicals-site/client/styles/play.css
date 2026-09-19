@@ -858,15 +858,117 @@
         grid-template-columns: repeat(2, minmax(var(--tap-min), 1fr));
     }
     /*
-     * In the pager there is no side column to fit into, so the tools take a
-     * full-width row of four rather than the 2x2 that suits 150px. Halves what
-     * the bar costs in a window this short.
+     * The pager gets the same side column the overview has.
+     *
+     * It used to take a full-width row of tools under the grid, on the
+     * reasoning that the pager had no side column to fit into. But a window
+     * this short has no room for that row either. Measured at 844x390: the
+     * pager ran to y=502 inside a stage that ended at y=390, and the tools were
+     * pinned at 286-330 - straight across the track, which ran 156-446. Three
+     * of four rows sat behind the tool bar and the clue-sheet header, invisible
+     * and untappable.
+     *
+     * Height is what is scarce here; width is what is abundant. A four-column
+     * grid is about 208px wide in an 844px window, so the tools move sideways
+     * and the grid gets the whole stage height. The status overlay already
+     * assumed this column - it stops short at right: 150px + gap either way.
+     *
+     * Squeezing instead does not work: constraining the pager to the stage
+     * height just crushed the track to 79px and clipped the grid below the
+     * column headers. There is no height to find, only width to use.
      */
+    .screen--play[data-view="pager"] .play-stage {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 150px;
+        /* minmax(0, 1fr), not auto: an auto row takes its content height, so
+           the pager kept its own height and the track never received the space
+           below it to grow into. The 0 floor is what permits shrinking. */
+        grid-template-rows: minmax(0, 1fr);
+        align-items: stretch;
+        /*
+         * And the stage clips. Turning it into a grid let the carousel escape
+         * its column: pair-page-5 reached x=4134 in an 844px window and the
+         * page really scrolled sideways (window.scrollTo(300, 0) took, against
+         * a baseline scrollWidth of exactly 844). The status line is absolutely
+         * positioned inside these bounds and the clue sheet is fixed, so
+         * neither is affected.
+         */
+        overflow: hidden;
+    }
     .screen--play[data-view="pager"] .play-overview { grid-template-columns: minmax(0, 1fr); }
+    .screen--play[data-view="pager"] .overview-actions {
+        /* Out of the pinned position the portrait rule gives it: in the side
+           column it is laid out normally and cannot land on anything. */
+        position: static;
+        align-content: center;
+        grid-template-columns: minmax(0, 1fr);
+    }
     .screen--play[data-view="pager"] .overview-marks {
-        /* Capped rather than 1fr, so the row can centre instead of stretching
-           from edge to edge of a very wide short window. */
-        grid-template-columns: repeat(4, minmax(var(--tap-min), 72px));
+        justify-self: stretch;
+        /* Four in a row need 194px; the side column is 150. Two by two fits,
+           and every button keeps its 44px floor. */
+        grid-template-columns: repeat(2, minmax(var(--tap-min), 1fr));
+    }
+    /*
+     * Nothing is pinned under the grid any more, but the clue sheet still peeks
+     * across the full width - so the reservation is the sheet's foot, not a
+     * tool row. Without it Clara and Dora sat behind the sheet header.
+     *
+     * Four rows still do not fit in a 390px-tall window: that was measured long
+     * ago (~211px of usable height against ~314px needed) and is why the canvas
+     * overview pans rather than shrinks. The pager cannot pan, so the track
+     * scrolls instead - it already carried overflow-y: auto and never used it,
+     * because its height equalled its content. Bounding the column is what
+     * turns that into real scrolling, and min-height: 0 is what lets a flex
+     * child shrink below its content at all.
+     */
+    .screen--play[data-view="pager"] .play-pager {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        /*
+         * As a grid item its min-width defaults to auto, so it sized itself to
+         * the whole carousel - all seven pages side by side - and the page
+         * scrolled 3460px wide instead of 844. The track's overflow-x never got
+         * the chance to clip anything. Measured before and after.
+         */
+        min-width: 0;
+        /*
+         * And it has to clip what its own track does not. With the stage turned
+         * into a grid the carousel leaked past the column: measured
+         * documentElement.scrollWidth 3460 against a 844px window, and the page
+         * really scrolled (window.scrollTo(200, 0) took). Baseline was 844.
+         */
+        overflow: hidden;
+        /*
+         * No reservation of its own. The stage already carries the sheet's foot
+         * as its padding-bottom, and the tools are in the side column now, so
+         * the portrait rule's row-sized padding would reserve the same 60px a
+         * second time - measured as a blank band from y=270 to y=330 and one
+         * grid row fewer.
+         */
+        padding-bottom: 0;
+    }
+    .screen--play[data-view="pager"] .pager-track {
+        flex: 1 1 auto;
+        min-height: 0;
+        min-width: 0;
+    }
+    /*
+     * The page title repeats the segmented tab directly above it, which is
+     * already highlighted - pure duplication, and in a 390px-tall window the
+     * line it costs is a row of the grid. Hidden from sight but kept for
+     * assistive technology, which reaches the panel without passing the tab.
+     */
+    .screen--play[data-view="pager"] .pair-page__title {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
     }
 
     .overview-minimap { width: 58px; height: 58px; }
