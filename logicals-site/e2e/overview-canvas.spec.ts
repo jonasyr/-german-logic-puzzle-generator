@@ -39,11 +39,17 @@ async function openPuzzle(page: Page, width: number, height: number, autoCross =
     players: [{ id: 1, displayName: 'Ada' }], selectedPlayerId: 1,
   })));
   await page.goto('/');
+  // Die Spiel-Vorlieben liegen nicht mehr im Erzeugen-Ablauf, sondern auf
+  // ihrem eigenen Bildschirm - erreichbar vom Start und aus dem Spiel.
+  if (!autoCross) {
+    await page.locator('#settings-button').click();
+    await page.locator('#field-autoCross').uncheck();
+    await page.goBack();
+  }
   await page.locator('#start-button').click();
   await page.locator('#field-categoryCount').selectOption('5');
   await page.locator('#field-valuesPerCategory').selectOption('5');
   await page.locator('#field-difficulty').selectOption('leicht');
-  if (!autoCross) await page.locator('#field-autoCross').uncheck();
   await page.locator('#generate-button').click();
   await expect(page.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 120_000 });
   await expect(page.locator('#overview-canvas')).toBeVisible();
@@ -231,7 +237,7 @@ test('the switch is remembered for the next puzzle', async ({ page }) => {
   test.setTimeout(120_000);
   await openPuzzle(page, 375, 812, false);
   await page.goto('/');
-  await page.locator('#start-button').click();
+  await page.locator('#settings-button').click();
   await expect(page.locator('#field-autoCross')).not.toBeChecked();
 });
 

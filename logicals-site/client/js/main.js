@@ -10,6 +10,7 @@ import {
     loadOptions, collectOptions, updateTargetOptions, randomSeed, ensureSeed,
 } from './screens/configScreen.js';
 import { loadStatsScreen } from './screens/statsScreen.js';
+import { initSettingsScreen } from './screens/settingsScreen.js';
 import { initPlay, openPlay } from './play/playController.js';
 import { createDuelForPuzzle, initDuelController, openRoomFromUrl } from './duel/lobbyController.js';
 import { initDuelResultController } from './duel/duelResultController.js';
@@ -265,6 +266,13 @@ function wire() {
     const duelStart = el('duel-start-button');
     duelStart.hidden = loadPrefs().hideDuel;
     duelStart.addEventListener('click', () => generate('duel'));
+
+    // Zwei Wege hinein: vom Start, und aus dem laufenden Spiel. Der Weg aus dem
+    // Spiel läuft nicht über die Duell-Rückfrage - man verlässt das Duell dabei
+    // nicht, man schaut nur kurz weg, und onLeave hält Uhr und Fortschritt an.
+    initSettingsScreen();
+    el('settings-button').addEventListener('click', () => showScreen('screen-settings'));
+    el('play-settings').addEventListener('click', () => showScreen('screen-settings'));
 
     initPlay();
     initDuelController({ onOpenPlay: openPlay });

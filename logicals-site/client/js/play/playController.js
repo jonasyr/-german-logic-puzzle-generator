@@ -4,7 +4,7 @@
  */
 
 import { el, make, clear } from '../dom.js';
-import { showScreen, onLeave, onBackRequest } from '../router.js';
+import { showScreen, onLeave, onEnter, onBackRequest } from '../router.js';
 import { buildPager, categoryPairs } from './matrixView.js';
 import { createOverviewCanvas } from './overview/overviewCanvas.js';
 import { loadPrefs } from './playPrefs.js';
@@ -612,6 +612,19 @@ export function initPlay() {
     // Der Knopf trägt kein data-goto; der Router verdrahtet ihn über btn--back
     // auf denselben Weg wie die Wisch-Geste. Hier hängt nur die Rückfrage.
     onBackRequest(from => (from === 'screen-play' ? mayLeavePlay() : true));
+
+    // Die Uhr wurde nur beim Öffnen eines Rätsels gelesen. Seit die Vorliebe aus
+    // dem laufenden Spiel heraus erreichbar ist, muss sie beim Zurückkommen
+    // greifen - sonst schaltet man sie um und nichts passiert.
+    onEnter(id => {
+        if (id !== 'screen-play' || !state.puzzle) return;
+        el('play-timer').hidden = loadPrefs().hideClock;
+        // Und neu einpassen. Das Canvas misst sich an seinem Layoutkasten, und
+        // der ist Null, solange der Bildschirm inaktiv ist - wer weggeht und
+        // zurückkommt, fand sonst ein Gitter vor, das nicht mehr zu seinem
+        // Ausschnitt passte. Erst nach dem Umschalten, wie bei openPlay.
+        requestAnimationFrame(() => overview?.fit());
+    });
 
     el('play-check').addEventListener('click', requestCheck);
     el('play-undo').addEventListener('click', onUndo);

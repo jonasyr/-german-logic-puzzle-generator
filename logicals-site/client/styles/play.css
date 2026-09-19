@@ -94,17 +94,25 @@
 .play-toolbar .btn { flex: 0 0 auto; }
 
 @media (max-width: 899px) {
+    /*
+     * Six fixed columns, not five.
+     *
+     * A sixth button added without widening the track wraps to a second row and
+     * pushes the grid down by that much. The gear is an icon, so it costs less
+     * width than a worded button, but the columns are equal - the type has to
+     * come down a point to keep "Löschen" on one line at 320px.
+     */
     .play-toolbar {
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 6px;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 4px;
         overflow: visible;
     }
     .play-toolbar .btn {
         width: 100%;
         min-width: 0;
-        padding-inline: 4px;
-        font-size: 13px;
+        padding-inline: 2px;
+        font-size: 12px;
     }
 }
 

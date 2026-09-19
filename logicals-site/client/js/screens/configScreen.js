@@ -2,7 +2,7 @@
 
 import { el, setHint, fillRange, fillOptions } from '../dom.js';
 import { fetchOptions } from '../api.js';
-import { loadPrefs, savePrefs } from '../play/playPrefs.js';
+
 
 /**
  * Kept because collectOptions still sends colours to the generator, even though
@@ -52,16 +52,9 @@ export async function loadOptions() {
 
     fillOptions(el('field-themeId'), data.themes.map(theme => ({ value: theme.id, label: theme.title })));
 
-    // Play-time preferences are not booklet options: they are never sent to the
-    // generator, and they outlive the puzzle chosen here.
-    const prefs = loadPrefs();
-    for (const key of ['autoCross', 'hideClock', 'hideDuel']) {
-        const field = el(`field-${key}`);
-        field.checked = prefs[key];
-        // Re-read on every change: another switch may have been flipped since.
-        field.addEventListener('change', () => savePrefs({ ...loadPrefs(), [key]: field.checked }));
-    }
-
+    // Play-time preferences used to be wired here, which meant reaching them
+    // through a screen whose job is to describe a puzzle. They have their own
+    // screen now; see screens/settingsScreen.js.
     setHint('config-hint', '');
 }
 
