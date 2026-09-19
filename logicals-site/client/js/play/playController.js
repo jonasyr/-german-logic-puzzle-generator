@@ -4,7 +4,7 @@
  */
 
 import { el, make, clear } from '../dom.js';
-import { showScreen, onLeave } from '../router.js';
+import { showScreen, onLeave, onBackRequest } from '../router.js';
 import { buildPager, categoryPairs } from './matrixView.js';
 import { createOverviewCanvas } from './overview/overviewCanvas.js';
 import { loadPrefs } from './playPrefs.js';
@@ -565,6 +565,31 @@ export function openPlay(puzzle, context) {
     renderTimer(timer.elapsedMs());
 }
 
+/**
+ * Darf das Spiel gerade verlassen werden?
+ *
+ * Nur das Duell fragt nach. Es ist der einzige Zustand, den das Verlassen
+ * unwiederbringlich kostet - und ausgerechnet er war ungesichert, während
+ * "Prüfen" und "Löschen" längst je einen Dialog hatten. Die Absicherung war
+ * invers zum Risiko.
+ *
+ * Der Router ruft das sowohl für den Knopf als auch für die System-Geste auf,
+ * also kann es keine zwei Antworten geben.
+ *
+ * @returns {boolean} false lehnt ab und hat die Rückfrage geöffnet
+ */
+function mayLeavePlay() {
+    if (state.context?.mode !== 'duel' || state.solved) return true;
+    askConfirm({
+        title: 'Duell verlassen?',
+        text: 'Das Duell läuft weiter und die Zeit ebenfalls. Dein Gegner spielt zu Ende.',
+        confirmLabel: 'Verlassen',
+        destructive: true,
+        onConfirm: () => showScreen('screen-start'),
+    });
+    return false;
+}
+
 export function initPlay() {
     tool = createMarkTool({
         buttons: [
@@ -583,6 +608,10 @@ export function initPlay() {
         backdrop: el('sheet-backdrop'),
         countNode: el('clue-count'),
     });
+
+    // Der Knopf trägt kein data-goto; der Router verdrahtet ihn über btn--back
+    // auf denselben Weg wie die Wisch-Geste. Hier hängt nur die Rückfrage.
+    onBackRequest(from => (from === 'screen-play' ? mayLeavePlay() : true));
 
     el('play-check').addEventListener('click', requestCheck);
     el('play-undo').addEventListener('click', onUndo);

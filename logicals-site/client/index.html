@@ -246,9 +246,11 @@
     <!-- 8. Spielen -->
     <section class="screen screen--play" id="screen-play" data-view="pager">
         <header class="bar play-bar">
-            <!-- Ziel und Chrome werden in Aufgabe 3 kontextabhängig; bis dahin
-                 der Start, damit der Knopf nicht ins Leere zeigt. -->
-            <button class="btn btn--ghost btn--small" type="button" data-goto="screen-start" aria-label="Spiel verlassen">← Start</button>
+            <!-- Dieselbe Chrome wie auf jedem anderen Bildschirm, und ohne
+                 data-goto: wohin es zurückgeht, entscheidet der Verlauf. -->
+            <button class="btn btn--ghost btn--back" type="button" id="play-back" aria-label="Spiel verlassen">
+                <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Zurück</span>
+            </button>
             <h2 id="play-title">Rätsel</h2>
             <span class="timer" id="play-timer" aria-live="off" aria-label="Verstrichene Zeit">0:00</span>
         </header>

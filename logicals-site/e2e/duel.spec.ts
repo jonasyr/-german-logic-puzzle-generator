@@ -159,3 +159,52 @@ test('two devices load the same runtime puzzle and enter play from one start ins
   await hostContext.close();
   await guestContext.close();
 });
+
+/*
+ * Ein laufendes Duell wird nicht versehentlich verlassen.
+ *
+ * Der Zurueck-Knopf des Spiels fuehrte ohne jede Rueckfrage heraus, waehrend
+ * "Pruefen" und "Loeschen" - die nur einen Hinweis verraten bzw. die eigenen
+ * Markierungen kosten - je einen Bestaetigungsdialog hatten. Die Absicherung
+ * war invers zum Risiko.
+ */
+test('ein laufendes Duell wird nicht ohne Rueckfrage verlassen', async ({ browser }) => {
+  test.setTimeout(180_000);
+  const state = createDuelState();
+  const hostContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const guestContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const host = await hostContext.newPage();
+  const guest = await guestContext.newPage();
+  await installDuelApi(host, { playerId: 1, displayName: 'Ada', state });
+  await installDuelApi(guest, { playerId: 2, displayName: 'Bea', state });
+
+  await host.goto('/');
+  await host.locator('#start-button').click();
+  await host.locator('#field-categoryCount').selectOption('3');
+  await host.locator('#field-valuesPerCategory').selectOption('4');
+  await host.locator('#field-difficulty').selectOption('leicht');
+  await host.locator('#duel-start-button').click();
+  await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 60_000 });
+
+  await guest.goto(`/?room=${ROOM_CODE}`);
+  await expect(guest.locator('#screen-duel-entry')).toHaveClass(/is-active/);
+  await guest.locator('#duel-entry-submit').click();
+  await expect(guest.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 60_000 });
+  await host.locator('#duel-ready').click();
+  await guest.locator('#duel-ready').click();
+  await expect(host.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 30_000 });
+
+  await host.locator('#play-back').click();
+  await expect(host.locator('#confirm-title')).toHaveText('Duell verlassen?');
+  await host.locator('#confirm-cancel').click();
+  await expect(host.locator('#screen-play')).toHaveClass(/is-active/);
+
+  // Und die System-Geste muss dieselbe Antwort geben, sonst umgeht sie die Frage.
+  await host.goBack();
+  await expect(host.locator('#confirm-title')).toHaveText('Duell verlassen?');
+  await host.locator('#confirm-ok').click();
+  await expect(host.locator('#screen-start')).toHaveClass(/is-active/);
+
+  await hostContext.close();
+  await guestContext.close();
+});
