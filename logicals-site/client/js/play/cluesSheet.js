@@ -99,9 +99,11 @@ export function createCluesSheet({ sheet, handle, header, toggle, list, backdrop
         sheet.style.transform = '';
         backdrop.classList.toggle('is-open', next !== 'peek');
         toggle.setAttribute('aria-expanded', next === 'peek' ? 'false' : 'true');
-        // Leaving the full detent must not strand the body mid-scroll, or
-        // reopening starts somewhere arbitrary.
-        if (next !== 'full') body.scrollTop = 0;
+        // Closing must not strand the body mid-scroll, or reopening starts
+        // somewhere arbitrary. Half and full both scroll now, so moving between
+        // them keeps the place - losing it there would punish exactly the move
+        // you make to read on.
+        if (next === 'peek') body.scrollTop = 0;
     }
 
     function cycle() {
@@ -199,11 +201,13 @@ export function createCluesSheet({ sheet, handle, header, toggle, list, backdrop
         surface.addEventListener('pointercancel', cancelDrag);
     }
 
-    // At the full detent the body scrolls. A downward drag that starts when the
-    // body is already at the top means "close the sheet", not "scroll further
-    // up", so the gesture is handed to the sheet.
+    // Wherever the body scrolls - half as well as full - a downward drag that
+    // starts with it already at the top means "close the sheet", not "scroll
+    // further up", so the gesture is handed to the sheet. Leaving half out here
+    // would make the middle detent scrollable but undraggable from its list,
+    // which is a stranger state than either of the two it sits between.
     body.addEventListener('pointerdown', event => {
-        if (detent !== 'full' || body.scrollTop > 0) return;
+        if (detent === 'peek' || body.scrollTop > 0) return;
         beginDrag(event, { fromBody: true });
     });
     body.addEventListener('pointermove', event => {

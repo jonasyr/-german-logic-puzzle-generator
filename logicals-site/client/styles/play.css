@@ -605,7 +605,11 @@
     --sheet-peek: var(--sheet-chrome);
 }
 .clues-sheet.is-dragging { transition: none; }
-.clues-sheet[data-detent="half"] { transform: translateY(45%); }
+/* Der Anteil, um den "halb" nach unten geschoben ist. Als Variable, weil die
+   sichtbare Koerperhoehe unten davon abgeleitet wird und beide Zahlen sonst
+   auseinanderlaufen. cluesSheet.js haelt dieselbe Zahl in DETENT_FRACTION. */
+.clues-sheet { --detent-half: 45%; }
+.clues-sheet[data-detent="half"] { transform: translateY(var(--detent-half)); }
 .clues-sheet[data-detent="full"] { transform: translateY(0); }
 
 .sheet-handle {
@@ -646,10 +650,17 @@
 .sheet-header .sheet-count { color: var(--muted); font-size: 14px; font-weight: 400; }
 
 /*
- * The body only scrolls once the sheet is fully open. At peek and half most of
- * it sits below the viewport, so scrolling there would move content nobody can
- * see while overscroll-behavior blocks the gesture from reaching the page -
- * which is exactly the "I have to keep sliding up and it never comes" trap.
+ * At peek the body does not scroll: nothing of it is on screen, so a gesture
+ * there would move content nobody can see while overscroll-behavior stops it
+ * reaching the page - the "I keep sliding and it never comes" trap.
+ *
+ * Half used to be lumped in with peek for the same reason, and that reasoning
+ * was half right: the sheet is pushed down by --detent-half, so its lower part
+ * really is below the bottom edge. But the conclusion was wrong. It does not
+ * mean half must not scroll; it means the body must be given the height that is
+ * actually visible instead of the full one. Without that the middle detent had
+ * no purpose at all - you could see the first clues and reach the rest only by
+ * opening fully, which covers the grid you are reading them against.
  */
 .sheet-body {
     flex: 1 1 auto;
@@ -659,6 +670,12 @@
     padding: 0 var(--pad-left) calc(var(--space-5) + var(--safe-bottom));
 }
 .clues-sheet[data-detent="full"] .sheet-body { overflow-y: auto; }
+.clues-sheet[data-detent="half"] .sheet-body {
+    overflow-y: auto;
+    /* Nur der Teil ueber der Kante: die Prozente rechnen gegen die Hoehe des
+       Zettels, und die Chrome (Griff + Kopf) steht ueber dem Koerper. */
+    max-height: calc(100% - var(--detent-half) - var(--sheet-chrome));
+}
 
 .clues li { transition: opacity var(--dur-fast) var(--ease-out); }
 .clues li.is-used { opacity: .42; text-decoration: line-through; }
