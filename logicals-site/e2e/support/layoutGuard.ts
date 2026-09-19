@@ -9,7 +9,16 @@ import { expect, type Page } from '@playwright/test';
  * sondern eine Pruefung.
  */
 
+/*
+ * 320px steht hier, weil die Leiste dort zuerst bricht.
+ *
+ * Die schmalste unterstuetzte Breite fehlte, und genau sie hat als erste
+ * nachgegeben: sechs Spalten Werkzeugleiste ergeben im Satzspiegel von 320px
+ * rechnerisch 43.3px pro Knopf. Der Waechter, der ab 375px anfing, sah davon
+ * nichts. Die schmalste Breite ist die, an der sich alles entscheidet.
+ */
 export const PHONES = [
+  { name: 'iPhone SE', viewport: { width: 320, height: 568 } },
   { name: 'iPhone mini', viewport: { width: 375, height: 812 } },
   { name: 'iPhone', viewport: { width: 390, height: 844 } },
   { name: 'iPhone quer', viewport: { width: 844, height: 390 } },

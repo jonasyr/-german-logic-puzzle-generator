@@ -769,28 +769,46 @@
     .screen--play[data-view="pager"] .overview-marks { justify-self: center; }
 
     /*
-     * Both the tools and the status overlay are placed from the foot of the
-     * stage, so neither can land on the other.
+     * Die Bühne teilt sich in Gitter und Werkzeugreihe - keine feste Reservierung.
      *
-     * In the overview the viewport grows and pushes the tools down; with it
-     * hidden they floated up under the grid, while the overlay kept measuring
-     * from the foot - and came down on top of them. Pinning the row makes the
-     * two offsets comparable instead of one depending on content height.
-     * (A flex column with margin-top: auto does it in portrait but drops the
-     * row below the fold in landscape, where the pager already overflows.)
+     * Die Reihe war absolut an den Fuß gepinnt, und der Pager hielt mit einer
+     * Polsterung von genau einer Tapfläche dagegen. Das stimmte, solange die
+     * Reihe genau eine Tapfläche hoch war. Mit der Legende darüber wurde sie
+     * 86px hoch, die Polsterung blieb bei 56 - gemessen bei 320x568 lag die
+     * Reihe danach bei 394-480 mitten im Track, der von 224 bis 486 reicht, und
+     * verdeckte die Zellen von Clara und David.
+     *
+     * Eine Zahl gegen eine andere Zahl zu stellen geht so lange gut, bis eine
+     * von beiden sich ändert. Zwei Grid-Zeilen können nicht auseinanderlaufen:
+     * die Reihe nimmt sich, was sie braucht, das Gitter bekommt den Rest.
      */
-    .screen--play[data-view="pager"] .overview-actions {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: var(--stage-foot);
+    .screen--play[data-view="pager"] .play-stage {
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) auto;
     }
-    .screen--play[data-view="pager"] .play-status {
-        bottom: calc(var(--stage-foot) + var(--tap-min) + var(--space-3));
-    }
-    /* Keeps the grid clear of the pinned row. */
     .screen--play[data-view="pager"] .play-pager {
-        padding-bottom: calc(var(--tap-min) + var(--space-3));
+        grid-row: 1;
+        min-height: 0;
+        padding-bottom: 0;
+    }
+    .screen--play[data-view="pager"] .play-overview { grid-row: 2; }
+    .screen--play[data-view="pager"] .overview-actions { position: static; }
+    /*
+     * Die Statuszeile bleibt ein Overlay, sitzt aber jetzt im Bereich der ersten
+     * Zeile: ein absolut positioniertes Grid-Kind wird an seinem eigenen
+     * Grid-Bereich ausgerichtet, nicht am ganzen Container. Damit hängt ihr
+     * Abstand nicht mehr an der Höhe der Werkzeugreihe.
+     */
+    .screen--play[data-view="pager"] .play-status {
+        /*
+         * Beide Linien ausdrücklich. "grid-row: 1" heißt Startlinie 1 und Ende
+         * `auto`, und `auto` löst bei absolut positionierten Kindern auf die
+         * Polsterkante des Containers auf - der Bereich umfasste damit die
+         * ganze Bühne, und die Meldung landete gemessen bei 804 statt über der
+         * Werkzeugreihe bei 672.
+         */
+        grid-row: 1 / 2;
+        bottom: var(--space-2);
     }
 }
 .screen--play[data-view="overview"] .play-pager { display: none; }
@@ -935,6 +953,12 @@
         grid-template-rows: minmax(0, 1fr);
         align-items: stretch;
         /*
+         * Und die Zeilenzuweisungen aus dem Hochformat gelten hier nicht: dort
+         * stehen Gitter und Werkzeuge untereinander, hier nebeneinander. Ohne
+         * das Zurücksetzen landete die Werkzeugspalte in einer zweiten Zeile,
+         * die es in diesem Raster gar nicht gibt.
+         */
+        /*
          * And the stage clips. Turning it into a grid let the carousel escape
          * its column: pair-page-5 reached x=4134 in an 844px window and the
          * page really scrolled sideways (window.scrollTo(300, 0) took, against
@@ -944,10 +968,13 @@
          */
         overflow: hidden;
     }
-    .screen--play[data-view="pager"] .play-overview { grid-template-columns: minmax(0, 1fr); }
+    .screen--play[data-view="pager"] .play-pager,
+    .screen--play[data-view="pager"] .play-status { grid-row: auto; }
+    .screen--play[data-view="pager"] .play-overview {
+        grid-row: auto;
+        grid-template-columns: minmax(0, 1fr);
+    }
     .screen--play[data-view="pager"] .overview-actions {
-        /* Out of the pinned position the portrait rule gives it: in the side
-           column it is laid out normally and cannot land on anything. */
         position: static;
         align-content: center;
         grid-template-columns: minmax(0, 1fr);

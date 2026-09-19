@@ -1505,3 +1505,60 @@ Ein Szenario (`the pager marks with the same tool as the overview`) ist in einem
 Gesamtlauf einmal ausgefallen und lief danach in jedem weiteren Lauf sowie
 einzeln grün. Die Ursache ist nicht gefunden. Bei einer Suite, die als Wächter
 dient, ist Flattern kein Randthema.
+
+---
+
+## Nachlauf: Flatter-Prüfung und PWA
+
+### Der Wächter, nachgeschärft
+
+`PHONES` begann bei 375 px. Die schmalste unterstützte Breite ist 320 px, und
+genau sie hat als erste nachgegeben: die Legende aus Aufgabe 7 verdeckte dort
+Gitterzellen. Ursache war dieselbe Klasse Fehler wie im Querformat — die
+Werkzeugreihe war absolut an den Fuß gepinnt, der Pager hielt mit einer
+Polsterung von genau einer Tapfläche dagegen, und mit der Legende wuchs die
+Reihe auf 86 px, während die Polsterung bei 56 blieb. Gemessen bei 320×568 lag
+sie danach bei 394–480 mitten im Track (224–486).
+
+Behoben wurde diesmal nicht die Zahl, sondern die Konstruktion: Die Bühne ist im
+Hochformat ein Grid aus zwei Zeilen. Zwei Zahlen können auseinanderlaufen, zwei
+Grid-Zeilen nicht.
+
+Dabei aufgefallen: `grid-row: 1` setzt Startlinie 1 und Ende `auto`, und `auto`
+löst bei absolut positionierten Kindern auf die Polsterkante auf, nicht aufs
+Zeilenende. Die Statuszeile saß deshalb bei 804 statt 639. `grid-row: 1 / 2`.
+
+### Eine behauptete Regression, die keine war
+
+Vor der Messung wurde aus der Breitenarithmetik geschlossen, die sechsspaltige
+Werkzeugleiste ergebe bei 320 px 43,3 px pro Knopf und unterschreite die
+Tapfläche. Gemessen sind es 47 px. Die Rechnung war falsch, der Fehler existierte
+nicht. Festgehalten, weil die Messung sonst wie eine Bestätigung der Rechnung
+aussieht.
+
+### PWA
+
+- Ein Test prüft jetzt das **gebaute** Verzeichnis auf Manifest, Service Worker,
+  wurzelabsolute `start_url` und jedes Icon. Die e2e-Prüfungen laufen gegen den
+  Dev-Server, wo `public/` ohnehin an der Wurzel liegt — sie konnten den
+  Home-Screen-Fehler nie sehen. Der neue Test wurde scheitern gesehen, indem das
+  Manifest zurück neben `index.html` geschoben wurde.
+- `apple-mobile-web-app-status-bar-style: black-translucent` ist entfernt.
+  Gemessen: die oberste gemalte Fläche ist im hellen Modus `rgb(251, 250, 247)`,
+  und die Angabe zwingt iOS zu weißen Symbolen darauf.
+- Zwei Offline-Tests für die umgebauten Wege. Der Generator ist ein Worker, der
+  erst beim ersten Erzeugen geladen wird; der Test erzeugt darum einmal online,
+  bevor das Netz weggeht — der erste Besuch ohne Netz ist nie der allererste.
+- `goBack()` fragte das Veto ab und löste `history.back()` aus, dessen
+  `popstate`-Handler es erneut fragte. Folgenlos, solange die Antwort dieselbe
+  ist; ein Handler mit Nebenwirkung hätte den Dialog zweimal geöffnet.
+
+### Ein schwacher Test, ersetzt
+
+`ein neu geladenes Spiel kommt auch ohne Verlauf zurueck` prüfte nur, dass die
+App nach einem Reload den Start zeigt — trivial wahr, auch bei kaputtem
+`goBack()`. Ersetzt durch zwei, die die Behauptung prüfen, darunter der echte
+PWA-Fall: iOS verdrängt Home-Screen-Apps aus dem Speicher, und danach muss ein
+Weg zurück ins Spiel dastehen. Dabei gelernt, statt angenommen: die
+Rücknahme-Historie überlebt einen Neustart bewusst nicht — sie gehört zur
+Sitzung, nicht zum Spielstand.
