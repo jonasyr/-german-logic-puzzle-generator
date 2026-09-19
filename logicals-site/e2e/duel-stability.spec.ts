@@ -39,9 +39,9 @@ test('a duel learned about from a poll still starts exactly once', async ({ brow
   await host.locator('#field-categoryCount').selectOption('3');
   await host.locator('#field-valuesPerCategory').selectOption('4');
   await host.locator('#field-difficulty').selectOption('leicht');
-  await host.locator('#generate-button').click();
-  await expect(host.locator('.puzzle')).toHaveCount(1, { timeout: 60_000 });
-  await host.getByRole('button', { name: 'Duell', exact: true }).click();
+  // 'Duell starten' erzeugt selbst; ein Druck auf 'Spielen' davor wuerde im
+  // Solo-Spiel landen, weil es kein Heft mehr gibt, das beides anboete.
+  await host.locator('#duel-start-button').click();
   await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE);
 
   await guest.goto(`/?room=${ROOM_CODE}`);

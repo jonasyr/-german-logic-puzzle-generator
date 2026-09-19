@@ -143,35 +143,18 @@
 
             <p class="hint" id="config-hint"></p>
 
+            <!-- Beide Wege auf derselben Tiefe. Das Duell hing vorher am
+                 Heft-Bildschirm, den es nicht mehr gibt. -->
+            <!-- Gestapelt, nicht nebeneinander: "Duell starten" neben "Spielen"
+                 unterschreitet auf einem 320px-Gerät die Tapbreite. -->
             <div class="action-bar">
-                <button class="btn btn--primary btn--block" type="submit" id="generate-button">Rätsel erzeugen</button>
+                <button class="btn btn--primary btn--block" type="submit" id="generate-button">Spielen</button>
+                <button class="btn btn--ghost btn--block" type="button" id="duel-start-button">Duell starten</button>
             </div>
         </form>
     </section>
 
-    <!-- 3. Ergebnis -->
-    <section class="screen screen--result" id="screen-result">
-        <header class="bar">
-            <button class="btn btn--ghost btn--back" type="button" data-goto="screen-config" aria-label="Zurück zu den Einstellungen">
-                <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Einstellungen</span>
-            </button>
-            <h2 id="result-title">Heft</h2>
-        </header>
-
-        <div class="result-head">
-            <p id="result-subtitle" class="result-sub"></p>
-            <ul class="meta" id="result-meta"></ul>
-            <p class="hint" id="result-hint"></p>
-        </div>
-
-        <div id="puzzle-list" class="puzzles"></div>
-
-        <div class="action-bar">
-            <button class="btn btn--ghost btn--block" type="button" id="reroll-button">Anderer Seed</button>
-        </div>
-    </section>
-
-    <!-- 4. Duell beitreten -->
+    <!-- 3. Duell beitreten -->
     <section class="screen screen--duel" id="screen-duel-entry">
         <header class="bar">
             <button class="btn btn--ghost btn--back" type="button" data-goto="screen-start" aria-label="Zurück">
@@ -263,7 +246,9 @@
     <!-- 8. Spielen -->
     <section class="screen screen--play" id="screen-play" data-view="pager">
         <header class="bar play-bar">
-            <button class="btn btn--ghost btn--small" type="button" data-goto="screen-result" aria-label="Zurück zur Übersicht">← Übersicht</button>
+            <!-- Ziel und Chrome werden in Aufgabe 3 kontextabhängig; bis dahin
+                 der Start, damit der Knopf nicht ins Leere zeigt. -->
+            <button class="btn btn--ghost btn--small" type="button" data-goto="screen-start" aria-label="Spiel verlassen">← Start</button>
             <h2 id="play-title">Rätsel</h2>
             <span class="timer" id="play-timer" aria-live="off" aria-label="Verstrichene Zeit">0:00</span>
         </header>

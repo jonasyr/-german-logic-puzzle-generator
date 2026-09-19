@@ -9,7 +9,6 @@ import { initResultOutbox } from './results/outbox.js';
 import {
     loadOptions, collectOptions, updateTargetOptions, randomSeed, ensureSeed,
 } from './screens/configScreen.js';
-import { renderBooklet } from './screens/resultScreen.js';
 import { loadStatsScreen } from './screens/statsScreen.js';
 import { initPlay, openPlay } from './play/playController.js';
 import { createDuelForPuzzle, initDuelController, openRoomFromUrl } from './duel/lobbyController.js';
@@ -38,28 +37,41 @@ function clearBusy() {
     el('overlay').hidden = true;
 }
 
-async function generate() {
+/**
+ * Erzeugt das eingestellte Rätsel und öffnet es unmittelbar.
+ *
+ * Es gab einen Heft-Bildschirm dazwischen, aus der Zeit, als ein Heft bis zu
+ * zehn Rätsel hatte. `puzzleCount` steht seit langem fest auf 1, also zeigte er
+ * genau eine Karte und kostete zwei Tippser - und war zugleich das Ziel, auf das
+ * die Zurück-Taste des Spiels zeigte, auch wenn nie ein Heft erzeugt worden war.
+ *
+ * @param {'play'|'duel'} intent
+ */
+async function generate(intent) {
     const options = collectOptions();
-    setBusy('Rätsel werden erzeugt und geprüft …');
+    setBusy('Rätsel wird erzeugt und geprüft …');
     try {
         const data = await fetchBooklet(options);
+        const puzzle = data.booklet.puzzles[0];
+        if (!puzzle) throw new Error('Das Rätsel konnte nicht erzeugt werden.');
         state.options = options;
-        renderBooklet(data.booklet, data.durationMs, {
-            onPlay: (puzzle, puzzleIndex) => openPlay(puzzle, {
-                mode: 'solo',
-                player: getSelectedPlayer(),
-                options: state.options,
-                puzzleIndex,
-            }),
-            onDuel: (puzzle, puzzleIndex) => createDuelForPuzzle({
+        setHint('config-hint', '');
+
+        if (intent === 'duel') {
+            await createDuelForPuzzle({
                 player: getSelectedPlayer(),
                 options: data.booklet.config,
                 puzzle,
-                puzzleIndex,
-            }).catch(error => setHint('result-hint', error.message, true)),
+                puzzleIndex: 0,
+            });
+            return;
+        }
+        openPlay(puzzle, {
+            mode: 'solo',
+            player: getSelectedPlayer(),
+            options,
+            puzzleIndex: 0,
         });
-        showScreen('screen-result');
-        setHint('config-hint', '');
     } catch (error) {
         setHint('config-hint', error.message, true);
     } finally {
@@ -245,13 +257,14 @@ function wire() {
 
     el('config-form').addEventListener('submit', event => {
         event.preventDefault();
-        generate();
+        generate('play');
     });
 
-    el('reroll-button').addEventListener('click', () => {
-        el('field-seed').value = randomSeed();
-        generate();
-    });
+    // Das Duell verschwindet vollständig, wenn der Spieler es ausgeblendet hat.
+    // Dieselbe Regel hing vorher am Heft, das es nicht mehr gibt.
+    const duelStart = el('duel-start-button');
+    duelStart.hidden = loadPrefs().hideDuel;
+    duelStart.addEventListener('click', () => generate('duel'));
 
     initPlay();
     initDuelController({ onOpenPlay: openPlay });

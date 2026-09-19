@@ -185,10 +185,6 @@ export async function openSoloPuzzle(page: Page) {
   await page.locator('#field-valuesPerCategory').selectOption('4');
   await page.locator('#field-difficulty').selectOption('leicht');
   await page.locator('#generate-button').click();
-  // ENTFAELLT MIT AUFGABE 2: der Heft-Zwischenschritt.
-  const heft = page.locator('#puzzle-list .puzzle button:has-text("Spielen")');
-  await heft.first().waitFor({ state: 'visible', timeout: 120_000 }).catch(() => {});
-  if (await heft.count()) await heft.first().click();
   await expect(page.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 120_000 });
   await expect(page.locator('#overview-canvas')).toBeVisible();
 }

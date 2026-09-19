@@ -326,12 +326,7 @@ input[type="number"] {
 
 /* --- Chips / meta --------------------------------------------------------- */
 
-.meta { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; }
-.meta li { background: var(--surface-sunken); border-radius: var(--radius-pill); padding: 5px 12px; font-size: 13px; }
 
-.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 var(--gap-md); padding: 0; list-style: none; }
-.chip { border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 13px; }
-.chip b { color: var(--teal); }
 
 /* --- Segmented control ---------------------------------------------------- */
 

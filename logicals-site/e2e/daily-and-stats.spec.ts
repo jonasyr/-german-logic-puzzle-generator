@@ -164,13 +164,10 @@ test('hiding the duel removes every way into one', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#duel-join-button')).toBeHidden();
 
-  // And not just the lobby button - the result screen's duel action too.
+  // And not just the lobby button - the way to start one too. It used to sit on
+  // the booklet card; it sits in the settings action bar now.
   await page.locator('#start-button').click();
-  await page.locator('#field-categoryCount').selectOption('5');
-  await page.locator('#field-valuesPerCategory').selectOption('5');
-  await page.locator('#field-difficulty').selectOption('leicht');
-  await page.locator('#generate-button').click();
-  await expect(page.locator('.puzzle')).toHaveCount(1, { timeout: 60_000 });
+  await expect(page.locator('#duel-start-button')).toBeHidden();
   await expect(page.getByRole('button', { name: 'Duell', exact: true })).toHaveCount(0);
 });
 
@@ -185,9 +182,10 @@ test('the settings screen offers nothing that does not affect playing', async ({
                       '#field-palette', '#field-accent', '#field-secondary', '#field-ink']) {
     await expect(page.locator(gone)).toHaveCount(0);
   }
-  // One puzzle is generated, and it is the one that gets played.
+  // One puzzle is generated, and it is the one that gets played - straight
+  // away now, with no booklet in between.
   await page.locator('#generate-button').click();
-  await expect(page.locator('.puzzle')).toHaveCount(1, { timeout: 60_000 });
+  await expect(page.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 120_000 });
 });
 
 const STATS_HISTORY: Result[] = [

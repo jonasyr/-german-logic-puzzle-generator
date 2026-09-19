@@ -45,8 +45,7 @@ async function openPuzzle(page: Page, width: number, height: number, autoCross =
   await page.locator('#field-difficulty').selectOption('leicht');
   if (!autoCross) await page.locator('#field-autoCross').uncheck();
   await page.locator('#generate-button').click();
-  await expect(page.locator('.puzzle')).toHaveCount(1, { timeout: 60_000 });
-  await page.getByRole('button', { name: 'Spielen', exact: true }).click();
+  await expect(page.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 120_000 });
   await expect(page.locator('#overview-canvas')).toBeVisible();
   await page.waitForTimeout(350);
 }

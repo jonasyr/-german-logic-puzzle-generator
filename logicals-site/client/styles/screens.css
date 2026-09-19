@@ -51,7 +51,6 @@
 /* Column layout so the sticky action bar can be pushed to the bottom of a short
    page by margin-top:auto instead of floating just below the content. */
 .screen--config.is-active,
-.screen--result.is-active,
 .screen--history.is-active,
 .screen--duel.is-active { display: flex; flex-direction: column; }
 
@@ -68,62 +67,12 @@
 
 .screen--config .form { flex: 1 1 auto; display: flex; flex-direction: column; gap: var(--space-6); }
 
-.result-head {
-    border: var(--hairline) solid var(--line);
-    border-radius: var(--radius);
-    background: var(--surface);
-    padding: var(--space-4) var(--space-5);
-    display: grid;
-    gap: var(--space-3);
-}
 .result-sub {
     margin: 0;
     color: var(--muted);
     font-size: var(--text-sm);
     line-height: var(--leading-sm);
 }
-
-/* --- Puzzle cards --------------------------------------------------------- */
-
-.puzzles { display: grid; gap: var(--space-3); margin-top: var(--space-5); }
-
-.puzzle {
-    border: var(--hairline) solid var(--line);
-    border-radius: var(--radius);
-    background: var(--surface);
-    padding: var(--space-4) var(--space-5);
-    display: grid;
-    gap: var(--space-2);
-}
-
-.puzzle__title {
-    margin: 0;
-    font-size: var(--text-body);
-    line-height: var(--leading-body);
-    font-weight: 600;
-}
-
-.puzzle__story {
-    margin: 0;
-    color: var(--muted);
-    font-size: var(--text-sm);
-    line-height: var(--leading-sm);
-    /* One glance per card; the full story is on the play screen. */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.puzzle__meta {
-    margin: 0;
-    color: var(--muted);
-    font-size: var(--text-caption);
-    line-height: var(--leading-caption);
-    font-variant-numeric: tabular-nums;
-}
-
-.puzzle__actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
 
 /* --- Two-device duel ----------------------------------------------------- */
 
@@ -198,17 +147,6 @@
 .duel-result-waiting { min-height: 44px; display: grid; place-items: center; }
 .duel-result-waiting[hidden] { display: none; }
 
-.puzzle__details { margin-top: var(--space-1); }
-.puzzle__details > summary { font-size: var(--text-sm); }
-.puzzle__details[open] > summary { margin-bottom: var(--space-2); }
-
-.puzzle__verification {
-    margin: var(--space-3) 0 0;
-    color: var(--muted);
-    font-size: var(--text-caption);
-    line-height: var(--leading-caption);
-}
-
 .solution { margin-top: var(--space-3); }
 
 .goal {
@@ -231,7 +169,6 @@
 }
 
 @media (max-width: 520px) {
-    .puzzle, .result-head { padding: var(--space-4); }
     .start-card { padding: var(--space-7) var(--space-5); }
     .duel-entry { padding: var(--space-4); }
     .duel-result-list { grid-template-columns: 1fr; }

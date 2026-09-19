@@ -1,4 +1,22 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openSoloPuzzle } from './support/layoutGuard';
+
+/*
+ * Erzeugen fuehrt ins Spiel, nicht auf ein Heft.
+ *
+ * puzzleCount steht seit langem fest auf 1, also zeigte der Heft-Bildschirm
+ * genau eine Karte und kostete zwei Tippser. Er war zugleich das Ziel, auf das
+ * die Zurueck-Taste des Spiels fest zeigte - auch nach dem Tagesraetsel und im
+ * Duell, wo nie ein Heft erzeugt worden war. Gemessen: leeres "Heft", 0 Raetsel,
+ * und dessen eigene Zurueck-Taste fuehrte in die Einstellungen.
+ */
+test('Erzeugen fuehrt unmittelbar ins Spiel, ohne Heft', async ({ page }) => {
+  test.setTimeout(180_000);
+  await openSoloPuzzle(page);
+  await expect(page.locator('#screen-play')).toHaveClass(/is-active/);
+  await expect(page.locator('#screen-result')).toHaveCount(0);
+  await expect(page.locator('[data-goto="screen-result"]')).toHaveCount(0);
+});
 
 async function selectedPlayer(page: Page, id: number, displayName: string) {
   await page.route('**/api/players', route => route.fulfill({
@@ -31,10 +49,7 @@ test('runtime generation opens a fitted, touch-safe mobile overview', async ({ p
   await page.locator('#field-difficulty').selectOption('leicht');
   await page.locator('#generate-button').click();
 
-  await expect(page.locator('.puzzle')).toHaveCount(1, { timeout: 30_000 });
-  await expect(page.locator('.puzzle__actions button')).toHaveCount(2);
-  await page.getByRole('button', { name: 'Spielen', exact: true }).click();
-  await expect(page.locator('#screen-play')).toHaveClass(/is-active/);
+  await expect(page.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 120_000 });
   await expect(page.locator('#screen-play')).toHaveAttribute('data-view', 'overview');
   await expect(page.locator('#overview-canvas')).toBeVisible();
   await page.waitForTimeout(300);
