@@ -1457,3 +1457,51 @@ Alles grün, dann `rtk git push`. Der Deploy ist ein eigener Schritt und braucht
 **Namenskonsistenz.** `openSoloPuzzle`, `findOccludedCells`, `expectStableGrid`, `CELL_SELECTORS` werden in Aufgabe 1 definiert und in 2, 5 und 7 unter genau diesen Namen benutzt. `mayLeavePlay` ersetzt in Aufgabe 4 bewusst die in Aufgabe 3 eingeführte Fassung von `leavePlay`; das ist im Text ausgewiesen. `renderStatsInto` ersetzt `loadStatsScreen`, dessen letzter Aufrufer in derselben Aufgabe entfernt wird.
 
 **Bekannte Stolperstellen, die im Plan benannt sind.** Das Fünf-Spalten-Raster der Werkzeugleiste (Aufgabe 5), die Seitenspalte im Querformat (Aufgabe 7), der `onChange`-Aufruf im Konstruktor von `createMarkTool` (Aufgabe 7), die sechs e2e-Spezifikationen am Heft (Aufgabe 2) und die vorläufige Überbrückung in `openSoloPuzzle` (Aufgaben 1 → 2).
+
+---
+
+## Was tatsächlich passiert ist
+
+Der Plan ging von neun Aufgaben aus. Umgesetzt wurden acht Commits, mit drei
+Abweichungen, die hier festgehalten sind, damit der Plan nicht besser aussieht
+als der Verlauf.
+
+**Aufgabe 3 und 4 wurden zusammengelegt** (`469b7d3`). Getrennt hätten sie sich
+widersprochen: ein Zurück-Knopf, der zum Start springt, neben einer Wisch-Geste,
+die eine Ebene zurückgeht. Beide laufen jetzt durch `goBack()`, und die
+Duell-Rückfrage hängt an der gemeinsamen Veto-Stelle, damit die Geste sie nicht
+umgehen kann.
+
+**Zwei Aufgaben kamen dazu, beide aus der Wirklichkeit statt aus dem Plan:**
+
+- `f04e185` — das Querformat der Einzelansicht. Der Wächter aus Aufgabe 1 fand
+  beim allerersten Lauf, dass dort von vier Gitterzeilen eine sichtbar war; der
+  Rest lag unter der Werkzeugleiste und dem Hinweise-Kopf. Der Fehler stammte aus
+  der Einzelansicht-Arbeit vom Vortag und hatte 68 grüne Szenarien überlebt.
+- `ae96271` — der halb hochgezogene Hinweis-Zettel ließ sich nicht scrollen, vom
+  Auftraggeber gemeldet. Die Begründung im Quelltext war halb richtig und die
+  Folgerung falsch: nicht das Scrollen gehört verboten, sondern dem Körper
+  gehört bei „halb" die sichtbare Höhe.
+
+**Die Gruppierung des Startbildschirms** stand nicht im Plan und wurde
+nachträglich beauftragt (`e7e9cc5`).
+
+### Was der Wächter im Nachhinein gefangen hat
+
+Beim Reparieren des Querformats zweimal, innerhalb von Minuten: einmal einen auf
+79 px gequetschten Track, der das Gitter unter den Spaltenköpfen abschnitt, und
+einmal ein ausgebrochenes Karussell, das die Seite 3460 px breit scrollen ließ
+statt 844. Beides waren Fehler in der Reparatur, nicht im Bestand. Die
+Ausgangsbreite wurde per `git stash` gegengeprüft, statt sie anzunehmen.
+
+Aufgabe 5 deckte zwei Fehler auf, die längst dort waren: die Uhr wurde nur beim
+Öffnen eines Rätsels gelesen, und das Canvas wurde beim Zurückkommen auf den
+Spielbildschirm nie neu eingepasst. Beide waren über jede Navigation weg und
+zurück erreichbar; kein Test hatte diesen Weg je genommen.
+
+### Offen
+
+Ein Szenario (`the pager marks with the same tool as the overview`) ist in einem
+Gesamtlauf einmal ausgefallen und lief danach in jedem weiteren Lauf sowie
+einzeln grün. Die Ursache ist nicht gefunden. Bei einer Suite, die als Wächter
+dient, ist Flattern kein Randthema.

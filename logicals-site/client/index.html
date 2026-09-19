@@ -339,7 +339,16 @@
                          Steht im Fluss der Aktionsleiste, kann also weder etwas
                          verdecken noch das Gitter verdrängen. aria-hidden, weil
                          die Knöpfe daneben dasselbe schon sagen. -->
-                    <p class="tool-legend" id="tool-legend" aria-hidden="true">× ausgeschlossen · ○ sichere Zuordnung · · vermutet · ␣ löschen</p>
+                    <!-- Eine Liste und keine Aufzählung mit „·“: das Trennzeichen
+                         wäre dasselbe Zeichen wie das Symbol für „vermutet“, und
+                         „· · vermutet“ liest sich als Fehler. Der Abstand trennt,
+                         und jedes Paar bleibt beim Umbruch zusammen. -->
+                    <ul class="tool-legend" id="tool-legend" aria-hidden="true">
+                        <li><b>×</b> ausgeschlossen</li>
+                        <li><b>○</b> sichere Zuordnung</li>
+                        <li><b>·</b> vermutet</li>
+                        <li><b>␣</b> löschen</li>
+                    </ul>
                 </div>
             </div>
 

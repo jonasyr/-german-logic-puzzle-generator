@@ -514,12 +514,18 @@
 .tool-legend {
     grid-column: 1 / -1;
     margin: var(--space-1) 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2px 12px;
     font-size: 11px;
     line-height: 1.35;
     color: var(--muted);
-    text-align: center;
-    text-wrap: balance;
 }
+.tool-legend li { white-space: nowrap; }
+.tool-legend b { font-weight: 600; color: var(--text); }
 
 /*
  * Two rows: what is selected, then what to do with it.
