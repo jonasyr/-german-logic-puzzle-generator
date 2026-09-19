@@ -235,10 +235,32 @@ export function initDuelController({ onOpenPlay }) {
     onLeave(from => { if (from === 'screen-duel-lobby') stopLobby(); });
 }
 
+/**
+ * Verbraucht den Raumlink aus der Adresse.
+ *
+ * Ein Einladungslink ist eine einmalige Anweisung, kein Dauerzustand. Blieb
+ * `?room=` stehen, führte jedes spätere Neuladen desselben Tabs wieder in den
+ * Duell-Ablauf - und iOS lädt Tabs von sich aus neu, sobald es Speicher
+ * braucht. Für den Spieler sah das aus, als lande er grundlos im
+ * Beitreten-Bildschirm.
+ *
+ * replaceState statt pushState: der Link soll aus dem Verlauf verschwinden,
+ * nicht einen weiteren Eintrag anlegen, durch den man zurückstolpert.
+ */
+function consumeRoomParam() {
+    const url = new URL(location.href);
+    const code = url.searchParams.get('room');
+    if (!code) return null;
+    url.searchParams.delete('room');
+    try { history.replaceState(history.state, '', url.pathname + url.search + url.hash); }
+    catch { /* ohne History-Zugriff bleibt der Link stehen; das Duell geht trotzdem */ }
+    return code;
+}
+
 export async function openRoomFromUrl() {
     const player = getSelectedPlayer();
     if (!player) return;
-    const code = new URL(location.href).searchParams.get('room');
+    const code = consumeRoomParam();
     const session = code
         ? loadDuelSession(code.toUpperCase(), player.id)
         : loadActiveDuelSession(player.id);

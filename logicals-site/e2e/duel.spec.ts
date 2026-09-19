@@ -219,3 +219,45 @@ test('ein laufendes Duell wird nicht ohne Rueckfrage verlassen', async ({ browse
   await hostContext.close();
   await guestContext.close();
 });
+
+/*
+ * Ein Einladungslink ist eine einmalige Anweisung, kein Dauerzustand.
+ *
+ * Blieb `?room=` in der Adresse stehen, fuehrte jedes spaetere Neuladen
+ * desselben Tabs wieder in den Duell-Ablauf - und iOS laedt Tabs von sich aus
+ * neu, sobald es Speicher braucht. Fuer den Spieler sah das aus, als lande er
+ * grundlos im Beitreten-Bildschirm.
+ */
+test('ein Raumlink wirkt einmal und kapert spaetere Starts nicht', async ({ browser }) => {
+  test.setTimeout(180_000);
+  const state = createDuelState();
+  const hostContext = await browser.newContext();
+  const guestContext = await browser.newContext();
+  const host = await hostContext.newPage();
+  const guest = await guestContext.newPage();
+  await installDuelApi(host, { playerId: 1, displayName: 'Ada', state });
+  await installDuelApi(guest, { playerId: 2, displayName: 'Bea', state });
+
+  await host.goto('/');
+  await host.locator('#start-button').click();
+  await host.locator('#field-categoryCount').selectOption('3');
+  await host.locator('#field-valuesPerCategory').selectOption('4');
+  await host.locator('#field-difficulty').selectOption('leicht');
+  await host.locator('#duel-start-button').click();
+  await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 120_000 });
+
+  await guest.goto(`/?room=${ROOM_CODE}`);
+  await expect(guest.locator('#screen-duel-entry')).toHaveClass(/is-active/);
+  // Der Link hat gewirkt - und ist damit verbraucht.
+  expect(new URL(guest.url()).searchParams.get('room'),
+    'der Raumlink steht noch in der Adresse').toBe(null);
+
+  // Ein Neuladen, wie iOS es von sich aus macht, wenn es Speicher braucht.
+  await guest.reload();
+  await guest.waitForTimeout(2000);
+  expect(await guest.evaluate(() => document.querySelector('.screen.is-active')?.id),
+    'ein verbrauchter Raumlink hat den Start gekapert').toBe('screen-start');
+
+  await hostContext.close();
+  await guestContext.close();
+});
