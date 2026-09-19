@@ -2,8 +2,19 @@ import { expect, test } from '@playwright/test';
 import { createDuelState, installDuelApi, ROOM_CODE } from './support/duelServer';
 
 test('two devices load the same runtime puzzle and enter play from one start instant', async ({ browser }) => {
+  /*
+   * Gemessen, nicht geraten: allein 28,8 s, im Gesamtlauf 31,4 bis 36,2 s -
+   * gegen die Voreinstellung von 60 s also im schlechtesten beobachteten Fall
+   * nur Faktor 1,66. Der Test wartet dabei auf nichts Kaputtes: zwei Geräte,
+   * zweimal neu laden, ein Vier-Sekunden-Countdown und ein vollständig
+   * gelöstes Rätsel brauchen diese Zeit.
+   *
+   * Er war der einzige schwere Test ohne eigene Grenze - alle übrigen setzen
+   * längst 180 s. Diese Lücke ist die Ursache dafür, dass er gelegentlich im
+   * Gesamtlauf starb und allein grün blieb.
+   */
+  test.setTimeout(180_000);
   const state = createDuelState();
-
 
   const hostContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const guestContext = await browser.newContext({ viewport: { width: 768, height: 1024 } });
