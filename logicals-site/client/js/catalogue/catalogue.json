@@ -1,0 +1,2321 @@
+{
+  "generatorVersion": "1.4.1-logicals.b03a226",
+  "generatorHash": "sha256:795b6a67f4dd59d2f0605486c9d389a0f98c8a1e7858393d19532be5de81b6e3",
+  "chapters": [
+    {
+      "themeId": "streetfood",
+      "title": "Finale beim Street-Food-Festival",
+      "entries": [
+        {
+          "number": 1,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1000001,
+          "fingerprint": "12e9ef2a3278638e6f52795e43904f7a22f59cbf4f89773afe55661bbcc55a20",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            2,
+            0,
+            0
+          ]
+        },
+        {
+          "number": 2,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1000002,
+          "fingerprint": "bd5050cf44b77ef8ff7eb71a0aa6a1e4b92188cc3c6bead8d1d41a791e956ae3",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            1
+          ]
+        },
+        {
+          "number": 3,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1000003,
+          "fingerprint": "adb57df6071a9ab9302a99e3093b4c5cbc5e74ce8f77094d22d2862a7e6091fc",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            1
+          ]
+        },
+        {
+          "number": 4,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1000004,
+          "fingerprint": "f8d67087311412a85b370fd081aa096ea4fb7018912d99e42bbcec7c1e01acbb",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "number": 5,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1000005,
+          "fingerprint": "13245872dd364dedfdae89effb945e13c5d326812b4fffac918c376aa08ed66b",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            6,
+            6
+          ]
+        },
+        {
+          "number": 6,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1000006,
+          "fingerprint": "a672b31bbcd16ba6dc8e6b19b9d0b81b6e22b5d7d65cd0ce6280317ec5a47729",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            1,
+            1
+          ]
+        },
+        {
+          "number": 7,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1000007,
+          "fingerprint": "c552772cd40dbd4fba1b295f0753ad2c1d156d8108c9cbaf8c13b763862225fa",
+          "clueTypes": [
+            5,
+            2,
+            5,
+            0,
+            6,
+            0,
+            5,
+            5
+          ]
+        },
+        {
+          "number": 8,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1000008,
+          "fingerprint": "0a8793e3eb6656af9b8bec93c1005affba5e90b396a7e414875446c94d0d462d",
+          "clueTypes": [
+            5,
+            0,
+            6,
+            0,
+            1,
+            0,
+            5,
+            0,
+            5
+          ]
+        },
+        {
+          "number": 9,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1000009,
+          "fingerprint": "e34d80c3df0c94c749cd18d0d0a565258cc59b5c3ae423bca110b07ea5057f0d",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 10,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1000010,
+          "fingerprint": "184c64ea8de26454fffe927f1715aa6bc099e66072579942e58b79d68f7808c4",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            6,
+            0,
+            5,
+            5
+          ]
+        },
+        {
+          "number": 11,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1000011,
+          "fingerprint": "e8c1e07839e8ebdf8bbc3f549a4c4cabb6fa67d48393588ab90808940d3bfaff",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            1,
+            0,
+            5,
+            0,
+            7,
+            5
+          ]
+        },
+        {
+          "number": 12,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1000012,
+          "fingerprint": "16333a0ac2dccc3feecf39b362eeba8b5cc2f651182be6af3513294c37318c2c",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            7,
+            0,
+            5,
+            0,
+            7,
+            0,
+            7,
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "themeId": "nachtzug",
+      "title": "Abfahrt des Nachtzugs",
+      "entries": [
+        {
+          "number": 1,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1010001,
+          "fingerprint": "d27328ff8ae41859c60aeebb7fd9472909af8c362f3277a875a614679cd1f3e8",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            2,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 2,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1010002,
+          "fingerprint": "b6af404a83913b7d3059d9b2dce94b045e5a4b5aeec0ccdfc979da61dd911aca",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            1
+          ]
+        },
+        {
+          "number": 3,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1010003,
+          "fingerprint": "bcb9cd153a57693f117423802c8b20ef1dba1f8c30876b5fad9aaf96f18fbbf0",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            1
+          ]
+        },
+        {
+          "number": 4,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1010004,
+          "fingerprint": "40827cdc5ee7353eff4ea4e0b1b5069d69a38c753f39c0698bbde6431691d7bb",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "number": 5,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1010005,
+          "fingerprint": "12acc3bc8b3a53a55cdcf83f4a89c160913999ab616f3a39288646b3db1b9782",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            6,
+            1
+          ]
+        },
+        {
+          "number": 6,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1010006,
+          "fingerprint": "1269e661e58a9a3787d4faf13874225c6486368affa7a36a37a2b35fb9428dde",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "number": 7,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1010007,
+          "fingerprint": "014baec1004bdcd0784335507f3b54bb0720f795c3cd772a9cf54e5bbc1c675a",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            5,
+            5
+          ]
+        },
+        {
+          "number": 8,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1010008,
+          "fingerprint": "3c441b02a8c84a810d36a98f113450ebaca2effdc55d9a74dc4e1dc5bcfa7e82",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            6
+          ]
+        },
+        {
+          "number": 9,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1010009,
+          "fingerprint": "a6a667e13cadf51bf29273ef6fe001f3a9121497d9e3f015481850e3033394b4",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            1,
+            0,
+            5
+          ]
+        },
+        {
+          "number": 10,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1010010,
+          "fingerprint": "7375248bcc664f433775cbda78feb19a77d21581961af1d21e2a254e77c1bc10",
+          "clueTypes": [
+            5,
+            2,
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            5,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 11,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1010011,
+          "fingerprint": "2c663d148f0cf198f29e6b45cf81c0a39112b5fbb2a8ffce822c8ae37afb4431",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            6,
+            0,
+            7,
+            0,
+            7,
+            0,
+            7,
+            0,
+            5
+          ]
+        },
+        {
+          "number": 12,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1010012,
+          "fingerprint": "9ef24b9e63e0a147adb4fd2fe4b530302f78dc4302362c72f3180e9370bb9451",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            7,
+            0,
+            7,
+            0,
+            7,
+            0,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "themeId": "escape-room",
+      "title": "Das verschlossene Archiv",
+      "entries": [
+        {
+          "number": 1,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1020001,
+          "fingerprint": "b2347dd7fad5a8c202a5b7d4a00f4bff2e9b57d39f45e898c0da941c4e6ed1e1",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 2,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1020002,
+          "fingerprint": "08526c6f48395de9fe6b594d019314d5f144822c828142ea12a11227fbd68e9d",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 3,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1020003,
+          "fingerprint": "e16dcf6ceb0604ef1b60c6801994f39e35af9c41144a6678fa2447b982440c20",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            2,
+            0,
+            1,
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "number": 4,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1020004,
+          "fingerprint": "33cf8cd521ace68453c1cbb28c698d53c163e5f3a7665362b2ff0df0a0e0c11c",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            2,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 5,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1020005,
+          "fingerprint": "d53155fc8c87ee8685ae463fb0ebddbfbf6b7e7029098438103969dc444af7fe",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            0
+          ]
+        },
+        {
+          "number": 6,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1020006,
+          "fingerprint": "096a08407e9768128ec00062565227d4a1673a95bc583fce2a76523a85c471b7",
+          "clueTypes": [
+            5,
+            0,
+            6,
+            0,
+            5,
+            1
+          ]
+        },
+        {
+          "number": 7,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1020007,
+          "fingerprint": "04b45cf98a3097b5dc8f534c318894d5dced5cb69f41dd67e1834fd4914f7426",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1,
+            5
+          ]
+        },
+        {
+          "number": 8,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1020008,
+          "fingerprint": "1f8f4a08caeecca5f288d24ff27e060c564ded8cf9004b7f58e100fd8e737c28",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6,
+            1
+          ]
+        },
+        {
+          "number": 9,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1020009,
+          "fingerprint": "449fc0ff9a7342a5565309abd4955ceebd9875221f353491dee8a83b64fc3663",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            5,
+            0,
+            6,
+            0,
+            6,
+            5
+          ]
+        },
+        {
+          "number": 10,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1020010,
+          "fingerprint": "78273a765d67d9131bac1262c2d840afe4e53715b193c2f41de477217f049924",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            5,
+            0,
+            5
+          ]
+        },
+        {
+          "number": 11,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1020011,
+          "fingerprint": "7435eba5ff8ee12d3c41e2b1323f6f55be327a6c4773b782f1865545c4cf23bb",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            5,
+            5
+          ]
+        },
+        {
+          "number": 12,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1020012,
+          "fingerprint": "cf8f30aa16243dfa6b7194cd4adbef3a3467bf44aeba9e05e084b27e276abab0",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            5,
+            0,
+            7,
+            0,
+            5,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "themeId": "sternwarte",
+      "title": "Beobachtungsnacht in der Sternwarte",
+      "entries": [
+        {
+          "number": 1,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1030001,
+          "fingerprint": "81c67b43696c40a287c80e6472d2f532a95f0e29da32065168abda9821bacca1",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 2,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1030002,
+          "fingerprint": "3e75d2f800a2e50dea951b0485229a84bb34c27691f003a7d16f9e7e25a56a80",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            2,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 3,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1030003,
+          "fingerprint": "3ad91490e164eb3561a366bc28907ad3b96fc4f6a33a8cb050ea803764bad071",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 4,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1030004,
+          "fingerprint": "5946229081af30536ae08cc0353fc6e847487a519989a00b43d8aa990695cba8",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 5,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1030005,
+          "fingerprint": "62c657b5b347bb1656f18531dd76ff17eda59aa2f8fec4cb40c442edd04eca82",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            6,
+            5
+          ]
+        },
+        {
+          "number": 6,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1030006,
+          "fingerprint": "794939dd2115c88f7f3b72c12ca3a9d87cbd2f12f1ef678c6d11f43eba2c3ca0",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 7,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1030007,
+          "fingerprint": "49acbdf77353e213fb43b08b28c9ae2ab03704ea66cfa2253b8a4773cebde4f8",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6
+          ]
+        },
+        {
+          "number": 8,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1030008,
+          "fingerprint": "1e4f0e41c1058980ac96b81c1ff0f07f34048a3f20d08f875968c0898afd8f8a",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            6,
+            6
+          ]
+        },
+        {
+          "number": 9,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1030009,
+          "fingerprint": "1d2be8f8dbb12cb99a09ea3c53ca6981750ddc504fbad6881665eeeb307b13c3",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 10,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1030010,
+          "fingerprint": "6bd4da137268f173cdeb7f7be874870918c270da1f62d685a21b1ccb8ec3bdca",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            5,
+            0,
+            6,
+            0,
+            5,
+            0,
+            0,
+            5
+          ]
+        },
+        {
+          "number": 11,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1030011,
+          "fingerprint": "d11bca050de8e174666d9466e9ac90de0abf1db7954b3d172e0c7dae8df17c79",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            7,
+            0,
+            7,
+            0,
+            6,
+            5
+          ]
+        },
+        {
+          "number": 12,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1030012,
+          "fingerprint": "f3bea852d6c240f90cd6078996117e73a97ac07b53b27f7a24d409239ec782d4",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            7,
+            0,
+            6,
+            0,
+            7,
+            6
+          ]
+        }
+      ]
+    },
+    {
+      "themeId": "plattenmarkt",
+      "title": "Raritäten auf dem Plattenmarkt",
+      "entries": [
+        {
+          "number": 1,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1040001,
+          "fingerprint": "f4c6ddd64ddb8a217538d421a5fc522cd4cd38c707109e9e49c9c563342c49cc",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "number": 2,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1040002,
+          "fingerprint": "fac0cd9d05f0161fe6803adc707e20ed9f618a90ff35d882b627271f50fe9550",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            2
+          ]
+        },
+        {
+          "number": 3,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1040003,
+          "fingerprint": "e029b7d4c7f951b16f48ac0782f55b5cd9f67216e096849d86e807163ddef808",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            1
+          ]
+        },
+        {
+          "number": 4,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1040004,
+          "fingerprint": "cbc6533c22b6560de9c546920382485639c894774e6161ec888821020afcc86b",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "number": 5,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1040005,
+          "fingerprint": "2a3ee7c88cbd670c057ef623b35f28b4b91cb516dc0305e38e4aef8cedd735e4",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5
+          ]
+        },
+        {
+          "number": 6,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1040006,
+          "fingerprint": "292792b483d71875db597da21a918acbd5ed4c73c308e7e1f536d04ac39be854",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            1
+          ]
+        },
+        {
+          "number": 7,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1040007,
+          "fingerprint": "35d740d10f07759f340d8b32ed623deb91988441a96efbf72d509e65622562b1",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            6,
+            0,
+            5,
+            0
+          ]
+        },
+        {
+          "number": 8,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1040008,
+          "fingerprint": "321a15f9cd8440809957aff9928a4b3f7e1c2a02feaac93e11da86a60fddd323",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            5
+          ]
+        },
+        {
+          "number": 9,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1040009,
+          "fingerprint": "3a599fd55624d8fc9b149b8622b50121a48f1c8376ba219000d08daf6afa26c3",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            0
+          ]
+        },
+        {
+          "number": 10,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1040010,
+          "fingerprint": "1a0d4dcf5396555d10fcda86d29cb01b3c87fce79e86aa780e801beafb138d2d",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            1,
+            0,
+            5,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 11,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1040011,
+          "fingerprint": "982c485729dd546ac30ec9318199c86ad0d0d042b78f8d09dc08c2f01990f503",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 12,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1040012,
+          "fingerprint": "e1cd8e860f39ceafb507578b55bd6248535c4092ee62149a93545c2330afc03c",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            1,
+            0,
+            5,
+            0,
+            5,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "themeId": "hackathon",
+      "title": "Entscheidung beim Nacht-Hackathon",
+      "entries": [
+        {
+          "number": 1,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1050001,
+          "fingerprint": "6675de06f03787752e607e4586af1ff63b5c88e86118c9d4f796509727ed8d70",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "number": 2,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1050002,
+          "fingerprint": "b6c7c0c2c57f582e1ea8d33197f24c1b409f1ca0416ed292a4ac00bdcff5b0cb",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "number": 3,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1050003,
+          "fingerprint": "e10f4b8e9dd6f3a9c1f17226da92ffbc1225e4f9b8b487d9c2d2fcdd807a16a2",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "number": 4,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1050004,
+          "fingerprint": "96d5e1aacf7d9b5238bd46960cb47c4a1a7c05b646e29078962cfb2a752c9ef9",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "number": 5,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1050005,
+          "fingerprint": "9e3562d2291f683347bec8293e8898f466e83b865f1e61f9fa9bc2fef3c239ff",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            6,
+            1
+          ]
+        },
+        {
+          "number": 6,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1050006,
+          "fingerprint": "efbc1e4fd871cd449086ea65163cbfb65faf78a24e6958dd3c2f33f7f34becbd",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            1,
+            5
+          ]
+        },
+        {
+          "number": 7,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1050007,
+          "fingerprint": "2ee641e80269a60816415d87561e4ff8c09d40f40678c0ce0c48110ccee0e273",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "number": 8,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1050008,
+          "fingerprint": "206b5bd64758419390ec79a3a203afb33d0e59232998ff8970e752daf366c67c",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1,
+            5
+          ]
+        },
+        {
+          "number": 9,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1050009,
+          "fingerprint": "211e4cff42aa63c14885bd3dcdac4d94c829aa4d1b183183c51f091e65aa4bae",
+          "clueTypes": [
+            5,
+            0,
+            1,
+            0,
+            6,
+            0,
+            1,
+            0,
+            6,
+            0,
+            5,
+            5
+          ]
+        },
+        {
+          "number": 10,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1050010,
+          "fingerprint": "df091ecfee153f0b93ecc72b5cde4b92cd47286ed9c39c54e5bc9fed2a923b05",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            5
+          ]
+        },
+        {
+          "number": 11,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1050011,
+          "fingerprint": "5b45e58932aeffafd100907fda69f2dfcec268711f126f67f458f5166362b24f",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            7,
+            0,
+            5,
+            0,
+            7,
+            0,
+            7,
+            5
+          ]
+        },
+        {
+          "number": 12,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1050012,
+          "fingerprint": "a4f56776339560707865f7b83e5d64abf9c0d5265f30da220f70515d0a0b752e",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            6,
+            0,
+            7,
+            0,
+            5,
+            0,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "themeId": "fotowettbewerb",
+      "title": "Die fünf Nachtaufnahmen",
+      "entries": [
+        {
+          "number": 1,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1060001,
+          "fingerprint": "55e04bec973e33bd417d8995fb73a013bd503be68c3007b01db7b38accb50d24",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            2,
+            1,
+            1
+          ]
+        },
+        {
+          "number": 2,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1060002,
+          "fingerprint": "50ff400eb1a5505ce6cbb2992d4047615e49a660ea57d28f3f1d6437acfd277c",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 3,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1060003,
+          "fingerprint": "5b7ea57fd98d3dbe8fc5050b334fa591cf13dc27d9f60c5f42d385c926cde280",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 4,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1060004,
+          "fingerprint": "acd7a7a3b2dcadcc020b915f61ff415a4ca69078bdf7efdbfabb5896a7bbc4c4",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 5,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1060005,
+          "fingerprint": "cd842e94d7cb1ce285689c70daeb0b1318d01410245d5d20016cb545d916a06c",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "number": 6,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1060006,
+          "fingerprint": "0a2f56a058a87331adcf9554251f1d0723ee72da07bb5d83c0bbcaa6fe593f4b",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            1,
+            5
+          ]
+        },
+        {
+          "number": 7,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1060007,
+          "fingerprint": "426784bbf4fe2502755b0d4917e1703fff5fd4bbdc8bdea5fcec05a3407033f7",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            5,
+            0,
+            5
+          ]
+        },
+        {
+          "number": 8,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1060008,
+          "fingerprint": "19becc0d4f9f46392138acc6724805706044bea3dcffb413ed97eae54d4b3773",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            6,
+            1
+          ]
+        },
+        {
+          "number": 9,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1060009,
+          "fingerprint": "13b6ca88be7cb245f6c959eba9a8c7ed1269ebd2920f57aad6b9859d16da2096",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            1,
+            0,
+            5,
+            5
+          ]
+        },
+        {
+          "number": 10,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1060010,
+          "fingerprint": "9169f701569f2ed6e6a726ee09e92b21fb95c31af5f74d6e5e6ba32b0019d433",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            6,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 11,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1060011,
+          "fingerprint": "fccbdcc343a35d2e43d207cdc5e22823629d17e11c3f4d012ecb345bfe18992c",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            7,
+            0,
+            5
+          ]
+        },
+        {
+          "number": 12,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1060012,
+          "fingerprint": "ad49b302a844a799102c81f5aee060f48fb15107688a4cafdb8505d3917f0e13",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            1,
+            0,
+            1,
+            0,
+            7,
+            0,
+            5,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "themeId": "gartenfest",
+      "title": "Das Rätsel vom Gartenfest",
+      "entries": [
+        {
+          "number": 1,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1070001,
+          "fingerprint": "ca341b7109ef7121e5039d7a65bb8a026bc3d587a79e3b25af5ad16af3d52d2e",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "number": 2,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1070002,
+          "fingerprint": "b2f249bca6b1549b65a1f7e9b5615253e3283a3e7921fe51904ae77b18747c58",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "number": 3,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1070003,
+          "fingerprint": "733e8203a5cc1c1f1531b0a13eae51e056d5adbdde142b47191e7191499f8c17",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            2
+          ]
+        },
+        {
+          "number": 4,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1070004,
+          "fingerprint": "7dd23982a0e9d337aeae34acf823a62385ebfc8048dff79c0ad44663ffc206f9",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "number": 5,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1070005,
+          "fingerprint": "defe53ae79f698264c5a606897f3e0b52d0546b1ce013799fb8adad7b2c9142d",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            1,
+            5
+          ]
+        },
+        {
+          "number": 6,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1070006,
+          "fingerprint": "0103d556673be022a727c9e115ccc1d60d813bb53e4ed36b9335372810b0f34f",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            1,
+            5
+          ]
+        },
+        {
+          "number": 7,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1070007,
+          "fingerprint": "7d2d07f0561744e1be407d995420621e215af852342b3097fd2e8176b2de147d",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 8,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1070008,
+          "fingerprint": "e99a48446ec2b923b4061b55d984e91dcdbe819009cf177d71d0e5c0b183934e",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            5
+          ]
+        },
+        {
+          "number": 9,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1070009,
+          "fingerprint": "daeff735da7670d967271cb8fd38fc880e77230df57b0684269c5f5e4c8e6175",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 10,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1070010,
+          "fingerprint": "07ae85ef299f3e4f37a6de919952d9e57eb5a301fda16bec310594dc22ccce7c",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            1,
+            0,
+            5
+          ]
+        },
+        {
+          "number": 11,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1070011,
+          "fingerprint": "69c7d19c86fa669e4ce5097e42db927cd0feaf809425266e7e30a6763dcffb7e",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            1,
+            0,
+            7,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 12,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1070012,
+          "fingerprint": "e2da7c4a61621895c9256e4b600c127856882915d67f0b0189ad5b677ba7d2c1",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            1,
+            0,
+            7,
+            0,
+            7,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "themeId": "museum",
+      "title": "Spätschicht im Museum",
+      "entries": [
+        {
+          "number": 1,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1080001,
+          "fingerprint": "2cbde0ef9c1d151c926e6bd1866f17a7cce49ed4d2021f3fa7fb2e6b23e1ced2",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            2,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 2,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1080002,
+          "fingerprint": "522bec566e20b3a8a01accef7d089aa810ae7567e9b49f5d41744fce5729d8b2",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "number": 3,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1080003,
+          "fingerprint": "b284097ee4fdac6c74964a96c0612db7aad93607acd194c3c02384361bbd682f",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "number": 4,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1080004,
+          "fingerprint": "4e0cd3525cceec61de29a59562f12956d913a87af04f5e3cd0fc1ac35b2bdfc8",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 5,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1080005,
+          "fingerprint": "bb2da9a8e5002cc5beec49f7023ca9ec84bc58402c8bb9a0747fb51abb69132e",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            1,
+            1
+          ]
+        },
+        {
+          "number": 6,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1080006,
+          "fingerprint": "67d3d24e649537f1f20f5fa46c8462b28f143ed5e21e9e8a91ecb348e5f2fbae",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            1
+          ]
+        },
+        {
+          "number": 7,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1080007,
+          "fingerprint": "3b3d618ceac160d6d14905f5ba4d23d6d1ad21ae73000b672252ad7b5f606a8c",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            5,
+            0
+          ]
+        },
+        {
+          "number": 8,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1080008,
+          "fingerprint": "24759a87a8b5eb37611d3028ba49fc175b837f82440315f15561e08e6be3f9ae",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6,
+            5
+          ]
+        },
+        {
+          "number": 9,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1080009,
+          "fingerprint": "01c22717cb4e3209a8b4d8ba818307316c696b8cd20c859fa2881f2edad75cdc",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1,
+            0,
+            5,
+            0,
+            5,
+            0
+          ]
+        },
+        {
+          "number": 10,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1080010,
+          "fingerprint": "c07239bcd39c799c4e0115b2ef77d463a4274bcc75146db44ad418c5d30e6219",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            5,
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "number": 11,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1080011,
+          "fingerprint": "fb9b0913d06860235ea22c22e1fafa4ca0e4ac6db7abcd563508ff52ee5599b7",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            5,
+            0,
+            5
+          ]
+        },
+        {
+          "number": 12,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1080012,
+          "fingerprint": "516c279498621099c5de3d2f7536e7751036e2a00f5d35b359f021b710ccbf98",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            5,
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "themeId": "triathlon",
+      "title": "Startliste des Staffel-Triathlons",
+      "entries": [
+        {
+          "number": 1,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1090001,
+          "fingerprint": "ae156dfda261a4f059c6853fd90741fd37b979a355d9b1ea6a34dd58839d3a02",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "number": 2,
+          "categoryCount": 3,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1090002,
+          "fingerprint": "72872b31363586621165579cb71885405d2f31ad6b702edf156774ca9d66b3fd",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "number": 3,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1090003,
+          "fingerprint": "14a4e2cff360787ec9a67f0eff7fc94fe6c817e404d6357548f25b9d47404673",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            1
+          ]
+        },
+        {
+          "number": 4,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "leicht",
+          "seed": 1090004,
+          "fingerprint": "9b54345e45763bf273e8b8ba65d42e9cbf569bc3e5264cf2d5ba725bb449a39a",
+          "clueTypes": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            1
+          ]
+        },
+        {
+          "number": 5,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1090005,
+          "fingerprint": "9a956ff0300b09966fb3a98610a608a820133d59d9d0ffbb309a263fbccb0c8d",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            6,
+            1
+          ]
+        },
+        {
+          "number": 6,
+          "categoryCount": 4,
+          "valuesPerCategory": 4,
+          "difficulty": "mittel",
+          "seed": 1090006,
+          "fingerprint": "d7a8f75aef38cd92f6bcb61c76aa9dd332aa620af61158951ae9ee74686f3c84",
+          "clueTypes": [
+            5,
+            1,
+            0,
+            6,
+            0,
+            5
+          ]
+        },
+        {
+          "number": 7,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1090007,
+          "fingerprint": "007fb6eb0beda1f85753fc1090baa3320f5f62fb3bafbf8b0f890eaf6de3e06f",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1,
+            5
+          ]
+        },
+        {
+          "number": 8,
+          "categoryCount": 4,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1090008,
+          "fingerprint": "6fb3fa4741b104bf5e8e720219fd44e93f2266101585efb3b523baae5647d408",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            1,
+            5
+          ]
+        },
+        {
+          "number": 9,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1090009,
+          "fingerprint": "0ec1f76354dc1475652a8ee69099cae8da5a82870610e24b033391181e145bd6",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            1
+          ]
+        },
+        {
+          "number": 10,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "mittel",
+          "seed": 1090010,
+          "fingerprint": "522a06c5ca5677f691511e2db0feb4c4d49a8aadf157a3e54e20654e17b52dc3",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            5,
+            0
+          ]
+        },
+        {
+          "number": 11,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1090011,
+          "fingerprint": "6759ce68576c7e1dc40fcda20348de2c041ff5997aeeedc810ad6c5402966a45",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            6,
+            0,
+            1,
+            0,
+            7,
+            5
+          ]
+        },
+        {
+          "number": 12,
+          "categoryCount": 5,
+          "valuesPerCategory": 5,
+          "difficulty": "schwer",
+          "seed": 1090012,
+          "fingerprint": "5b6de73ec0e504231b551f3e762b90bab60cde21f286ac3cc26d5218547a5776",
+          "clueTypes": [
+            5,
+            0,
+            5,
+            0,
+            5,
+            0,
+            7,
+            0,
+            1,
+            0,
+            5,
+            1
+          ]
+        }
+      ]
+    }
+  ]
+}

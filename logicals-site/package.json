@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "node scripts/build.mjs",
+    "catalogue:build": "node scripts/build-catalogue.mjs",
+    "catalogue:verify": "node scripts/verify-catalogue.mjs",
     "test": "vitest run --root . test",
     "test:e2e": "playwright test",
     "preview": "vite preview --host 0.0.0.0",
