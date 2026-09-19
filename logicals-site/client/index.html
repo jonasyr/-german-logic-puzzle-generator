@@ -288,9 +288,13 @@
         </header>
         <p class="result-sub" id="collection-total"></p>
         <p class="hint" id="collection-hint" role="status"></p>
-        <!-- Die erste Handlung ist Weiterspielen, nicht Suchen. Ohne das kostet
-             der nächste Eintrag einen Blick durch zehn Kapitel. -->
-        <button class="btn btn--primary btn--large btn--block" type="button" id="collection-continue" hidden></button>
+        <!-- Die erste Handlung ist Weiterspielen, nicht Suchen. Kurzer Knopf,
+             Ziel in der Zeile darunter - wie beim Tagesrätsel. Ein Knopf, der
+             einen Doppelpunkt und einen Umbruch braucht, ist ein Satz mit
+             Knopfhintergrund. -->
+        <button class="btn btn--primary btn--large btn--block" type="button" id="collection-continue" hidden>Weiter spielen</button>
+        <p class="collection-note" id="collection-next" hidden></p>
+        <p class="collection-note collection-note--done" id="collection-done" hidden></p>
         <div class="history-list" id="chapter-list"></div>
     </section>
 
@@ -299,8 +303,11 @@
             <button class="btn btn--ghost btn--back" type="button" aria-label="Zurück">
                 <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Zurück</span>
             </button>
-            <h2 id="chapter-title">Kapitel</h2>
+            <h2>Sammlung</h2>
         </header>
+        <!-- Nicht in die Leiste: die ist absichtlich einzeilig mit Auslassung,
+             und "Finale beim Street-Food-Fes…" sagt einem nicht, wo man ist. -->
+        <h3 class="chapter-heading" id="chapter-title"></h3>
         <p class="result-sub" id="chapter-progress"></p>
         <p class="hint" id="chapter-hint" role="status"></p>
         <div class="history-list" id="entry-list"></div>

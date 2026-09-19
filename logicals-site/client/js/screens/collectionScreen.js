@@ -57,16 +57,43 @@ function chapterRow(chapter) {
         className: 'list-row__score',
         text: done ? `${part.solved}/${part.total} ✓` : `${part.solved}/${part.total}`,
     }));
+
+    /*
+     * Ein feiner Strich, keine Fortschrittsanzeige.
+     *
+     * Zehn Zeilen "0/12" untereinander sind eine Wand aus Nullen - und genau
+     * dort entscheidet sich, ob jemand anfaengt. Drei Pixel unten an der Zeile
+     * sagen dasselbe als Form statt als Ziffer, ohne der Liste Gewicht zu
+     * geben. Fuer Screenreader traegt die Zahl daneben die Auskunft bereits,
+     * also bleibt der Strich dekorativ.
+     */
+    const meter = make('span', { className: 'chapter-meter', attrs: { 'aria-hidden': 'true' } });
+    const fill = make('span', { className: 'chapter-meter__fill' });
+    fill.style.width = `${Math.round((part.solved / part.total) * 100)}%`;
+    meter.append(fill);
+    row.append(meter);
+
     row.addEventListener('click', () => openChapter(chapter.themeId));
     return row;
 }
 
-function entryRow(chapter, entry, index) {
+function entryRow(chapter, entry, index, next) {
     const isSolved = solved.has(entry.seed);
+    /*
+     * Wo es weitergeht, markiert ein Akzentstreifen am linken Rand - kein
+     * Text.
+     *
+     * Bei verstreut geloesten Eintraegen liegt die Luecke irgendwo in der
+     * Mitte, und man soll sie sehen statt suchen. Eine Zeile "Hier geht es
+     * weiter" waere lauter als noetig und machte die Zeile hoeher als ihre
+     * Nachbarn.
+     */
+    const isNext = !isSolved && next !== null && entry.seed === next.seed;
     const row = make('button', {
-        className: `list-row entry-row${isSolved ? ' is-solved' : ''}`,
+        className: `list-row entry-row${isSolved ? ' is-solved' : ''}${isNext ? ' is-next' : ''}`,
         attrs: { type: 'button' },
     });
+    if (isNext) row.setAttribute('aria-current', 'step');
     // Alle zwölf Einträge tragen denselben Titel, also trägt ihn die Zeile
     // nicht: Nummer, Gitter und Stufe sind das, was sie unterscheidet.
     row.append(make('h3', {
@@ -120,7 +147,8 @@ function drawChapter() {
     const part = progressOf(chapter, solved);
     el('chapter-progress').textContent = `${part.solved} von ${part.total} gelöst`;
     const list = clear(el('entry-list'));
-    chapter.entries.forEach((entry, index) => list.append(entryRow(chapter, entry, index)));
+    const next = nextOpen(chapter, solved);
+    chapter.entries.forEach((entry, index) => list.append(entryRow(chapter, entry, index, next)));
 }
 
 function drawCollection() {
@@ -129,19 +157,38 @@ function drawCollection() {
         ? `${total.solved} von ${total.total} gelöst`
         : 'Wird geladen …';
 
-    // Die erste Handlung ist Weiterspielen. Der Knopf nennt, wohin er führt.
+    /*
+     * Die erste Handlung ist Weiterspielen - kurz beschriftet, Ziel darunter.
+     *
+     * "Weiter: Finale beim Street-Food-Festival, 1" brach auf zwei Zeilen und
+     * liess ein einsames ", 1" am Ende baumeln. Dieselbe Trennung wie beim
+     * Tagesraetsel: Knopf sagt die Handlung, die Zeile darunter das Ziel.
+     */
     const chapter = chapters().find(candidate => nextOpen(candidate, solved));
     const button = el('collection-continue');
-    button.hidden = false;
+    const next = el('collection-next');
+    const done = el('collection-done');
+
     if (chapter) {
         const entry = nextOpen(chapter, solved);
-        button.disabled = false;
-        button.textContent = `Weiter: ${chapter.title}, ${entry.number}`;
+        button.hidden = false;
         button.onclick = () => play(chapter, entry);
+        next.hidden = false;
+        next.textContent = `${chapter.title} · ${entry.number} von ${chapter.entries.length}`;
+        done.hidden = true;
     } else {
-        button.disabled = true;
-        button.textContent = 'Alles gelöst';
+        /*
+         * Fertig heisst fertig, nicht "ausgegrauter Knopf".
+         *
+         * Ein deaktivierter Knopf nach 120 geloesten Raetseln sieht aus wie
+         * ein Fehler - und das ist der eine Moment, in dem die Sammlung etwas
+         * zu sagen haette.
+         */
+        button.hidden = true;
         button.onclick = null;
+        next.hidden = true;
+        done.hidden = false;
+        done.textContent = 'Alle 120 gelöst. Die Sammlung ist vollständig.';
     }
 
     const list = clear(el('chapter-list'));

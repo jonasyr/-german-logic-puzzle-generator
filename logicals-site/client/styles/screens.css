@@ -335,3 +335,63 @@
 
 /* Der Weiter-Knopf steht über der Liste und hat Luft zu ihr. */
 #collection-continue { margin: var(--space-4) 0 var(--space-2); }
+
+/* Die Zeile, die sagt, wohin der Knopf führt - wie beim Tagesrätsel. */
+.collection-note {
+    margin: 0 0 var(--space-5);
+    text-align: center;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+}
+.collection-note--done { color: var(--teal); font-weight: 600; }
+.collection-note[hidden] { display: none; }
+
+/* Der Kapiteltitel im Rumpf, wo er umbrechen darf. */
+.chapter-heading {
+    margin: var(--space-4) 0 var(--space-2);
+    font-size: var(--text-title);
+    line-height: var(--leading-title);
+    text-wrap: balance;
+}
+
+/*
+ * Gleiche Zeilenhöhe, damit die Liste einen Rhythmus hat.
+ *
+ * Zeilen mit "Neu:" oder "gelöst" tragen eine zweite Textzeile, die anderen
+ * nicht - ohne Untergrenze wirkt die Liste ungesetzt.
+ */
+.entry-row { min-height: 68px; align-content: center; }
+
+/*
+ * Der feine Strich am Fuß einer Kapitelzeile.
+ *
+ * Drei Pixel, in der Akzentfarbe, über die volle Breite der Zeile. Er soll
+ * lesbar sein, ohne der Liste Gewicht zu geben - eine Fortschrittsanzeige mit
+ * Rahmen und Prozentzahl wäre genau das Erschlagende, das hier nicht hingehört.
+ */
+.chapter-meter {
+    height: 3px;
+    border-radius: 999px;
+    background: var(--surface-sunken);
+    overflow: hidden;
+}
+.chapter-meter__fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent);
+    transition: width var(--dur-fast) var(--ease-out);
+}
+.chapter-row.is-solved .chapter-meter__fill { background: var(--teal); }
+
+/*
+ * Wo es weitergeht: ein Streifen am linken Rand, kein Text.
+ *
+ * Still genug, um die Liste nicht zu zerreißen, und deutlich genug, dass das
+ * Auge die Lücke findet, statt sie zu suchen.
+ */
+.entry-row.is-next {
+    border-left: 3px solid var(--accent);
+    padding-left: calc(var(--space-5) - 3px);
+}

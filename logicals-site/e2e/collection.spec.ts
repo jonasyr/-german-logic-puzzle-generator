@@ -54,10 +54,13 @@ test('die erste Handlung ist Weiterspielen, nicht Suchen', async ({ page }) => {
   await page.locator('#collection-button').click();
   await expect(page.locator('#screen-collection')).toHaveClass(/is-active/);
 
-  // Der Knopf steht oben und nennt, wohin er führt.
+  // Der Knopf sagt die Handlung, die Zeile darunter das Ziel. Zusammen in
+  // einem Knopf ergab das "Weiter: Finale beim Street-Food-Festival, 1" -
+  // zwei Zeilen mit einem einsamen ", 1" am Ende.
   const jump = page.locator('#collection-continue');
   await expect(jump).toBeVisible();
-  await expect(jump).toContainText('Weiter:');
+  await expect(jump).toHaveText('Weiter spielen');
+  await expect(page.locator('#collection-next')).toContainText('Street-Food-Festival');
 
   await jump.click();
   await expect(page.locator('#overview-canvas')).toBeVisible({ timeout: 120_000 });

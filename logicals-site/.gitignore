@@ -6,3 +6,4 @@ site.tar.gz
 .sites-runtime/
 test-results/
 playwright-report/
+shots/
