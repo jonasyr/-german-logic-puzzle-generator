@@ -24,7 +24,14 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Kein "black-translucent". Das lässt den Inhalt unter die Statusleiste
+         reichen und zwingt iOS zu weißen Symbolen - und die oberste gemalte
+         Fläche ist im hellen Modus gemessen rgb(251, 250, 247), weil #app den
+         sicheren Bereich nur als Polsterung freilässt. Uhrzeit, Akku und
+         Empfang wären dort unsichtbar. Ohne die Angabe beginnt der Inhalt unter
+         der Statusleiste, und iOS wählt die Symbolfarbe selbst.
+         viewport-fit=cover bleibt: die unteren und seitlichen Einzüge braucht
+         das Layout weiterhin. -->
     <meta name="apple-mobile-web-app-title" content="Logicals" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />
