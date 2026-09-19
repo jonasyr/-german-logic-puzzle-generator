@@ -232,3 +232,19 @@ Generator nötig, weil die Booklet-Schicht nur `difficulty` durchreicht und
 
 **Unverändert bleiben:** Datenbank-Schema, Migrationen, Hosting, Tagesrätsel,
 Duell, freies Spiel. Die Speicherschlüssel bleiben byte-identisch.
+
+## Vor jedem Deploy
+
+Zusätzlich zu Tests und Typecheck:
+
+    npm run catalogue:verify
+
+Erwartet: `120 Einträge geprüft, 0 abweichend`. Gemessen rund 94 Sekunden.
+
+Schlägt es fehl, hat sich der Generator geändert — dann wird der Katalog neu
+gebaut (`npm run catalogue:build`) und die Änderung an den Fingerprints bewusst
+abgenommen, weil sie bedeutet, dass die Kapitel für alle bisherigen Spieler
+andere Rätsel enthalten als vorher.
+
+Vergessen kann man den Befehl nicht: `test/catalogue.test.ts` prüft Version und
+Hash des Generators in Millisekunden und wird rot, sobald sich `vendor/` rührt.
