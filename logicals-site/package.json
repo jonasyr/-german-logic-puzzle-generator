@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@playwright/test": "1.55.0",
+    "@types/node": "^20.12.7",
     "drizzle-kit": "0.31.10",
     "esbuild": "0.28.2",
     "typescript": "5.9.3",
