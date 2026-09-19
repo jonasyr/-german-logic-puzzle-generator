@@ -36,7 +36,7 @@
     color: #c9cfdb;   /* fallback before Safari 16.2 gained color-mix */
     color: color-mix(in srgb, var(--on-ink) 72%, transparent);
 }
-.start-title { margin: 12px 0 16px; font-size: clamp(44px, 9vw, 72px); letter-spacing: .12em; line-height: 1.05; }
+.start-title { margin: 12px 0 16px; font-size: clamp(34px, 9vw, 72px); letter-spacing: .12em; line-height: 1.05; }
 .start-sub {
     margin: 0 auto var(--gap-xl);
     max-width: 40ch;
