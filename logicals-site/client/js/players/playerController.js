@@ -1,6 +1,6 @@
 import { clear, el, make, setHint } from '../dom.js';
 import { showScreen } from '../router.js';
-import { loadHistoryScreen } from '../screens/historyScreen.js';
+import { initHistoryTabs, loadHistoryScreen } from '../screens/historyScreen.js';
 import { createPlayer, listPlayers } from './playerApi.js';
 import { cachePlayers, getSelectedPlayer, loadPlayerState, selectPlayer, snapshot } from './playerStore.js';
 
@@ -45,6 +45,7 @@ function openDialog() {
 export async function initPlayerController() {
     loadPlayerState();
     updateStart();
+    initHistoryTabs();
     el('player-button').addEventListener('click', openDialog);
     el('player-close').addEventListener('click', () => el('player-dialog').close());
     el('history-button').addEventListener('click', () => {

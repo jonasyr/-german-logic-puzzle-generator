@@ -1,5 +1,7 @@
 import { clear, el, make, setHint } from '../dom.js';
 import { listPlayerResults } from '../players/playerApi.js';
+import { renderStatsInto } from './statsScreen.js';
+import { berlinDate } from '../play/dailyPuzzle.js';
 
 function formatDuration(milliseconds) {
     const seconds = Math.max(0, Math.round(milliseconds / 1000));
@@ -58,8 +60,34 @@ export async function loadHistoryScreen(player) {
     const list = clear(el('history-list'));
     setHint('history-hint', 'Ergebnisse werden geladen …');
     try {
-        const results = await listPlayerResults(player.id);
+        // 100 ist die Obergrenze des Workers - darüber antwortet er mit 400
+        // statt zu kappen - und beide Reiter teilen sich diese eine Abfrage.
+        // Die Liste fragte vorher 50 ab und die Statistik daneben 100.
+        const results = await listPlayerResults(player.id, 100);
         setHint('history-hint', results.length ? '' : 'Noch keine abgeschlossenen Rätsel.');
         for (const result of results) list.append(resultCard(result));
+        renderStatsInto(el('stats-body'), results, berlinDate());
     } catch (error) { setHint('history-hint', error.message, true); }
+}
+
+/**
+ * Die Reiter tauschen nur Sichtbarkeit.
+ *
+ * Geladen wurde beim Öffnen des Bildschirms einmal; ein Reiterwechsel ist eine
+ * andere Sicht auf dieselben Daten, keine neue Frage an den Server.
+ */
+export function initHistoryTabs() {
+    const tabs = [
+        { tab: el('history-tab-list'), panel: el('history-panel-list') },
+        { tab: el('history-tab-stats'), panel: el('history-panel-stats') },
+    ];
+    for (const { tab } of tabs) {
+        tab.addEventListener('click', () => {
+            for (const entry of tabs) {
+                const active = entry.tab === tab;
+                entry.tab.setAttribute('aria-selected', String(active));
+                entry.panel.hidden = !active;
+            }
+        });
+    }
 }

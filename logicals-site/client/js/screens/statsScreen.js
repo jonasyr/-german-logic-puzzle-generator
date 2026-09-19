@@ -6,10 +6,10 @@
  * file only decides how to say them.
  */
 
-import { clear, el, make, setHint } from '../dom.js';
-import { listPlayerResults } from '../players/playerApi.js';
+import { clear, make } from '../dom.js';
+
 import { headToHead, personalStats } from '../stats/statistics.js';
-import { berlinDate } from '../play/dailyPuzzle.js';
+
 
 function formatDuration(milliseconds) {
     const seconds = Math.max(0, Math.round(milliseconds / 1000));
@@ -102,23 +102,20 @@ function duelSection(entry) {
     return node;
 }
 
-export async function loadStatsScreen(player) {
-    el('stats-player').textContent = `Statistik von ${player.displayName}`;
-    const body = clear(el('stats-body'));
-    setHint('stats-hint', 'Wird berechnet …');
-
-    try {
-        // 100 is the Worker's ceiling - it answers 400 above that rather than
-        // clamping - and the note at the foot of the screen says so.
-        const results = await listPlayerResults(player.id, 100);
-        if (!results.length) {
-            setHint('stats-hint', 'Noch keine abgeschlossenen Rätsel.');
-            return;
-        }
-        setHint('stats-hint', '');
-        body.append(personalSection(personalStats(results, berlinDate())));
-        for (const entry of headToHead(results)) body.append(duelSection(entry));
-    } catch (error) {
-        setHint('stats-hint', error.message, true);
-    }
+/**
+ * Rendert die Statistik in einen bereitgestellten Knoten.
+ *
+ * Lädt nicht selbst. Der Ergebnis-Bildschirm trägt beide Sichten und liest
+ * einmal - vorher las er hier 100 Ergebnisse und in der Rätselliste nebenan 50,
+ * also gaben zwei benachbarte Knöpfe verschiedene Antworten auf dieselbe Frage.
+ *
+ * @param {HTMLElement} node
+ * @param {Array<object>} results  neueste zuerst
+ * @param {string} today  Datum in Berliner Zeit, `YYYY-MM-DD`
+ */
+export function renderStatsInto(node, results, today) {
+    const body = clear(node);
+    if (!results.length) return;
+    body.append(personalSection(personalStats(results, today)));
+    for (const entry of headToHead(results)) body.append(duelSection(entry));
 }

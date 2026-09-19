@@ -9,7 +9,6 @@ import { initResultOutbox } from './results/outbox.js';
 import {
     loadOptions, collectOptions, updateTargetOptions, randomSeed, ensureSeed,
 } from './screens/configScreen.js';
-import { loadStatsScreen } from './screens/statsScreen.js';
 import { initSettingsScreen } from './screens/settingsScreen.js';
 import { initPlay, openPlay } from './play/playController.js';
 import { createDuelForPuzzle, initDuelController, openRoomFromUrl } from './duel/lobbyController.js';
@@ -177,7 +176,6 @@ function refreshStartScreen() {
     detail.hidden = !record;
     if (record) detail.textContent = describeResume(record);
 
-    el('stats-button').disabled = !player;
     el('duel-join-button').hidden = loadPrefs().hideDuel;
 
     // Stacked primary buttons compete with each other, so exactly one is primary.
@@ -242,12 +240,6 @@ function wire() {
     });
     el('resume-button').addEventListener('click', resumeSavedGame);
     el('daily-button').addEventListener('click', playDaily);
-    el('stats-button').addEventListener('click', () => {
-        const player = getSelectedPlayer();
-        if (!player) return;
-        showScreen('screen-stats');
-        loadStatsScreen(player);
-    });
 
     // Coming back from a game is exactly when the offer changes: it appears
     // after the first mark, and disappears once the puzzle is solved.

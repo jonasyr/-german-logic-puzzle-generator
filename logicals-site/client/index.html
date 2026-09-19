@@ -52,8 +52,7 @@
                 <p class="hint start-hint" id="start-hint" role="status" aria-live="polite"></p>
                 <button class="btn btn--primary btn--large btn--block" id="start-button" type="button" disabled>Rätsel erstellen</button>
                 <button class="btn btn--on-dark btn--block" id="duel-join-button" type="button" disabled>Duell beitreten</button>
-                <button class="btn btn--on-dark btn--block" id="history-button" type="button" disabled>Meine Ergebnisse</button>
-                <button class="btn btn--on-dark btn--block" id="stats-button" type="button" disabled>Statistik</button>
+                <button class="btn btn--on-dark btn--block" id="history-button" type="button" disabled>Ergebnisse &amp; Statistik</button>
                 <button class="btn btn--on-dark btn--block" id="settings-button" type="button">Einstellungen</button>
             </div>
         </div>
@@ -197,25 +196,28 @@
             <button class="btn btn--ghost btn--back" type="button" data-goto="screen-start" aria-label="Zurück">
                 <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Zurück</span>
             </button>
-            <h2>Meine Ergebnisse</h2>
+            <h2>Ergebnisse</h2>
         </header>
         <p class="result-sub" id="history-player"></p>
-        <div class="history-list" id="history-list"></div>
+        <!-- Zwei Sichten auf dieselbe Abfrage. Als zwei Bildschirme lasen sie
+             verschiedene Umfänge (50 gegen 100) und gaben damit verschiedene
+             Antworten auf "meine Ergebnisse". -->
+        <div class="segmented" role="tablist" aria-label="Ansicht">
+            <button class="segmented__item" type="button" id="history-tab-list"
+                    role="tab" aria-selected="true" aria-controls="history-panel-list">Rätsel</button>
+            <button class="segmented__item" type="button" id="history-tab-stats"
+                    role="tab" aria-selected="false" aria-controls="history-panel-stats">Statistik</button>
+        </div>
+        <div id="history-panel-list" role="tabpanel" aria-labelledby="history-tab-list">
+            <div class="history-list" id="history-list"></div>
+        </div>
+        <div id="history-panel-stats" role="tabpanel" aria-labelledby="history-tab-stats" hidden>
+            <div id="stats-body"></div>
+            <p class="stats-scope">Über die letzten 100 Rätsel.</p>
+        </div>
         <p class="hint" id="history-hint" role="status"></p>
     </section>
 
-    <section class="screen screen--stats" id="screen-stats">
-        <header class="bar">
-            <button class="btn btn--ghost btn--back" type="button" data-goto="screen-start" aria-label="Zurück">
-                <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Zurück</span>
-            </button>
-            <h2>Statistik</h2>
-        </header>
-        <p class="result-sub" id="stats-player"></p>
-        <div id="stats-body"></div>
-        <p class="hint" id="stats-hint" role="status"></p>
-        <p class="stats-scope">Über die letzten 100 Rätsel.</p>
-    </section>
 
     <!-- Spiel-Vorlieben, getrennt von dem, was erzeugt wird. -->
     <section class="screen screen--settings" id="screen-settings">

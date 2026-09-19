@@ -217,7 +217,9 @@ test('the statistics screen reports development and the head-to-head', async ({ 
   await page.setViewportSize({ width: 375, height: 812 });
   await withPlayer(page, STATS_HISTORY);
   await page.goto('/');
-  await page.locator('#stats-button').click();
+  // Die Statistik ist ein Reiter der Ergebnisse, kein eigener Bildschirm mehr.
+  await page.locator('#history-button').click();
+  await page.locator('#history-tab-stats').click();
 
   const body = page.locator('#stats-body');
   // The median of 240s and 260s - a mean of all three would say something else.
@@ -240,7 +242,47 @@ test('an empty history says so instead of showing zeroes', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await withPlayer(page, []);
   await page.goto('/');
-  await page.locator('#stats-button').click();
-  await expect(page.locator('#stats-hint')).toContainText('Noch keine');
+  await page.locator('#history-button').click();
+  // Ein Hinweis fuer beide Reiter: die Quelle ist dieselbe, also ist auch das
+  // "es gibt noch nichts" dasselbe und muss nicht zweimal dastehen.
+  await expect(page.locator('#history-hint')).toContainText('Noch keine');
+  await page.locator('#history-tab-stats').click();
   await expect(page.locator('#stats-body')).toBeEmpty();
+});
+
+/*
+ * Ergebnisse und Statistik sind ein Bildschirm.
+ *
+ * Sie standen als zwei Knoepfe direkt untereinander, lasen dieselbe Quelle und
+ * widersprachen sich dabei im Umfang: die Raetselliste fragte 50 Eintraege ab,
+ * die Statistik 100. Zwei benachbarte Knoepfe gaben verschiedene Antworten auf
+ * "meine Ergebnisse", und nichts sagte, worin sie sich unterscheiden sollen.
+ */
+test('Ergebnisse und Statistik teilen einen Bildschirm und eine Abfrage', async ({ page }) => {
+  await withPlayer(page);
+  // Nach withPlayer registriert, damit diese Route gewinnt - Playwright nimmt
+  // die zuletzt eingetragene zuerst.
+  let calls = 0;
+  await page.route('**/api/players/*/results**', route => {
+    calls += 1;
+    expect(new URL(route.request().url()).searchParams.get('limit'),
+      'beide Reiter lesen denselben Umfang').toBe('100');
+    return route.fulfill({
+      status: 200, contentType: 'application/json', body: JSON.stringify({ results: STATS_HISTORY }),
+    });
+  });
+  await page.goto('/');
+  await expect(page.locator('#stats-button')).toHaveCount(0);
+
+  await page.locator('#history-button').click();
+  await expect(page.locator('#screen-history')).toHaveClass(/is-active/);
+  await expect(page.locator('#history-panel-list')).toBeVisible();
+  await expect(page.locator('#history-panel-stats')).toBeHidden();
+
+  const before = calls;
+  await page.locator('#history-tab-stats').click();
+  await expect(page.locator('#history-panel-stats')).toBeVisible();
+  await expect(page.locator('#history-panel-list')).toBeHidden();
+  await expect(page.locator('#stats-body')).toContainText('Deine Entwicklung');
+  expect(calls, 'der Reiterwechsel darf nicht neu laden').toBe(before);
 });
