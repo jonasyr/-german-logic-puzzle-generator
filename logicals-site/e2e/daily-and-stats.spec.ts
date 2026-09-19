@@ -20,6 +20,9 @@ async function withPlayer(page: Page, results: Result[] = []) {
   await page.route('**/api/players/1/results*', route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ results }),
   }));
+  // Ein Spieler, der schon einmal hier war, hat die Einfuehrung gesehen.
+  // Sie gehoert in first-run.spec.ts und nirgendwo sonst.
+  await page.addInitScript(() => localStorage.setItem('logicals.seenIntro.v1', '1'));
   await page.addInitScript(() => localStorage.setItem('logicals.players.v1', JSON.stringify({
     players: [{ id: 1, displayName: 'Ada' }], selectedPlayerId: 1,
   })));

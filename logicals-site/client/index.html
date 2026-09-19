@@ -322,6 +322,12 @@
                         <button class="overview-mark" type="button" id="overview-mark-maybe" data-tool="maybe" aria-pressed="false" aria-label="Werkzeug: vermutet">·</button>
                         <button class="overview-mark" type="button" id="overview-mark-clear" data-tool="clear" aria-pressed="false" aria-label="Werkzeug: Markierung entfernen">␣</button>
                     </div>
+                    <!-- Die Bedeutung stand ausschließlich im aria-label: ein
+                         Screenreader-Nutzer erfuhr sie, ein sehender nicht.
+                         Steht im Fluss der Aktionsleiste, kann also weder etwas
+                         verdecken noch das Gitter verdrängen. aria-hidden, weil
+                         die Knöpfe daneben dasselbe schon sagen. -->
+                    <p class="tool-legend" id="tool-legend" aria-hidden="true">× ausgeschlossen · ○ sichere Zuordnung · · vermutet · ␣ löschen</p>
                 </div>
             </div>
 
@@ -374,6 +380,24 @@
             <!-- autofocus sits on the safe action, so Enter dismisses. -->
             <button class="btn btn--ghost" type="submit" value="cancel" id="confirm-cancel" autofocus>Abbrechen</button>
             <button class="btn btn--primary" type="submit" value="ok" id="confirm-ok">Bestätigen</button>
+        </form>
+    </dialog>
+
+    <!-- Einmalig, beim ersten geöffneten Rätsel. Ein Dialog und keine Leiste im
+         Spielbildschirm: so kann die Erklärung das Gitter nicht verschieben. -->
+    <dialog class="confirm" id="intro-dialog" aria-labelledby="intro-title">
+        <h3 class="confirm__title" id="intro-title">So wird markiert</h3>
+        <p class="confirm__text">
+            Wähle unten ein Werkzeug und tippe damit Zellen an.
+            <b>×</b> schließt aus, <b>○</b> bestätigt eine sichere Zuordnung,
+            <b>·</b> merkt eine Vermutung vor und <b>␣</b> löscht wieder.
+        </p>
+        <p class="confirm__text">
+            Ein Tipp auf das bereits gewählte Werkzeug legt es weg – dann passiert
+            beim Antippen nichts, und du kannst das Gitter in Ruhe ansehen.
+        </p>
+        <form method="dialog" class="confirm__actions">
+            <button class="btn btn--primary" type="submit" id="intro-close" autofocus>Los geht’s</button>
         </form>
     </dialog>
 

@@ -57,10 +57,15 @@ export type DuelApiOptions = {
 export async function installDuelApi(page: Page, options: DuelApiOptions): Promise<void> {
   const { playerId, displayName, state, clockLagMs = 0 } = options;
 
-  await page.addInitScript(({ playerId, displayName }) => localStorage.setItem(
-    'logicals.players.v1',
-    JSON.stringify({ players: [{ id: playerId, displayName }], selectedPlayerId: playerId }),
-  ), { playerId, displayName });
+  await page.addInitScript(({ playerId, displayName }) => {
+    localStorage.setItem(
+      'logicals.players.v1',
+      JSON.stringify({ players: [{ id: playerId, displayName }], selectedPlayerId: playerId }),
+    );
+    // Wer ein Duell eingeht, hat schon einmal gespielt - die Einfuehrung
+    // gehoert in first-run.spec.ts und wuerde hier nur den Dialog testen.
+    localStorage.setItem('logicals.seenIntro.v1', '1');
+  }, { playerId, displayName });
 
   await page.route('**/api/**', async (route: Route) => {
     const request = route.request();

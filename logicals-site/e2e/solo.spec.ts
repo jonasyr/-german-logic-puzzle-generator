@@ -24,6 +24,9 @@ async function selectedPlayer(page: Page, id: number, displayName: string) {
     contentType: 'application/json',
     body: JSON.stringify({ players: [{ id, displayName, createdAt: '2026-09-17T00:00:00Z' }] }),
   }));
+  // Ein Spieler, der schon einmal hier war, hat die Einfuehrung gesehen.
+  // Sie gehoert in first-run.spec.ts und nirgendwo sonst.
+  await page.addInitScript(() => localStorage.setItem('logicals.seenIntro.v1', '1'));
   await page.addInitScript(({ id, displayName }) => localStorage.setItem('logicals.players.v1', JSON.stringify({
     players: [{ id, displayName }], selectedPlayerId: id,
   })), { id, displayName });

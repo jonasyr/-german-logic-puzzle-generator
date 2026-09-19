@@ -504,6 +504,24 @@
 .overview-fit { min-height: var(--tap-min); }
 
 /*
+ * Was die vier Zeichen bedeuten.
+ *
+ * Stand vorher nur im aria-label, also erfuhr es genau die Gruppe, die den
+ * Bildschirm nicht sieht. Teil des Flusses der Aktionsleiste und nicht darüber
+ * gelegt: so kann die Zeile weder eine Zelle verdecken noch beim Erscheinen das
+ * Gitter verschieben - sie ist von Anfang an da.
+ */
+.tool-legend {
+    grid-column: 1 / -1;
+    margin: var(--space-1) 0 0;
+    font-size: 11px;
+    line-height: 1.35;
+    color: var(--muted);
+    text-align: center;
+    text-wrap: balance;
+}
+
+/*
  * Two rows: what is selected, then what to do with it.
  *
  * As one row of auto-sized columns the three marks came out at unequal widths,

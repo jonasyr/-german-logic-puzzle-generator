@@ -167,6 +167,9 @@ async function settledGridRect(page: Page, selector: string) {
 
 /** Der Weg von der Startseite bis in ein laufendes Solo-Spiel. */
 export async function openSoloPuzzle(page: Page) {
+  // Ein Spieler, der schon einmal hier war, hat die Einfuehrung gesehen.
+  // Sie gehoert in first-run.spec.ts und nirgendwo sonst.
+  await page.addInitScript(() => localStorage.setItem('logicals.seenIntro.v1', '1'));
   await page.addInitScript(() => localStorage.setItem('logicals.players.v1', JSON.stringify({
     players: [{ id: 1, displayName: 'Ada' }], selectedPlayerId: 1,
   })));

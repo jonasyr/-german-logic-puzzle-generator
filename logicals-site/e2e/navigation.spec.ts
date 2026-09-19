@@ -15,6 +15,9 @@ import { openSoloPuzzle } from './support/layoutGuard';
  */
 
 async function withPlayer(page: Page) {
+  // Ein Spieler, der schon einmal hier war, hat die Einfuehrung gesehen.
+  // Sie gehoert in first-run.spec.ts und nirgendwo sonst.
+  await page.addInitScript(() => localStorage.setItem('logicals.seenIntro.v1', '1'));
   await page.addInitScript(() => localStorage.setItem('logicals.players.v1', JSON.stringify({
     players: [{ id: 1, displayName: 'Ada' }], selectedPlayerId: 1,
   })));

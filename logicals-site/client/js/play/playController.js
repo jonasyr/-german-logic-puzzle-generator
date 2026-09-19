@@ -14,6 +14,7 @@ import { createMarkTool, nextMark } from './markTool.js';
 import { createCluesSheet } from './cluesSheet.js';
 import { askConfirm, closeConfirm } from '../ui/confirmDialog.js';
 import { closeSolved, showSolved } from '../ui/solvedDialog.js';
+import { showFirstRunIfNeeded } from '../ui/firstRun.js';
 import { createAuthoritativeTimer, createTimer, formatTime } from './playTimer.js';
 import { createCompletionSubmission } from '../results/completion.js';
 import { flushOutbox, queueResult } from '../results/outbox.js';
@@ -560,6 +561,9 @@ export function openPlay(puzzle, context) {
     // screen has a real Safari layout box, otherwise every measurement is 0.
     requestAnimationFrame(() => overview?.fit());
 
+    // Erst jetzt: die Erklärung handelt vom Gitter, das gerade erschienen ist.
+    showFirstRunIfNeeded();
+
     if (state.solved) timer.reset(restoredMs);
     else timer.start(restoredMs);
     renderTimer(timer.elapsedMs());
@@ -596,6 +600,20 @@ export function initPlay() {
             el('overview-mark-no'), el('overview-mark-yes'),
             el('overview-mark-maybe'), el('overview-mark-clear'),
         ],
+        /*
+         * Das Werkzeug wegzulegen ist ein stiller vierter Zustand: danach bleibt
+         * jeder Tipp auf dem Gitter wirkungslos, und nichts sagte, warum. Die
+         * Statuszeile ist ein Overlay, kann das Gitter also nicht verdrängen.
+         *
+         * createMarkTool ruft render() - und damit onChange - schon im
+         * Konstruktor auf, bevor initPlay fertig ist. Unkritisch, weil das
+         * Startwerkzeug 'no' ist und der Zweig dann nur eine ohnehin leere
+         * Zeile leert. Die Reihenfolge nicht ohne diesen Punkt ändern.
+         */
+        onChange: current => {
+            if (!current) setStatus('Kein Werkzeug gewählt – tippe eines unten an.');
+            else if (el('play-status').textContent.startsWith('Kein Werkzeug')) setStatus('');
+        },
     });
 
     sheet = createCluesSheet({
