@@ -69,18 +69,69 @@ test('nach dem Tagesraetsel fuehrt Zurueck auf den Start', async ({ page }) => {
   await expect(page.locator('#screen-start')).toHaveClass(/is-active/);
 });
 
-test('ein neu geladenes Spiel kommt auch ohne Verlauf zurueck', async ({ page }) => {
+test('Zurueck verlaesst die App nicht, wenn es nichts zu poppen gibt', async ({ page }) => {
+  await withPlayer(page);
+  await page.goto('/');
+  await expect(page.locator('#start-button')).toBeEnabled({ timeout: 30_000 });
+
+  /*
+   * Der Fall, den eine Home-Screen-App staendig erlebt: iOS wirft sie aus dem
+   * Speicher, sie startet neu, und es gibt keinen eigenen History-Eintrag mehr.
+   * history.back() wuerde dann aus der App heraus navigieren - in einem Fenster
+   * ohne Adressleiste ein Sackgassen-Bildschirm, aus dem es keinen Weg zurueck
+   * gibt. goBack() muss das erkennen.
+   *
+   * Direkt am Router geprueft: der Startbildschirm hat keinen Zurueck-Knopf,
+   * ueber den man den Fall sonst erreichen koennte.
+   */
+  await page.evaluate(async () => {
+    const router = await import('/js/router.js');
+    router.goBack();
+  });
+  await page.waitForTimeout(300);
+
+  await expect(page.locator('#screen-start')).toHaveClass(/is-active/);
+  // Immer noch die App und nicht about:blank.
+  expect(await page.title()).toContain('Logicals');
+});
+
+test('ein Rueckwurf aus dem Speicher laesst das Spiel wiederfinden', async ({ page }) => {
   test.setTimeout(180_000);
   await withPlayer(page);
   await page.goto('/');
   await expect(page.locator('#daily-button')).toBeEnabled({ timeout: 30_000 });
   await page.locator('#daily-button').click();
-  await expect(page.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 120_000 });
+  await expect(page.locator('#overview-canvas')).toBeVisible({ timeout: 120_000 });
 
-  // Ein Reload laesst nur einen Eintrag stehen. history.back() wuerde die App
-  // verlassen, also muss der Knopf das merken und stattdessen nach Hause gehen.
+  // Eine Markierung setzen, damit es etwas gibt, wozu man zurueckkehren wollte.
+  // Erst nach dem Einpassen: bis dahin wandert das Gitter noch unter dem Finger.
+  await page.waitForTimeout(400);
+  const cell = page.locator('.overview-mirror__cell').first();
+  const key = await cell.getAttribute('data-key');
+  const box = (await cell.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  const marked = page.locator(`.overview-mirror__cell[data-key="${key}"]`);
+  await expect(marked).toHaveAttribute('aria-label', /ausgeschlossen/);
+
+  // Der Reload steht fuer die Verdraengung aus dem Speicher.
   await page.reload();
   await expect(page.locator('#screen-start')).toHaveClass(/is-active/, { timeout: 60_000 });
+
+  // Nicht das Spiel selbst - aber ein Weg zurueck hinein, sonst ist die
+  // Verdraengung ein Verlust statt einer Unterbrechung.
+  await expect(page.locator('#resume-button')).toBeVisible();
+  await page.locator('#resume-button').click();
+  await expect(page.locator('#overview-canvas')).toBeVisible({ timeout: 120_000 });
+
+  /*
+   * Die Markierung ist wieder da - darauf kommt es an.
+   *
+   * Die Rücknahme-Historie überlebt den Neustart bewusst nicht: sie gehört zur
+   * Sitzung, nicht zum Spielstand. Erst dieser Test hat mich das nachsehen
+   * lassen, statt es anzunehmen.
+   */
+  await expect(page.locator(`.overview-mirror__cell[data-key="${key}"]`))
+    .toHaveAttribute('aria-label', /ausgeschlossen/, { timeout: 30_000 });
 });
 
 test('der Fokus wandert auf die Ueberschrift des neuen Bildschirms', async ({ page }) => {
