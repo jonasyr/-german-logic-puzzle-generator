@@ -29,6 +29,26 @@
     touch-action: pan-x pan-y;
 }
 
+/*
+ * Auf jedem Element, nicht nur auf dem Bildschirm.
+ *
+ * Die Regel darüber allein hat nicht gehalten, und der Grund steckt in der
+ * Definition: touch-action wird nicht vererbt. Der Browser schneidet die Werte
+ * vom getippten Element aufwärts - aber nur bis zum nächsten Scroll-Container.
+ * Jedes `overflow` im Inneren kappt die Kette, bevor sie hier oben ankommt: die
+ * Pager-Seite, die Hinweisliste, die Reiterleiste, die Bühne selbst. Ab dem
+ * Schnitt gilt wieder `auto`, und Doppeltippen zoomt.
+ *
+ * Gemessen standen praktisch alle Elemente im Spielbildschirm auf `auto`. Der
+ * Schutz hing allein daran, dass die Kette zufällig durchlief - und jedes neue
+ * scrollende Element hat ihn erneut zerschnitten.
+ *
+ * Bewusst nur EINE Klasse Spezifität: die beiden Stellen, die strenger sein
+ * müssen - die Gestenfläche des Gitters und die Ziehgriffe des Zettels - stehen
+ * weiter unten in dieser Datei und überschreiben sie damit durch Reihenfolge.
+ */
+.screen--play * { touch-action: pan-x pan-y; }
+
 /* --- Sticky header + toolbar ---------------------------------------------- */
 
 .play-bar {
@@ -427,6 +447,12 @@
  * not sufficient - js/play/overview/gestures.js also cancels WebKit's own
  * gesturestart/gesturechange/gestureend.)
  */
+/* Die eine Ausnahme, und sie gilt ausdrücklich auch für alles darin: das
+   Canvas wertet Kneifen selbst aus, und die Regel oben darf es nicht mit
+   erfassen - sonst wäre das Rätselgitter das Einzige, was nicht mehr zoomt. */
+.overview-viewport,
+.overview-viewport * { touch-action: none; }
+
 .overview-viewport {
     position: relative;
     min-height: 0;
@@ -434,7 +460,6 @@
     border-radius: var(--radius);
     background: var(--surface);
     overflow: hidden;
-    touch-action: none;
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
