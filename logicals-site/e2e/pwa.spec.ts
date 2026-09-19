@@ -129,3 +129,92 @@ test('the API is never served from the cache', async ({ page }) => {
   const source = await (await page.request.get('/sw.js')).text();
   expect(source).toContain("url.pathname.startsWith('/api/')");
 });
+
+/*
+ * Offline ist kein Schaufenster, sondern der Normalfall.
+ *
+ * Eine Home-Screen-App wird in der U-Bahn geoeffnet, und ihr Fenster hat keine
+ * Adressleiste, aus der man sich herausretten koennte. Raetsel werden im
+ * Browser erzeugt - fetchBooklet fasst das Netz nie an - also gibt es keinen
+ * Grund, warum Solo-Spiel eine Verbindung braeuchte.
+ *
+ * Nach dem Umbau des Ablaufs (kein Heft mehr, eigener Einstellungsbildschirm,
+ * gruppierter Start) ist dieser Weg ein anderer als der, fuer den die
+ * Offline-Faehigkeit urspruenglich geprueft wurde.
+ */
+test('das Tagesraetsel laesst sich ohne Netz spielen', async ({ page, context }) => {
+  test.setTimeout(180_000);
+  // Ein Spieler, der schon hier war: die Identitaet liegt lokal, sonst
+  // scheiterte der Start an einer Anmeldung, die es gar nicht gibt.
+  await page.addInitScript(() => {
+    localStorage.setItem('logicals.players.v1', JSON.stringify({
+      players: [{ id: 1, displayName: 'Ada' }], selectedPlayerId: 1,
+    }));
+    localStorage.setItem('logicals.seenIntro.v1', '1');
+  });
+
+  await page.goto('/');
+  await serviceWorkerReady(page);
+
+  /*
+   * Einmal online erzeugen, bevor das Netz weggeht.
+   *
+   * Der Generator ist ein Worker, der erst beim ersten Erzeugen geladen wird -
+   * im Dev-Server als viele einzelne Module. Was nie geholt wurde, liegt auch
+   * nicht im Cache. Das ist nicht kuenstlich, sondern der echte Fall: der erste
+   * Besuch ohne Netz ist nie der allererste Besuch.
+   */
+  await expect(page.locator('#daily-button')).toBeEnabled({ timeout: 30_000 });
+  await page.locator('#daily-button').click();
+  await expect(page.locator('#overview-canvas')).toBeVisible({ timeout: 120_000 });
+  await page.locator('#play-back').click();
+  await expect(page.locator('#screen-start')).toHaveClass(/is-active/);
+
+  await page.reload();
+  await serviceWorkerReady(page);
+  await expect(page.locator('#daily-button')).toBeEnabled({ timeout: 30_000 });
+
+  await context.setOffline(true);
+  try {
+    await page.reload();
+    await expect(page.locator('#screen-start')).toHaveClass(/is-active/, { timeout: 60_000 });
+    // Die Ergebnisliste ist nicht erreichbar, das Raetsel schon - ein totes
+    // Netz darf den Knopf nicht sperren.
+    await expect(page.locator('#daily-button')).toBeEnabled({ timeout: 30_000 });
+
+    await page.locator('#daily-button').click();
+    await expect(page.locator('#overview-canvas')).toBeVisible({ timeout: 120_000 });
+    // Und zwar wirklich spielbar, nicht nur sichtbar.
+    const cell = page.locator('.overview-mirror__cell').first();
+    const box = (await cell.boundingBox())!;
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(page.locator('#play-undo')).toBeEnabled();
+  } finally {
+    await context.setOffline(false);
+  }
+});
+
+test('die Einstellungen sind ohne Netz erreichbar und merken sich etwas', async ({ page, context }) => {
+  test.setTimeout(120_000);
+  await page.addInitScript(() => localStorage.setItem('logicals.players.v1', JSON.stringify({
+    players: [{ id: 1, displayName: 'Ada' }], selectedPlayerId: 1,
+  })));
+  await page.goto('/');
+  await serviceWorkerReady(page);
+  await page.reload();
+  await serviceWorkerReady(page);
+
+  await context.setOffline(true);
+  try {
+    await page.reload();
+    await page.locator('#settings-button').click();
+    await expect(page.locator('#screen-settings')).toHaveClass(/is-active/);
+    // Vorlieben liegen in localStorage, also darf hier nichts am Netz haengen.
+    await page.locator('#field-hideClock').check();
+    await page.reload();
+    await page.locator('#settings-button').click();
+    await expect(page.locator('#field-hideClock')).toBeChecked();
+  } finally {
+    await context.setOffline(false);
+  }
+});
