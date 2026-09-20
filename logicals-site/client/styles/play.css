@@ -447,12 +447,28 @@
  * are looking at it. This hit the checked-error colour too, long before
  * contradictions existed.
  */
+/*
+ * Die geprueften Fehler tragen mehr als eine Farbe.
+ *
+ * Bisher unterschied sich die hervorgehobene Stelle von einer normalen
+ * Markierung daneben allein im Farbton - Rot gegen Oliv, gleiche Rahmenstaerke,
+ * gleiche Fuellung, gleiches Zeichen. Wer rot-gruen-schwach ist, sieht drei
+ * gleich aussehende Zellen; im Dunkelmodus sind beide Toene zusaetzlich
+ * entsaettigt. Das ist die zentrale Rueckmeldung des Pruefens, und sie darf
+ * nicht an einer Farbe allein haengen (WCAG 1.4.1).
+ *
+ * Dazu kommen deshalb zwei Merkmale, die ohne Farbwahrnehmung funktionieren:
+ * ein doppelt so dicker Rahmen und ein Ring darum, der die Zelle aus dem
+ * Raster heraushebt. Die Zellgroesse bleibt unangetastet - der Rahmen waechst
+ * nach innen, sonst verschoebe sich das Gitter.
+ */
 .cell.is-wrong,
 .cell.is-wrong:hover:not(:disabled) {
     background: var(--danger-bg);
     border-color: var(--danger-fg);
     color: var(--danger-fg);
     font-weight: 700;
+    box-shadow: inset 0 0 0 2px var(--danger-fg), 0 0 0 2px var(--danger-bg);
 }
 .cell:disabled { cursor: default; opacity: .55; }
 
