@@ -398,14 +398,29 @@ function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight,
         const top = worldToScreen(view, 0, blockCells[0].y).y;
         const bottom = top + layout.valueCount * size;
         if (bottom < gutters.top || top > cssHeight) return;
-        const centre = Math.min(Math.max((top + bottom) / 2, gutters.top + 20), cssHeight - 20);
+        /*
+         * Mittig im SICHTBAREN Teil des eigenen Blocks, nicht am Bildrand.
+         *
+         * Vorher wurde der Mittelpunkt an den Rand geklemmt. Laeuft ein Block
+         * halb aus dem Bild, zog das seine Ueberschrift nach innen - auf die
+         * des Nachbarn. Auf einem 320px-Schirm verschmolzen "STAND" und
+         * "ANKUNFT" so zu "STANDANKUNFT". Bleibt die Ueberschrift im
+         * sichtbaren Ausschnitt ihres eigenen Blocks, kann das nicht
+         * passieren, und sie steht immer ueber dem, was sie benennt.
+         */
+        const sichtbarOben = Math.max(top, gutters.top);
+        const sichtbarUnten = Math.min(bottom, cssHeight);
+        const centre = (sichtbarOben + sichtbarUnten) / 2;
         ctx.save();
         ctx.translate(CATEGORY_STRIP - 4, centre);
         ctx.rotate(-Math.PI / 2);
         ctx.textAlign = 'center';
         ctx.fillStyle = colors.teal;
         ctx.font = `700 ${CATEGORY_FONT_PX}px system-ui, sans-serif`;
-        ctx.fillText(fitText(ctx, category.label.toUpperCase(), layout.valueCount * size), 0, 0);
+        ctx.fillText(
+            fitText(ctx, category.label.toUpperCase(), sichtbarUnten - sichtbarOben),
+            0, 0,
+        );
         ctx.restore();
     });
     ctx.restore();
@@ -439,11 +454,17 @@ function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight,
         const left = worldToScreen(view, blockCells[0].x, 0).x;
         const right = left + layout.valueCount * size;
         if (right < gutters.left || left > cssWidth) return;
-        const centre = Math.min(Math.max((left + right) / 2, gutters.left + 24), cssWidth - 24);
+        // Dieselbe Regel wie links: im sichtbaren Teil des eigenen Blocks.
+        const sichtbarLinks = Math.max(left, gutters.left);
+        const sichtbarRechts = Math.min(right, cssWidth);
+        const centre = (sichtbarLinks + sichtbarRechts) / 2;
         ctx.textAlign = 'center';
         ctx.fillStyle = colors.teal;
         ctx.font = `700 ${CATEGORY_FONT_PX}px system-ui, sans-serif`;
-        ctx.fillText(fitText(ctx, category.label.toUpperCase(), layout.valueCount * size), centre, 6);
+        ctx.fillText(
+            fitText(ctx, category.label.toUpperCase(), sichtbarRechts - sichtbarLinks),
+            centre, 6,
+        );
     });
     ctx.restore();
 }
