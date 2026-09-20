@@ -1,5 +1,10 @@
 /*
- * WEGWERF-STRECKE fuer die Durchsicht. Gehoert nicht in die Suite.
+ * Aufnahmestrecke fuer die Durchsicht. Laeuft NICHT im normalen Lauf.
+ *
+ * Sie schreibt 72 Bilder und prueft nichts - als Teil der Suite waere sie
+ * reine Last. Mit `SHOTS=1 npx playwright test screenshots` nimmt sie auf,
+ * sonst ueberspringt sie sich selbst. (Versehentlich war sie eine Weile
+ * Pflichtprogramm, weil ein `git add -A` sie mitgenommen hat.)
  *
  * Nimmt jeden Bildschirm in vier Varianten auf, damit ein Mensch (oder ein
  * Pruefer) sie nebeneinander legen kann. Die 13 Bildschirme der ersten
@@ -8,6 +13,8 @@
  * Geloest-Dialog, die Einfuehrung, der Spieler-Dialog - und das Querformat.
  */
 import { expect, test, type Page } from '@playwright/test';
+
+test.skip(!process.env.SHOTS, 'Aufnahmestrecke - mit SHOTS=1 starten');
 
 const SOLVED = [1000001, 1000002, 1010001];
 

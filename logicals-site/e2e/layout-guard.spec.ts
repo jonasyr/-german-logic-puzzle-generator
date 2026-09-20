@@ -35,6 +35,44 @@ for (const phone of PHONES) {
  * Sprung ist der Preis. Geprueft wird deshalb, was geblieben ist - keine
  * verdeckte und keine verhuellte Zelle, in beiden Ansichten.
  */
+/*
+ * Die Reiterleiste waechst nicht mit dem Fenster.
+ *
+ * `.play-pager` hatte zwei `auto`-Zeilen, und `align-content: stretch` - die
+ * Voreinstellung - verteilt ueberschuessige Hoehe gleichmaessig auf beide. Die
+ * Leiste wuchs damit im selben Mass wie das Gitter: gemessen 172px bei
+ * 390x844, mit einem 164px hohen Reiter fuer eine einzeilige Beschriftung, ein
+ * Fuenftel des Schirms direkt ueber dem Gitter.
+ *
+ * Unsichtbar war das, weil es nur bei UEBERSCHUSS auftritt. Bei 320x568 gibt
+ * es keinen, dort waren es immer korrekte 52px - und 320 ist die Breite, an
+ * der sonst alles zuerst bricht und auf die deshalb alle zuerst schauen. Zwei
+ * vollstaendige Screenshot-Durchsichten sind daran vorbeigelaufen.
+ *
+ * Geprueft wird am hohen Fenster, wo der Ueberschuss entsteht, und gegen die
+ * Tapflaeche statt gegen eine feste Zahl: die Leiste ist eine Reihe von
+ * Knoepfen, mehr als deren Hoehe plus Polster hat sie nicht zu brauchen.
+ */
+test('die Reiterleiste waechst nicht mit der Fensterhoehe', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openSoloPuzzle(page);
+  await page.locator('#play-view').click();
+  await expect(page.locator('#screen-play')).toHaveAttribute('data-view', 'pager');
+  await page.waitForTimeout(400);
+
+  const hoehen = await page.evaluate(() => {
+    const nav = document.getElementById('pager-nav')!;
+    return {
+      leiste: nav.getBoundingClientRect().height,
+      reiter: Math.max(...[...nav.children].map(c => c.getBoundingClientRect().height)),
+    };
+  });
+  expect(hoehen.reiter, `ein einzeiliger Reiter ist ${hoehen.reiter}px hoch`)
+    .toBeLessThan(60);
+  expect(hoehen.leiste, `die Leiste ist ${hoehen.leiste}px hoch`).toBeLessThan(72);
+});
+
 test('eine erscheinende Meldung verdeckt keine Zelle', async ({ page }) => {
   test.setTimeout(180_000);
   await page.setViewportSize(PHONES[1].viewport);

@@ -283,7 +283,28 @@
 
 /* --- Pager (phone) -------------------------------------------------------- */
 
-.play-pager { display: grid; gap: var(--gap-sm); }
+/*
+ * Die Reiterleiste behaelt ihre Hoehe, die Spur bekommt den Rest.
+ *
+ * Ohne die Zeilenangabe hat das Raster zwei `auto`-Zeilen, und `align-content`
+ * steht per Voreinstellung auf `stretch` - ueberschuessige Hoehe wird also
+ * gleichmaessig auf BEIDE verteilt. Die Reiterleiste wuchs damit im selben
+ * Mass wie das Gitter.
+ *
+ * Gemessen bei 390x844: die Leiste war 172px hoch und der aktive Reiter 164px,
+ * fuer eine einzeilige Beschriftung - ein Fuenftel des Schirms, direkt ueber
+ * dem Gitter. Der border-radius von 999px machte daraus die Ellipse, die zwei
+ * Durchsichten als "riesigen Kreis" gemeldet haben. Bei 320x568 gibt es
+ * keinen Ueberschuss zu verteilen, dort war die Leiste immer korrekt 52px -
+ * deshalb ist es an der engsten Breite, wo sonst alles zuerst bricht, nie
+ * aufgefallen. Der Waechter in layout-guard.spec.ts prueft deshalb am hohen
+ * Fenster.
+ */
+.play-pager {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: var(--gap-sm);
+}
 
 .pager-track {
     display: flex;
@@ -301,6 +322,32 @@
     scroll-snap-align: center;
     scroll-snap-stop: always;
     min-width: 0;
+    /*
+     * Der gewonnene Platz bleibt sonst als Leere unter dem Gitter liegen.
+     *
+     * Seit die Reiterleiste nicht mehr mitwaechst, bekommt die Spur die volle
+     * Resthoehe - gemessen 530px statt 410px bei 390x844. Das Gitter selbst
+     * bleibt aber so gross, wie seine Zellen es machen, und stand oben im
+     * Block: darunter klafften rund 190px, die wie ein unfertiger Bildschirm
+     * aussahen. Mittig gesetzt sitzt es dort, wo der Daumen ohnehin liegt.
+     *
+     * Aber NICHT mit `justify-content: center`. Das war der erste Versuch und
+     * die klassische Flexbox-Falle: ist der Inhalt hoeher als der Kasten,
+     * laeuft er bei zentrierter Ausrichtung nach BEIDEN Seiten ueber - und der
+     * Ueberlauf nach oben ist unerreichbar, weil kein Scroll-Container ins
+     * Negative scrollt. Gemessen bei 320x568: die Ueberschrift
+     * "PERSON x GERICHT" war verschwunden und die Zeile "Eva" abgeschnitten,
+     * beide nicht mehr erreichbar. Bei 390x844 passte der Inhalt, und der
+     * Fehler blieb unsichtbar - dieselbe Falle wie bei der Reiterleiste, nur
+     * andersherum: dort verriet ihn erst das hohe Fenster, hier erst das
+     * niedrige.
+     *
+     * Automatische Aussenabstaende zentrieren genauso, verteilen aber nur
+     * VORHANDENEN Freiraum. Fehlt er, stehen sie auf null und der Inhalt
+     * beginnt oben, statt im Unerreichbaren zu verschwinden.
+     */
+    display: flex;
+    flex-direction: column;
     /* Below ~360px even one block cannot hold 44pt cells; scrolling the block is
        the right trade, shrinking the targets is not. */
     overflow-x: auto;
@@ -308,6 +355,9 @@
     scrollbar-width: none;
 }
 .pair-page::-webkit-scrollbar { display: none; }
+/* Sicheres Zentrieren - siehe die Begruendung in .pair-page. */
+.pair-page > :first-child { margin-top: auto; }
+.pair-page > :last-child { margin-bottom: auto; }
 
 .pair-page__title {
     margin: 0 0 var(--gap-sm);
