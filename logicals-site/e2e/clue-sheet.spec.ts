@@ -115,16 +115,20 @@ test('der Pfeil am Hinweisblatt zeigt die naechste Handlung', async ({ page }) =
   const drehung = () => page.locator('.sheet-chevron')
     .evaluate(node => getComputedStyle(node).transform);
 
-  // Zugeklappt und halb offen oeffnet der naechste Tipp weiter: Pfeil unveraendert.
   const zu = await drehung();
+
   await page.locator('#sheet-toggle').click();          // halb
   await expect(page.locator('#clues-sheet')).toHaveAttribute('data-detent', 'half');
   await page.waitForTimeout(400);
-  expect(await drehung(), 'halb offen oeffnet weiter, der Pfeil bleibt').toBe(zu);
+  const halb = await drehung();
 
-  // Ganz offen schliesst der naechste Tipp - und nur da dreht sich der Pfeil.
   await page.locator('#sheet-toggle').click();          // ganz
   await expect(page.locator('#clues-sheet')).toHaveAttribute('data-detent', 'full');
   await page.waitForTimeout(400);
-  expect(await drehung(), 'ganz offen muss der Pfeil nach unten zeigen').not.toBe(zu);
+  const ganz = await drehung();
+
+  // Drei Rastungen, drei Stellungen. Zuerst unterschied der Pfeil gar nichts,
+  // dann nur "ganz" vom Rest - "zu" und "halb" blieben ununterscheidbar.
+  expect(new Set([zu, halb, ganz]).size,
+    `zu=${zu} halb=${halb} ganz=${ganz} - jede Rastung braucht ihre eigene Stellung`).toBe(3);
 });

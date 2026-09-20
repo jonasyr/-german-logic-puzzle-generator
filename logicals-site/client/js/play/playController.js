@@ -707,6 +707,15 @@ export function initPlay() {
     el('play-undo').addEventListener('click', onUndo);
     el('play-clear').addEventListener('click', requestClear);
     el('play-pause').addEventListener('click', togglePause);
+    /*
+     * Der Tipp auf die verhuellte Buehne spielt weiter.
+     *
+     * Im Pausenzustand ist die Buehne die groesste Flaeche des Schirms und war
+     * die einzige ohne Funktion: zurueck ging es nur ueber den Knopf oben in
+     * der Leiste, der dafuer still von "Pause" in "Weiter" umbenannt wurde.
+     * Der Knopf bleibt, dies ist der naheliegende zweite Weg.
+     */
+    el('play-stage').addEventListener('click', () => { if (paused) togglePause(); });
     el('play-view').addEventListener('click', toggleView);
     el('play-solution-button').addEventListener('click', requestSolution);
 

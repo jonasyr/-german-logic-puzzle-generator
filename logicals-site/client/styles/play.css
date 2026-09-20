@@ -165,7 +165,13 @@
  * Die Laengengrenze steht als Test in play-sprint.spec.ts.
  */
 .play-status {
-    margin: 0;
+    /*
+     * Ein Haar Abstand nach oben. Gemessen liegt nichts auf der Meldung - die
+     * Werkzeugleiste endet bei 104.0, die Meldung beginnt bei 104.0 - aber
+     * bündig anstossend liest sich die obere Kante als abgeschnitten, und zwei
+     * Pruefer haben sie genau so gemeldet. Der Eindruck ist der Fehler.
+     */
+    margin: var(--space-1) 0 0;
     padding: var(--space-2) var(--space-3);
     border: var(--hairline) solid var(--line);
     border-radius: 10px;
@@ -550,19 +556,28 @@
  * gelegt: so kann die Zeile weder eine Zelle verdecken noch beim Erscheinen das
  * Gitter verschieben - sie ist von Anfang an da.
  */
+/*
+ * Die Legende wohnt jetzt in den Einstellungen, nicht im Spiel.
+ *
+ * Im Spielbildschirm kostete sie gemessen 36px von 233px Gitterhoehe - rund
+ * 15 Prozent, dauerhaft, fuer eine Auskunft, die man hoechstens einmal
+ * braucht. Die Einfuehrung erklaert die Zeichen beim ersten Raetsel; hier
+ * stehen sie zum Nachschlagen. Kein `grid-column` mehr, weil sie nicht mehr
+ * in einem Raster liegt, und lesbar gross statt 11px, weil sie den Platz hier
+ * niemandem wegnimmt.
+ */
 .tool-legend {
-    grid-column: 1 / -1;
-    margin: var(--space-1) 0 0;
+    margin: 0;
     padding: 0;
     list-style: none;
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: 2px 12px;
-    font-size: 11px;
-    line-height: 1.35;
+    gap: var(--space-1) var(--space-4);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
     color: var(--muted);
 }
+.tool-legend--reference { margin-bottom: var(--space-2); }
 .tool-legend li { white-space: nowrap; }
 .tool-legend b { font-weight: 600; color: var(--text); }
 
@@ -654,13 +669,47 @@
 
 /* The status overlay is positioned against the stage, so it always anchors. */
 .play-stage { position: relative; }
-.play-stage.is-locked .pager-track,
-.play-stage.is-locked .overview-viewport { opacity: .25; filter: blur(3px); pointer-events: none; }
+/*
+ * Pause verhuellt die ganze Buehne, nicht nur das Gitter.
+ *
+ * Verhuellt wurden bisher `.pager-track` und `.overview-viewport`. Alles
+ * andere auf der Buehne blieb scharf und wirkte bedienbar: die Reiterleiste
+ * mit den Kategorienamen, die Ableseanzeige, die Werkzeugknoepfe, die
+ * Legende. Drei Pruefer haben unabhaengig dasselbe gesehen - "eine Pause, die
+ * nichts verbirgt". Also alle Kinder der Buehne, statt zwei ausgewaehlte.
+ *
+ * Und kraeftiger: bei .25 Deckkraft und 3px Unschaerfe waren die gesetzten
+ * Markierungen weiterhin abzulesen, womit die Pause ihren Zweck verfehlt.
+ */
+.play-stage.is-locked > * { opacity: .12; filter: blur(5px); pointer-events: none; }
+/*
+ * Die Meldung gehoert mit unter den Schleier.
+ *
+ * Sie liegt ausserhalb der Buehne, blieb deshalb gestochen scharf und war im
+ * Pausenzustand das einzige klare Element neben der Werkzeugleiste - was wie
+ * ein Versehen aussieht, nicht wie Absicht. Die Leiste bleibt scharf, weil
+ * "Weiter" dort liegt; die Meldung hat waehrend der Pause nichts zu sagen.
+ */
+.screen--play:has(.play-stage.is-locked) .play-status { opacity: .12; filter: blur(5px); }
+.play-stage.is-locked {
+    /* Der Tipp auf die Flaeche nimmt die Pause zurueck - siehe playController. */
+    cursor: pointer;
+}
+/*
+ * "Pausiert" als Zustand, nicht als verirrter Text.
+ *
+ * Es stand als blosses Wort mitten im leeren Gitterbereich, ohne Flaeche und
+ * ohne Ausweg; der einzige Weg zurueck war ein Knopf oben in der Leiste, der
+ * still von "Pause" auf "Weiter" umbenannt worden war. Wer mitten auf den
+ * Schirm tippt - das Naheliegende - traf nichts.
+ */
 .play-stage.is-locked::after {
-    content: "Pausiert";
+    content: "Pausiert · zum Weiterspielen tippen";
     position: absolute; inset: 0;
     display: grid; place-items: center;
-    font-size: 18px; font-weight: 700; color: var(--muted);
+    text-align: center;
+    padding: 0 var(--space-4);
+    font-size: 16px; font-weight: 600; color: var(--text);
     z-index: 5;
 }
 
@@ -680,8 +729,21 @@
     position: fixed;
     left: 0; right: 0; bottom: 0;
     z-index: 40;
-    height: 86vh;
-    height: 86svh;
+    /*
+     * Ganz geoeffnet endet das Blatt genau unter der Werkzeugleiste.
+     *
+     * Vorher waren es 86svh. Gemessen: bei 320x568 landete die Oberkante damit
+     * bei 79.5px - mitten in der Werkzeugleiste, die von 52 bis 104 reicht.
+     * Die Knoepfe wurden auf halber Hoehe abgeschnitten und lasen sich als
+     * Rendering-Fehler. Bei 390x844 lag die Kante bei 118.2 und damit zufaellig
+     * sauber darunter; der Fehler haengt an der Fensterhoehe, nicht am Zufall.
+     *
+     * Kopfzeile und Werkzeugleiste sind je 52px hoch, gemessen auf beiden
+     * Breiten. Der sichere Bereich oben kommt bei randlosen Geraeten zur
+     * Kopfzeile dazu, gehoert also in die Rechnung.
+     */
+    height: calc(100vh - 104px - var(--safe-top));
+    height: calc(100svh - 104px - var(--safe-top));
     display: flex;
     flex-direction: column;
     background: var(--surface);
@@ -758,7 +820,27 @@
     display: inline-block;
     transition: transform .18s ease;
 }
+/*
+ * Drei Rastungen, drei Stellungen.
+ *
+ * Der Pfeil unterschied zuerst gar nichts, dann nur "ganz offen" vom Rest -
+ * "zu" und "halb offen" sahen weiter gleich aus, obwohl der naechste Tipp
+ * Verschiedenes tut. Jetzt zeigt jede Rastung, wie weit es noch geht:
+ * zu = ganz hoch, halb = schraeg, ganz = hinunter (der naechste Tipp schliesst).
+ */
+.clues-sheet[data-detent="half"] .sheet-chevron { transform: rotate(90deg); }
 .clues-sheet[data-detent="full"] .sheet-chevron { transform: rotate(180deg); }
+
+/*
+ * Das ganz geoeffnete Blatt darf die Meldung nicht halbieren.
+ *
+ * Seine Oberkante lief mitten durch den Meldungskasten: oben die halbe Zeile,
+ * unten das Blatt - Text ueber Text, genau die Klasse Fehler, die hier nie
+ * durchgeht. Bei voller Oeffnung ist das Gitter ohnehin verdeckt, die Meldung
+ * also gegenstandslos. `visibility` statt `display`, damit die Buehne ihre
+ * Hoehe behaelt und das Blatt beim Schliessen nicht springt.
+ */
+.screen--play:has(.clues-sheet[data-detent="full"]) .play-status { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) {
     .sheet-chevron { transition: none; }
 }

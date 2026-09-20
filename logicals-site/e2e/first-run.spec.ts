@@ -64,18 +64,40 @@ test('die Einfuehrung erscheint einmal und dann nie wieder', async ({ page }) =>
   await expect(page.locator('#intro-dialog')).toBeHidden();
 });
 
-test('die Legende steht dauerhaft da und verdeckt nichts', async ({ page }) => {
+/*
+ * Die Legende steht zum Nachschlagen bereit - aber nicht im Spiel.
+ *
+ * Sie stand dauerhaft unter den Werkzeugknoepfen, weil ihre Bedeutung vorher
+ * nur im aria-label stand. Gemessen kostete sie dort 36px von 233px
+ * Gitterhoehe, rund 15 Prozent, fuer eine Auskunft, die man hoechstens einmal
+ * braucht. Erklaert wird sie jetzt einmal in der Einfuehrung und steht in den
+ * Einstellungen zum Nachschlagen; die aria-labels tragen die Bedeutung
+ * weiterhin.
+ */
+test('die Werkzeug-Zeichen stehen in den Einstellungen, nicht im Spiel', async ({ page }) => {
   test.setTimeout(180_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await returningPlayer(page);
   await openSoloPuzzle(page);
 
+  /*
+   * Nicht im Spiel - dort zaehlt jede Zeile gegen das Gitter.
+   *
+   * Geprueft wird der Ort UND die Sichtbarkeit. "Existiert nicht" waere
+   * falsch: die Legende liegt im selben Dokument, auf dem Einstellungs-
+   * Bildschirm, der nur gerade nicht aktiv ist.
+   */
+  await expect(page.locator('#screen-play #tool-legend')).toHaveCount(0);
+  await expect(page.locator('#tool-legend')).toBeHidden();
+  expect(await findOccludedCells(page, CELL_SELECTORS.overview)).toEqual([]);
+
+  // Aber auffindbar: das Zahnrad im Spiel fuehrt zu den Einstellungen.
+  await page.locator('#play-settings').click();
   const legend = page.locator('#tool-legend');
   await expect(legend).toBeVisible();
   for (const word of ['ausgeschlossen', 'sichere Zuordnung', 'vermutet', 'löschen']) {
     await expect(legend).toContainText(word);
   }
-  expect(await findOccludedCells(page, CELL_SELECTORS.overview)).toEqual([]);
 });
 
 /*

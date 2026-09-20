@@ -288,6 +288,25 @@
                     </label>
                 </div>
             </section>
+
+            <!-- Die Werkzeug-Zeichen zum Nachschlagen.
+                 Die Einfuehrung zeigt sie einmal beim ersten Raetsel; wer sie
+                 spaeter vergisst, braucht einen Ort, an dem sie stehen. Hier
+                 kosten sie keinen Platz im Spiel. -->
+            <section class="group" aria-labelledby="caption-marks">
+                <h3 class="group__caption" id="caption-marks">So wird markiert</h3>
+                <ul class="tool-legend tool-legend--reference" id="tool-legend">
+                    <li><b>×</b> ausgeschlossen</li>
+                    <li><b>○</b> sichere Zuordnung</li>
+                    <li><b>·</b> vermutet</li>
+                    <li><b>␣</b> löschen</li>
+                </ul>
+                <p class="group__note">
+                    Ein Tipp auf das bereits gewählte Werkzeug legt es weg –
+                    danach wählt ein Tipp auf das Gitter nur noch eine Zelle aus,
+                    ohne sie zu markieren.
+                </p>
+            </section>
         </div>
     </section>
 
@@ -395,21 +414,15 @@
                         <button class="overview-mark" type="button" id="overview-mark-maybe" data-tool="maybe" aria-pressed="false" aria-label="Werkzeug: vermutet">·</button>
                         <button class="overview-mark" type="button" id="overview-mark-clear" data-tool="clear" aria-pressed="false" aria-label="Werkzeug: Markierung entfernen">␣</button>
                     </div>
-                    <!-- Die Bedeutung stand ausschließlich im aria-label: ein
-                         Screenreader-Nutzer erfuhr sie, ein sehender nicht.
-                         Steht im Fluss der Aktionsleiste, kann also weder etwas
-                         verdecken noch das Gitter verdrängen. aria-hidden, weil
-                         die Knöpfe daneben dasselbe schon sagen. -->
-                    <!-- Eine Liste und keine Aufzählung mit „·“: das Trennzeichen
-                         wäre dasselbe Zeichen wie das Symbol für „vermutet“, und
-                         „· · vermutet“ liest sich als Fehler. Der Abstand trennt,
-                         und jedes Paar bleibt beim Umbruch zusammen. -->
-                    <ul class="tool-legend" id="tool-legend" aria-hidden="true">
-                        <li><b>×</b> ausgeschlossen</li>
-                        <li><b>○</b> sichere Zuordnung</li>
-                        <li><b>·</b> vermutet</li>
-                        <li><b>␣</b> löschen</li>
-                    </ul>
+                    <!-- Hier stand die Werkzeug-Legende.
+                         Sie kostete gemessen 36px von 233px Gitterhoehe, also
+                         rund 15 Prozent - dauerhaft, fuer eine Auskunft, die man
+                         hoechstens einmal braucht. Die Einfuehrung erklaert die
+                         vier Zeichen beim ersten Raetsel, und zum Nachschlagen
+                         stehen sie in den Einstellungen unter "So wird markiert".
+                         Die aria-labels der Knoepfe tragen die Bedeutung
+                         weiterhin, fuer die Screenreader-Nutzer, wegen denen die
+                         Legende urspruenglich gebaut wurde. -->
                 </div>
             </div>
 
@@ -427,8 +440,12 @@
                          nie. Im Querformat war sie damit ersatzlos verschwunden.
                          Jetzt steht sie am Kopf der Hinweise, wo sie hingehoert:
                          sie ist die Frage, die die Hinweise beantworten. -->
-                    <p class="goal goal--sheet" id="play-goal-sheet"></p>
                     <p class="result-sub" id="play-story"></p>
+                    <!-- Zielfrage NACH der Einleitung. Sie fragt nach Personen und
+                         Kategorien, die der Einleitungstext erst einfuehrt - davor
+                         gestellt liest man die Frage, bevor man weiss, wovon sie
+                         handelt. Drei Pruefer haben unabhaengig darauf gezeigt. -->
+                    <p class="goal goal--sheet" id="play-goal-sheet"></p>
                     <ol class="clues" id="play-clue-list"></ol>
                     <div class="solution">
                         <button class="btn btn--ghost btn--small" type="button" id="play-solution-button">Lösung anzeigen</button>

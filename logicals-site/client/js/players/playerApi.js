@@ -22,7 +22,25 @@ export async function createPlayer(displayName) {
     } catch {
         throw new Error('Zum Anlegen eines Spielers wird eine Verbindung benötigt.');
     }
-    return (await readJson(response, 'Spieler konnte nicht angelegt werden.')).player;
+    /*
+     * Die Antwort auf ihre Form pruefen, nicht blind auspacken.
+     *
+     * Vorher stand hier nur `.player`. Kommt etwas anderes zurueck als
+     * erwartet - eine veraenderte Schnittstelle, ein Portal im WLAN, das eine
+     * Anmeldeseite unterschiebt -, war das Ergebnis `undefined`, und der
+     * Aufrufer stolperte erst eine Zeile spaeter ueber `player.id`. Dieser
+     * TypeError faellt in dasselbe catch wie die uebersetzten Fehler und
+     * wurde dem Spieler im Klartext vorgesetzt: "Cannot read properties of
+     * undefined (reading 'id')", im ersten Dialog der App.
+     *
+     * readJson uebersetzt bereits Netz- und JSON-Fehler; hier fehlte nur der
+     * Fall "gueltiges JSON, falscher Inhalt".
+     */
+    const player = (await readJson(response, 'Spieler konnte nicht angelegt werden.')).player;
+    if (!player || typeof player.id === 'undefined') {
+        throw new Error('Spieler konnte nicht angelegt werden.');
+    }
+    return player;
 }
 
 export async function listPlayerResults(playerId, limit = 50) {

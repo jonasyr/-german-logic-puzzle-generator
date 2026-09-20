@@ -3,6 +3,12 @@ import { listPlayerResults } from '../players/playerApi.js';
 import { renderStatsInto } from './statsScreen.js';
 import { berlinDate } from '../play/dailyPuzzle.js';
 
+/** Tagesdatum auf Deutsch - oder nichts, wenn der Wert keins hergibt. */
+function formatDay(value) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('de-DE');
+}
+
 function formatDuration(milliseconds) {
     const seconds = Math.max(0, Math.round(milliseconds / 1000));
     return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
@@ -52,7 +58,16 @@ function resultCard(result) {
     if (result.roomId) card.append(duelVerdict(result));
     card.append(make('p', {
         className: 'history-card__meta',
-        text: `${result.difficulty} · Seed ${result.seed} · ${new Date(result.completedAt).toLocaleDateString('de-DE')}`,
+        /*
+         * Ein fehlendes oder unlesbares Datum darf nicht als "Invalid Date"
+         * erscheinen - englischer Rohwert in einer deutschen Oberflaeche, und
+         * fuer den Leser ein Defekt. Dann lieber die Zeile ohne Datum.
+         */
+        text: [
+            result.difficulty,
+            `Seed ${result.seed}`,
+            formatDay(result.completedAt),
+        ].filter(Boolean).join(' · '),
     }));
     return card;
 }
