@@ -39,6 +39,10 @@ async function seed(page: Page, opts: { intro?: boolean; player?: boolean } = {}
       ? JSON.stringify({ player: { id: 2, displayName: 'Neu', createdAt: '2026-09-20T00:00:00Z' } })
       : JSON.stringify({ players: [{ id: 1, displayName: 'Ada', createdAt: '2026-09-17T00:00:00Z' }] }),
   }));
+  await page.route('**/api/players/*/experience', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ xp: 812, solved: 21 }),
+  }));
   await page.route('**/api/players/*/results**', route => route.fulfill({
     status: 200, contentType: 'application/json',
     body: JSON.stringify({
@@ -164,6 +168,24 @@ for (const v of VARIANTEN) {
     await page.locator('#play-solution-button').click();
     await page.waitForTimeout(500);
     await shot('16-loesung');
+
+    // Der Geloest-Dialog mit Erfahrungsblock. Das Raetsel wirklich zu loesen
+    // dauert zu lang fuer eine Aufnahmestrecke; gezeigt wird der Zustand.
+    await page.evaluate(() => {
+      document.getElementById('confirm-dialog')?.removeAttribute('open');
+      document.getElementById('solved-puzzle')!.textContent = '1. Finale beim Street-Food-Festival';
+      document.getElementById('solved-time')!.textContent = '5:31';
+      document.getElementById('solved-checks')!.textContent = '0';
+      document.getElementById('solved-marks')!.textContent = '48';
+      document.getElementById('solved-note')!.textContent = 'Ohne eine einzige Fehlprüfung.';
+      document.getElementById('solved-xp-gain')!.textContent = '+56';
+      document.getElementById('solved-xp-level')!.textContent = 'Stufe 7';
+      document.getElementById('solved-xp-fill')!.setAttribute('style', 'width: 4%');
+      document.getElementById('solved-xp')!.hidden = false;
+      (document.getElementById('solved-dialog') as HTMLDialogElement).showModal();
+    });
+    await page.waitForTimeout(400);
+    await shot('17-geschafft');
   });
 }
 

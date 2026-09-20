@@ -9,6 +9,7 @@
 import { clear, make } from '../dom.js';
 
 import { headToHead, personalStats } from '../stats/statistics.js';
+import { levelAt } from '../stats/level.js';
 
 
 function formatDuration(milliseconds) {
@@ -34,9 +35,23 @@ function section(title) {
     return node;
 }
 
-function personalSection(stats) {
+function personalSection(stats, experience) {
     const node = section('Deine Entwicklung');
     const list = make('dl', { className: 'stats-list' });
+
+    /*
+     * Erfahrung zuerst: sie fasst alles darunter zusammen.
+     *
+     * Sie fehlt, wenn weder Netz noch gemerkter Stand da sind - dann bleibt
+     * die Zeile weg statt eine Null zu behaupten, die niemand verdient hat.
+     * Gerechnet wird sie im Worker ueber ALLE Ergebnisse, waehrend alles
+     * andere hier aus den letzten hundert stammt; deshalb steht sie bewusst
+     * ohne den Zusatz "ueber die letzten 100" darunter.
+     */
+    if (experience) {
+        const stufe = levelAt(experience.xp);
+        list.append(statRow('Erfahrung', `${experience.xp} · Stufe ${stufe.level}`));
+    }
 
     for (const entry of stats.byDifficulty) {
         // Median, not mean: one abandoned evening would drag an average
@@ -130,10 +145,12 @@ function duelSection(entry) {
  * @param {HTMLElement} node
  * @param {Array<object>} results  neueste zuerst
  * @param {string} today  Datum in Berliner Zeit, `YYYY-MM-DD`
+ * @param {{ xp: number } | null} [experience]  serverseitig ueber ALLE
+ *   Ergebnisse summiert; null, wenn weder Netz noch gemerkter Stand da sind
  */
-export function renderStatsInto(node, results, today) {
+export function renderStatsInto(node, results, today, experience = null) {
     const body = clear(node);
     if (!results.length) return;
-    body.append(personalSection(personalStats(results, today)));
+    body.append(personalSection(personalStats(results, today), experience));
     for (const entry of headToHead(results)) body.append(duelSection(entry));
 }

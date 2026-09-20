@@ -52,7 +52,39 @@ export function showSolved(details) {
     el('solved-checks').textContent = String(details.failedChecks);
     el('solved-marks').textContent = String(details.marks);
     el('solved-note').textContent = details.note ?? '';
+    // Jeder Aufruf beginnt ohne Erfahrungsblock; er kommt nach, wenn der Stand
+    // da ist. Sonst zeigte das naechste geloeste Raetsel kurz die Zahlen des
+    // vorigen.
+    el('solved-xp').hidden = true;
 
     const node = dialog();
     if (typeof node.showModal === 'function') node.showModal();
+}
+
+/**
+ * Traegt den Erfahrungsstand nach, sobald er vorliegt.
+ *
+ * Getrennt von showSolved, weil der Dialog im selben Augenblick aufgehen soll
+ * wie das geloeste Raetsel - auf das Netz zu warten wuerde genau den Moment
+ * verzoegern, um den es geht. Wird nichts uebergeben, bleibt der Block weg.
+ *
+ * @param {{ gain: number | null, xp: number, level: number,
+ *           intoLevel: number, levelSpan: number } | null} standing
+ */
+export function showSolvedExperience(standing) {
+    const block = el('solved-xp');
+    if (!standing) { block.hidden = true; return; }
+
+    // Der Zuwachs fehlt beim allerersten Mal, weil es keinen Stand davor gibt,
+    // mit dem sich vergleichen liesse. Dann nur der Gesamtstand.
+    el('solved-xp-gain').textContent = standing.gain === null || standing.gain <= 0
+        ? `${standing.xp} Erfahrung`
+        : `+${standing.gain}`;
+    el('solved-xp-level').textContent = `Stufe ${standing.level}`;
+
+    const anteil = standing.levelSpan > 0
+        ? Math.max(0, Math.min(1, standing.intoLevel / standing.levelSpan))
+        : 0;
+    el('solved-xp-fill').style.width = `${Math.round(anteil * 100)}%`;
+    block.hidden = false;
 }

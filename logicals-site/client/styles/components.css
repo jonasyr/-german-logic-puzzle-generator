@@ -573,6 +573,42 @@ summary {
     hyphens: manual;
     overflow-wrap: anywhere;
 }
+/*
+ * Erfahrung: eine Zeile und ein Strich, keine vierte Kachel.
+ *
+ * Der Dialog ist bei 320px schon eng - die Beschriftungen der drei Kacheln
+ * stiessen dort bis vor kurzem aneinander. Ein zusaetzlicher Block ist genau
+ * die Sorte Zuwachs, die das wieder bricht, also faellt er so schmal aus wie
+ * moeglich: Zuwachs und Stufe in einer Zeile, darunter ein Balken von vier
+ * Pixeln.
+ */
+.solved__xp { margin: 0 0 var(--space-4); }
+.solved__xp-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-3);
+    margin: 0 0 var(--space-1);
+}
+.solved__xp-gain { font-size: 17px; font-weight: 700; color: var(--accent); }
+.solved__xp-level { font-size: var(--text-caption); color: var(--muted); }
+.solved__xp-track {
+    height: 4px;
+    border-radius: 999px;
+    background: var(--surface-sunken);
+    overflow: hidden;
+}
+.solved__xp-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent);
+    transition: width var(--dur-slow, .4s) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+    .solved__xp-fill { transition: none; }
+}
+
 .solved__stat dd {
     margin: var(--space-1) 0 0;
     margin-top: auto;                  /* Zahlen auf einer Linie - siehe oben */

@@ -1,6 +1,7 @@
 import { clear, el, make, setHint } from '../dom.js';
 import { listPlayerResults } from '../players/playerApi.js';
 import { renderStatsInto } from './statsScreen.js';
+import { loadExperience } from '../stats/experience.js';
 import { berlinDate } from '../play/dailyPuzzle.js';
 
 /** Tagesdatum auf Deutsch - oder nichts, wenn der Wert keins hergibt. */
@@ -83,7 +84,10 @@ export async function loadHistoryScreen(player) {
         const results = await listPlayerResults(player.id, 100);
         setHint('history-hint', results.length ? '' : 'Noch keine abgeschlossenen Rätsel.');
         for (const result of results) list.append(resultCard(result));
-        renderStatsInto(el('stats-body'), results, berlinDate());
+        // Erfahrung kommt aus einer eigenen Abfrage, weil sie ueber ALLE
+        // Ergebnisse zaehlt und diese Liste bei 100 gedeckelt ist.
+        renderStatsInto(el('stats-body'), results, berlinDate(),
+            await loadExperience(player.id));
     } catch (error) { setHint('history-hint', error.message, true); }
 }
 

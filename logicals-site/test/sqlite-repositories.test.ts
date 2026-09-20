@@ -78,7 +78,7 @@ describe('D1 repository SQL', () => {
  */
 const insert = (
   database: any, id: number, playerId: number, roomId: number | null,
-  elapsed: number, checks: number, at: string, seed = 41,
+  elapsed: number, checks: number, at: string, seed = 41, configuration = '{}',
 ) =>
   database.exec(`
     INSERT INTO results (
@@ -86,7 +86,7 @@ const insert = (
       theme_id, difficulty, seed, configuration_json, elapsed_ms, failed_checks, completed_at
     ) VALUES (
       ${id}, ${playerId}, ${roomId === null ? 'NULL' : roomId}, 'k${id}', 'f', 'Museum',
-      'museum', 'mittel', ${seed}, '{}', ${elapsed}, ${checks}, '${at}'
+      'museum', 'mittel', ${seed}, '${configuration}', ${elapsed}, ${checks}, '${at}'
     );
   `);
 
@@ -171,5 +171,48 @@ describe('die gelösten Katalog-Seeds', () => {
     const repository = createResultsRepository(adapter(database));
 
     expect(await repository.listSolvedSeeds(1, 1_000_000)).toEqual([1000001]);
+  });
+});
+
+describe('die Eingaben für die Erfahrung', () => {
+  /*
+   * Der ganze Grund für diese Abfrage: listByPlayer hält bei 100. Erfahrung
+   * soll über alles zählen, sonst sänke sie, sobald ein altes Rätsel hinten
+   * aus dem Fenster fällt - und eine Anerkennung, die wieder sinkt, ist
+   * keine. Der Test hat deshalb mehr als hundert Zeilen zu zählen.
+   */
+  it('zählt über ALLE Ergebnisse, nicht nur über die ersten hundert', async () => {
+    const database = seeded();
+    const repository = createResultsRepository(adapter(database));
+    // Von der Vorbelegung ausgehen statt eine Zahl zu raten - sie hat für
+    // diesen Spieler mehr als ein Ergebnis, was beim ersten Anlauf auffiel.
+    const vorher = (await repository.listExperienceInputs(1)).length;
+
+    const konfiguration = '{"categoryCount":4,"valuesPerCategory":4}';
+    for (let index = 0; index < 120; index += 1) {
+      insert(database, 100 + index, 1, null, 50_000, 0,
+        `2026-09-18T04:${String(index % 60).padStart(2, '0')}:00Z`, 41, konfiguration);
+    }
+
+    const inputs = await repository.listExperienceInputs(1);
+    expect(inputs).toHaveLength(vorher + 120);
+    expect(inputs[0]).toHaveProperty('difficulty');
+    expect(inputs[0]).toHaveProperty('failedChecks');
+    expect(inputs[0]).toHaveProperty('configurationJson');
+  });
+
+  it('gibt die Ergebnisse anderer Spieler nicht mit aus', async () => {
+    const database = seeded();
+    const repository = createResultsRepository(adapter(database));
+    const vorherAda = (await repository.listExperienceInputs(1)).length;
+
+    // Zwanzig Ergebnisse für Bo dürfen Adas Erfahrung nicht anfassen.
+    for (let index = 0; index < 20; index += 1) {
+      insert(database, 300 + index, 2, null, 50_000, 0,
+        `2026-09-18T05:${String(index % 60).padStart(2, '0')}:00Z`);
+    }
+
+    expect(await repository.listExperienceInputs(1)).toHaveLength(vorherAda);
+    expect((await repository.listExperienceInputs(2)).length).toBeGreaterThanOrEqual(20);
   });
 });

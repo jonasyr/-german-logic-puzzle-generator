@@ -1,4 +1,5 @@
 import type { D1Database } from '../types';
+import type { ExperienceInput } from '../services/experience';
 
 export interface ResultRecord {
   id: number;
@@ -36,6 +37,15 @@ export interface ResultRepository {
    * gebraucht werden, keine Ergebniszeilen.
    */
   listSolvedSeeds(playerId: number, minSeed: number): Promise<number[]>;
+  /**
+   * Die Felder ALLER Ergebnisse, aus denen sich Erfahrung rechnen lässt.
+   *
+   * Eigene Abfrage aus demselben Grund wie listSolvedSeeds: die Ergebnisliste
+   * ist bei 100 gedeckelt, Erfahrung soll aber über alles zählen - sonst
+   * sänke sie, sobald ein altes Rätsel aus dem Fenster fällt. Und geholt
+   * werden nur die drei Felder, die die Formel braucht, keine ganzen Zeilen.
+   */
+  listExperienceInputs(playerId: number): Promise<ExperienceInput[]>;
 }
 
 const SELECT_COLUMNS = `
@@ -143,6 +153,15 @@ export function createResultsRepository(db: D1Database): ResultRepository {
         ORDER BY completed_at ASC, id ASC
       `).bind(roomId).all<ResultRecord>();
       return result.results ?? [];
+    },
+
+    async listExperienceInputs(playerId) {
+      const { results } = await db.prepare(`
+        SELECT difficulty, failed_checks AS failedChecks, configuration_json AS configurationJson
+        FROM results
+        WHERE player_id = ?
+      `).bind(playerId).all<ExperienceInput>();
+      return results ?? [];
     },
 
     async listSolvedSeeds(playerId, minSeed) {

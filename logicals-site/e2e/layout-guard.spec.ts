@@ -53,6 +53,51 @@ for (const phone of PHONES) {
  * Tapflaeche statt gegen eine feste Zahl: die Leiste ist eine Reihe von
  * Knoepfen, mehr als deren Hoehe plus Polster hat sie nicht zu brauchen.
  */
+/*
+ * Der Geloest-Dialog bleibt bei 320px bedienbar.
+ *
+ * Er ist dort ohnehin eng - die Beschriftungen seiner drei Kacheln stiessen
+ * bis vor kurzem aneinander -, und der Erfahrungsblock hat ihn um eine Zeile
+ * und einen Balken wachsen lassen. Genau die Sorte Zuwachs, die so etwas
+ * wieder bricht.
+ *
+ * Geprueft wird das Wesentliche: beide Knoepfe im Fenster und gross genug, und
+ * kein Querlauf. Wenn der Dialog zu hoch wird, rutscht "Zur Startseite" unter
+ * die Kante - und damit der einzige Weg vom geloesten Raetsel zurueck.
+ */
+test('der Geloest-Dialog bleibt bei 320px erreichbar', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 320, height: 568 });
+  await openSoloPuzzle(page);
+
+  await page.evaluate(() => {
+    const block = document.getElementById('solved-xp')!;
+    document.getElementById('solved-xp-gain')!.textContent = '+56';
+    document.getElementById('solved-xp-level')!.textContent = 'Stufe 12';
+    document.getElementById('solved-xp-fill')!.setAttribute('style', 'width: 64%');
+    block.hidden = false;
+    (document.getElementById('solved-dialog') as HTMLDialogElement).showModal();
+  });
+  await page.waitForTimeout(200);
+
+  const lage = await page.evaluate(() => {
+    const rect = (id: string) => document.getElementById(id)!.getBoundingClientRect();
+    return {
+      heim: rect('solved-home'),
+      bleiben: rect('solved-stay'),
+      fenster: window.innerHeight,
+      querlauf: document.documentElement.scrollWidth > window.innerWidth,
+    };
+  });
+
+  expect(lage.querlauf, 'der Dialog laeuft seitlich ueber').toBe(false);
+  for (const [name, knopf] of Object.entries({ heim: lage.heim, bleiben: lage.bleiben })) {
+    expect(knopf.bottom, `${name} liegt unter der Kante`).toBeLessThanOrEqual(lage.fenster + 1);
+    expect(knopf.top, `${name} liegt ueber der Kante`).toBeGreaterThanOrEqual(-1);
+    expect(knopf.height, `${name} ist zu flach`).toBeGreaterThanOrEqual(43.5);
+  }
+});
+
 test('die Reiterleiste waechst nicht mit der Fensterhoehe', async ({ page }) => {
   test.setTimeout(180_000);
   await page.setViewportSize({ width: 390, height: 844 });

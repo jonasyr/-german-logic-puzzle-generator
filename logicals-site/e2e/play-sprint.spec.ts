@@ -8,9 +8,24 @@ async function withPlayer(page: Page) {
     contentType: 'application/json',
     body: JSON.stringify({ players: [{ id: 1, displayName: 'Ada', createdAt: '2026-09-18T00:00:00Z' }] }),
   }));
+  /*
+   * Der Erfahrungsstand kommt vom Server, den es hier nicht gibt.
+   *
+   * Zwei Antworten nacheinander: der Stand VOR dem geloesten Raetsel und der
+   * danach. Nur so entsteht ueberhaupt ein Zuwachs - der Client rechnet ihn
+   * als Differenz, damit die Formel allein im Worker lebt.
+   */
+  let abrufe = 0;
+  await page.route('**/api/players/*/experience', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify(abrufe++ === 0 ? { xp: 800, solved: 20 } : { xp: 845, solved: 21 }),
+  }));
   // Ein Spieler, der schon einmal hier war, hat die Einfuehrung gesehen.
   // Sie gehoert in first-run.spec.ts und nirgendwo sonst.
   await page.addInitScript(() => localStorage.setItem('logicals.seenIntro.v1', '1'));
+  // Ein gemerkter Stand, gegen den sich der Zuwachs messen laesst.
+  await page.addInitScript(() => localStorage.setItem(
+    'logicals.experience.v1.1', JSON.stringify({ xp: 800, solved: 20 })));
   await page.addInitScript(() => localStorage.setItem('logicals.players.v1', JSON.stringify({
     players: [{ id: 1, displayName: 'Ada' }], selectedPlayerId: 1,
   })));
@@ -217,6 +232,24 @@ test('solving a puzzle is acknowledged, with a way back to the start', async ({ 
   await expect(page.locator('#solved-time')).toHaveText(/^\d+:\d{2}$/);
   await expect(page.locator('#solved-checks')).toHaveText(/^\d+$/);
   await expect(page.locator('#solved-marks')).toHaveText(/^\d+$/);
+
+  /*
+   * Erfahrung wird NACHGETRAGEN, nicht mitgeliefert.
+   *
+   * Der Dialog geht im selben Augenblick auf wie das geloeste Raetsel; auf
+   * das Netz zu warten wuerde genau den Moment verzoegern, um den es geht.
+   * Der Block kommt deshalb, sobald der Stand da ist - und er kommt nur
+   * dann, weil eine falsche Zahl schlechter waere als keine.
+   */
+  const xp = page.locator('#solved-xp');
+  await expect(xp).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('#solved-xp-level')).toHaveText(/^Stufe \d+$/);
+  await expect(page.locator('#solved-xp-gain')).not.toBeEmpty();
+  // Der Balken zeigt den Weg in der aktuellen Stufe, nie mehr als voll.
+  const anteil = await page.locator('#solved-xp-fill')
+    .evaluate(node => parseFloat((node as HTMLElement).style.width));
+  expect(anteil).toBeGreaterThanOrEqual(0);
+  expect(anteil).toBeLessThanOrEqual(100);
 
   await page.locator('#solved-home').click();
   await expect(page.locator('#screen-start')).toHaveClass(/is-active/);

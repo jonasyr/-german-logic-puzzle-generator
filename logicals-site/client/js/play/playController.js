@@ -13,7 +13,9 @@ import { clearResume, saveResume } from './resumeStore.js';
 import { createMarkTool, nextMark } from './markTool.js';
 import { createCluesSheet } from './cluesSheet.js';
 import { askConfirm, closeConfirm } from '../ui/confirmDialog.js';
-import { closeSolved, showSolved } from '../ui/solvedDialog.js';
+import { closeSolved, showSolved, showSolvedExperience } from '../ui/solvedDialog.js';
+import { cachedExperience, loadExperience } from '../stats/experience.js';
+import { levelAt } from '../stats/level.js';
 import { showFirstRunIfNeeded } from '../ui/firstRun.js';
 import { createAuthoritativeTimer, createTimer, formatTime } from './playTimer.js';
 import { createCompletionSubmission } from '../results/completion.js';
@@ -291,12 +293,27 @@ function handleSolved() {
     setStatus(`Gelöst in ${formatTime(elapsedMs)}. Alle Zuordnungen stimmen.`, true);
     renderUndo();
     persist();
-    queueCompletion(elapsedMs).catch(error => console.error('Completion queue failed', error));
+    /*
+     * Die Zusage festhalten, nicht nur feuern und vergessen: der
+     * Erfahrungsstand darf erst danach geholt werden, sonst kennt der Server
+     * dieses Raetsel noch nicht und der Zuwachs waere null.
+     */
+    const queued = queueCompletion(elapsedMs)
+        .catch(error => console.error('Completion queue failed', error));
 
     // A duel has its own result screen, with the other player on it. Solo had
     // nothing at all - the moment the whole screen is built for passed with a
     // line of status text and no way back to the start.
     if (state.context?.mode === 'duel') return;
+    /*
+     * Der Stand VOR diesem Raetsel, gemerkt bevor das Ergebnis abgeschickt
+     * wird. Der Zuwachs ist dann schlicht die Differenz zum frischen Stand -
+     * so muss die Formel nicht auch im Client stehen, sondern bleibt allein
+     * im Worker, der ueber alle Ergebnisse summieren kann.
+     */
+    const vorher = state.context?.player
+        ? cachedExperience(state.context.player.id)
+        : null;
     showSolved({
         title: `${state.puzzle.number}. ${state.puzzle.title}`,
         time: formatTime(elapsedMs),
@@ -306,6 +323,33 @@ function handleSolved() {
             ? 'Ohne eine einzige Fehlprüfung.'
             : 'Das Ergebnis steht in deinen Ergebnissen.',
         onHome: () => showScreen('screen-start'),
+    });
+    reportExperience(vorher, queued).catch(error => console.error('Experience failed', error));
+}
+
+/**
+ * Traegt den Erfahrungsstand im Gelöst-Dialog nach.
+ *
+ * Erst nachdem das Ergebnis in der Warteschlange ist - vorher kennt der Server
+ * dieses Raetsel noch nicht und der Zuwachs waere null. Schlaegt irgendetwas
+ * davon fehl, bleibt der Block weg: eine falsche Zahl waere schlechter als
+ * keine.
+ */
+async function reportExperience(vorher, queued) {
+    const player = state.context?.player;
+    if (!player) return;
+
+    await queued;
+    const jetzt = await loadExperience(player.id);
+    if (!jetzt) return;
+
+    const stufe = levelAt(jetzt.xp);
+    showSolvedExperience({
+        gain: vorher ? jetzt.xp - vorher.xp : null,
+        xp: jetzt.xp,
+        level: stufe.level,
+        intoLevel: stufe.intoLevel,
+        levelSpan: stufe.levelSpan,
     });
 }
 

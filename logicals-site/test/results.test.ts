@@ -45,6 +45,17 @@ class MemoryResults implements ResultRepository {
       .map(result => result.seed);
     return [...new Set(seeds)].sort((a, b) => a - b);
   }
+
+  /*
+   * Ungedeckelt, wie die echte Abfrage: genau das ist der Punkt dieser
+   * Methode - listByPlayer haelt bei 100, Erfahrung zaehlt alles.
+   */
+  async listExperienceInputs(playerId: number) {
+    return this.results
+      .filter(result => result.playerId === playerId)
+      .map(({ difficulty, failedChecks, configurationJson }) =>
+        ({ difficulty, failedChecks, configurationJson }));
+  }
 }
 
 const submission = {

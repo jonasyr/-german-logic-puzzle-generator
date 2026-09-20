@@ -23,6 +23,7 @@ import {
   resolveDuelResultContext,
 } from './services/rooms';
 import type { Env } from './types';
+import { sumExperience } from './services/experience';
 import { objectBody } from './validation';
 
 interface AppOverrides {
@@ -88,6 +89,23 @@ export function createApp(overrides: AppOverrides = {}) {
           const seeds = await resultsFor(env, overrides)
             .listSolvedSeeds(Number(solvedMatch[1]), 1_000_000);
           return json({ seeds });
+        }
+
+        const experienceMatch = url.pathname.match(/^\/api\/players\/(\d+)\/experience$/);
+        if (experienceMatch && request.method === 'GET') {
+          /*
+           * Serverseitig summiert, weil die Ergebnisliste bei 100 gedeckelt
+           * ist. Eine Zahl, die man sich erarbeitet hat, darf nicht sinken,
+           * nur weil ein altes Rätsel hinten aus dem Fenster fällt.
+           *
+           * Die Stufe steht bewusst nicht hier drin: die Schwellen sind
+           * Darstellung und leben im Client (client/js/stats/level.js). So
+           * liegt die Formel an einer Stelle und die Schwellen an einer
+           * anderen, statt beides an zweien.
+           */
+          const inputs = await resultsFor(env, overrides)
+            .listExperienceInputs(Number(experienceMatch[1]));
+          return json(sumExperience(inputs));
         }
 
         if (url.pathname === '/api/results' && request.method === 'POST') {

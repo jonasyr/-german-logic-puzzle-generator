@@ -234,7 +234,11 @@
         </div>
         <div id="history-panel-stats" role="tabpanel" aria-labelledby="history-tab-stats" hidden>
             <div id="stats-body"></div>
-            <p class="stats-scope">Über die letzten 100 Rätsel.</p>
+            <!-- Genau sagen, worauf sich die Grenze bezieht. Die Erfahrung
+                 zaehlt ueber ALLE Ergebnisse - der Worker summiert sie, statt
+                 die gedeckelte Liste zu nehmen. "Ueber die letzten 100
+                 Raetsel." allein behauptete das Gegenteil. -->
+            <p class="stats-scope">Zeiten und Fehlprüfungen über die letzten 100 Rätsel. Erfahrung über alle.</p>
         </div>
         <p class="hint" id="history-hint" role="status"></p>
     </section>
@@ -528,7 +532,7 @@
                  sich darauf nicht verlassen: &shy; setzt die Stelle selbst,
                  sichtbar nur wenn wirklich umbrochen wird. -->
             <div class="solved__stat">
-                <dt>Fehl&shy;prüfungen</dt>
+                <dt>Fehl&shy;prü&shy;fungen</dt>
                 <dd id="solved-checks">0</dd>
             </div>
             <div class="solved__stat">
@@ -536,6 +540,20 @@
                 <dd id="solved-marks">0</dd>
             </div>
         </dl>
+        <!-- Erfahrung: erscheint nachtraeglich, wenn der Stand da ist.
+             Der Dialog soll im selben Augenblick aufgehen wie das geloeste
+             Raetsel; auf das Netz zu warten wuerde genau den Moment
+             verzoegern, um den es geht. Ohne Netz bleibt der Block weg - eine
+             falsche Zahl waere schlechter als keine. -->
+        <div class="solved__xp" id="solved-xp" hidden>
+            <p class="solved__xp-line">
+                <span class="solved__xp-gain" id="solved-xp-gain"></span>
+                <span class="solved__xp-level" id="solved-xp-level"></span>
+            </p>
+            <div class="solved__xp-track" aria-hidden="true">
+                <span class="solved__xp-fill" id="solved-xp-fill"></span>
+            </div>
+        </div>
         <p class="confirm__text" id="solved-note"></p>
         <form method="dialog" class="confirm__actions">
             <button class="btn btn--ghost" type="submit" value="stay" id="solved-stay">Rätsel ansehen</button>
