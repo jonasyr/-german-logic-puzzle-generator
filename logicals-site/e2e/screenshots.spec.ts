@@ -188,7 +188,6 @@ for (const v of VARIANTEN) {
       document.getElementById('solved-time')!.textContent = '5:31';
       document.getElementById('solved-checks')!.textContent = '0';
       document.getElementById('solved-marks')!.textContent = '48';
-      document.getElementById('solved-note')!.textContent = 'Ohne eine einzige Fehlprüfung.';
       document.getElementById('solved-xp-gain')!.textContent = '+56';
       document.getElementById('solved-xp-level')!.textContent = 'Stufe 7';
       document.getElementById('solved-xp-fill')!.setAttribute('style', 'width: 4%');

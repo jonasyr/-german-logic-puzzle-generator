@@ -319,9 +319,6 @@ function handleSolved() {
         time: formatTime(elapsedMs),
         failedChecks: state.failedChecks,
         marks: state.marks.size,
-        note: state.failedChecks === 0
-            ? 'Ohne eine einzige Fehlprüfung.'
-            : 'Das Ergebnis steht in deinen Ergebnissen.',
         onHome: () => showScreen('screen-start'),
     });
     reportExperience(vorher, queued).catch(error => console.error('Experience failed', error));

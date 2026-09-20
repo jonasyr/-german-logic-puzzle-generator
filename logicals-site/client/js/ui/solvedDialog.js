@@ -41,7 +41,7 @@ export function closeSolved() {
 
 /**
  * @param {{ title: string, time: string, failedChecks: number, marks: number,
- *           note?: string, onHome: () => void }} details
+ *           onHome: () => void }} details
  */
 export function showSolved(details) {
     wire();
@@ -50,8 +50,11 @@ export function showSolved(details) {
     el('solved-puzzle').textContent = details.title;
     el('solved-time').textContent = details.time;
     el('solved-checks').textContent = String(details.failedChecks);
+    // Eine Fehlpruefung, nicht "1 Fehlpruefungen" - dieselbe Regel wie auf den
+    // Ergebniskarten, von denen diese Zeile ihre Form hat.
+    el('solved-checks-word').textContent =
+        details.failedChecks === 1 ? 'Fehlprüfung' : 'Fehlprüfungen';
     el('solved-marks').textContent = String(details.marks);
-    el('solved-note').textContent = details.note ?? '';
     // Jeder Aufruf beginnt ohne Erfahrungsblock; er kommt nach, wenn der Stand
     // da ist. Sonst zeigte das naechste geloeste Raetsel kurz die Zahlen des
     // vorigen.

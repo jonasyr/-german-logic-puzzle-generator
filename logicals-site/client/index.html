@@ -537,30 +537,23 @@
     </dialog>
 
     <dialog class="confirm solved" id="solved-dialog" aria-labelledby="solved-title">
-        <p class="solved__kicker">Gelöst</p>
+        <!-- Ein Kopf, eine Kennzahl, eine Zeile.
+             Hier standen ein Kicker "GELOEST" ueber dem Titel "Geschafft!" -
+             dasselbe zweimal -, drei Kacheln, deren Beschriftungen bei 320px
+             ueber drei Zeilen getrennt werden mussten, und eine Notiz, die die
+             Null darueber noch einmal in Worten sagte. Sieben gestapelte
+             Bloecke fuer drei Zahlen.
+             Die Ergebnisliste zeigt dieselben Daten laengst kompakt
+             ("4:10 · 1 Fehlpruefung"); der Dialog folgt ihr jetzt, statt eine
+             eigene Form zu erfinden und sich daran das Trennproblem zu
+             bauen. -->
         <h3 class="confirm__title" id="solved-title">Geschafft!</h3>
         <p class="solved__puzzle" id="solved-puzzle"></p>
-        <dl class="solved__stats">
-            <div class="solved__stat">
-                <dt>Zeit</dt>
-                <dd id="solved-time">0:00</dd>
-            </div>
-            <!-- Weiche Trennstriche, kein Verlass auf die Engine.
-                 "FEHLPRUEFUNGEN" passt bei 375px nicht in eine Kachel. Wo es
-                 bricht, entscheidet sonst der Browser - und Chromium bringt
-                 keine deutschen Trennmuster mit, bricht also mitten im Wort
-                 ("FEHLPRUEFU/NGEN"). Bei festen Oberflaechentexten muss man
-                 sich darauf nicht verlassen: &shy; setzt die Stelle selbst,
-                 sichtbar nur wenn wirklich umbrochen wird. -->
-            <div class="solved__stat">
-                <dt>Fehl&shy;prü&shy;fungen</dt>
-                <dd id="solved-checks">0</dd>
-            </div>
-            <div class="solved__stat">
-                <dt>Markie&shy;rungen</dt>
-                <dd id="solved-marks">0</dd>
-            </div>
-        </dl>
+        <p class="solved__time" id="solved-time">0:00</p>
+        <p class="solved__meta">
+            <span id="solved-checks">0</span> <span id="solved-checks-word">Fehlprüfungen</span>
+            · <span id="solved-marks">0</span> Markierungen
+        </p>
         <!-- Erfahrung: erscheint nachtraeglich, wenn der Stand da ist.
              Der Dialog soll im selben Augenblick aufgehen wie das geloeste
              Raetsel; auf das Netz zu warten wuerde genau den Moment
@@ -575,7 +568,6 @@
                 <span class="solved__xp-fill" id="solved-xp-fill"></span>
             </div>
         </div>
-        <p class="confirm__text" id="solved-note"></p>
         <form method="dialog" class="confirm__actions">
             <button class="btn btn--ghost" type="submit" value="stay" id="solved-stay">Rätsel ansehen</button>
             <button class="btn btn--primary" type="submit" value="home" id="solved-home" autofocus>Zur Startseite</button>

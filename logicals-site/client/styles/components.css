@@ -542,63 +542,26 @@ summary {
  * one moment the whole screen is built for passed without being marked. This is
  * the same dialog element as the confirmations, with the numbers worth keeping.
  */
-.solved__kicker {
-    margin: 0 0 var(--space-1);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--good);
-}
-.solved__puzzle { margin: 0 0 var(--space-4); color: var(--muted); font-size: 14px; }
-.solved__stats {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-2);
-    margin: 0 0 var(--space-4);
-}
+/* Der Kicker "GELOEST" ueber dem Titel "Geschafft!" sagte dasselbe zweimal
+   und ist weggefallen; die Kacheln ebenso, siehe unten. */
+#solved-dialog .confirm__title { text-align: center; }
+.solved__puzzle { margin: 0; text-align: center; color: var(--muted); font-size: 14px; }
 /*
- * Drei Kacheln, deren Beschriftungen nicht ineinanderlaufen.
+ * Eine Kennzahl gross, der Rest als Zeile.
  *
- * "FEHLPRUEFUNGEN" ist bei 11px und .05em Sperrung breiter als eine Kachel
- * auf einem 375px-Schirm. Ohne Umbruch lief es ueber den Rand hinaus und
- * stiess auf dem Geraet ohne Luecke an "MARKIERUNGEN" - zwei Woerter, die
- * als eines gelesen wurden.
- *
- * Das Wort darf jetzt umbrechen, mit Trennung wo die Engine sie kennt. Weil
- * die Kacheln als Rasterkinder ohnehin gleich hoch sind, haelt
- * `margin-top: auto` die Zahlen trotzdem auf einer Linie, egal ob die
- * Beschriftung darueber ein- oder zweizeilig ist.
+ * Hier standen drei Kacheln nebeneinander. Bei 320px passte
+ * "FEHLPRUEFUNGEN" in keine davon und musste ueber drei Zeilen getrennt
+ * werden - eine Notloesung, die aussah wie eine. Die Zeit ist ohnehin die
+ * Zahl, auf die man schaut; sie steht gross, und die beiden anderen bilden
+ * darunter eine Zeile in genau der Form, die die Ergebniskarten schon
+ * benutzen ("4:10 · 1 Fehlpruefung"). Kein Wort muss mehr getrennt werden.
  */
-.solved__stat {
-    padding: var(--space-3) var(--space-2);
-    border: var(--hairline) solid var(--line);
-    border-radius: var(--radius);
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-}
-.solved__stat dt {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: .03em;
-    line-height: 1.3;
-    color: var(--muted);
-    /* Manuelle Trennung im Markup (&shy;); `manual` achtet sie und erfindet
-       keine eigenen Stellen. `anywhere` bleibt als letzte Rettung fuer sehr
-       schmale Schirme. */
-    -webkit-hyphens: manual;
-    hyphens: manual;
-    overflow-wrap: anywhere;
-}
 /*
  * Erfahrung: eine Zeile und ein Strich, keine vierte Kachel.
  *
- * Der Dialog ist bei 320px schon eng - die Beschriftungen der drei Kacheln
- * stiessen dort bis vor kurzem aneinander. Ein zusaetzlicher Block ist genau
- * die Sorte Zuwachs, die das wieder bricht, also faellt er so schmal aus wie
- * moeglich: Zuwachs und Stufe in einer Zeile, darunter ein Balken von vier
- * Pixeln.
+ * Der Dialog ist bei 320px eng. Ein zusaetzlicher Block ist genau die Sorte
+ * Zuwachs, die das bricht, also faellt er so schmal aus wie moeglich:
+ * Zuwachs und Stufe in einer Zeile, darunter ein Balken von vier Pixeln.
  */
 .solved__xp { margin: 0 0 var(--space-4); }
 .solved__xp-line {
@@ -613,7 +576,11 @@ summary {
 .solved__xp-track {
     height: 4px;
     border-radius: 999px;
-    background: var(--surface-sunken);
+    /* Dieselbe Begruendung wie beim Ring im Ergebnis-Kopf: mit
+       --surface-sunken war die Bahn kaum vom Untergrund zu unterscheiden, und
+       ein kleiner Stand las sich als loser Strich statt als gefuellter Teil
+       einer Bahn. */
+    background: var(--line);
     overflow: hidden;
 }
 .solved__xp-fill {
@@ -627,11 +594,21 @@ summary {
     .solved__xp-fill { transition: none; }
 }
 
-.solved__stat dd {
-    margin: var(--space-1) 0 0;
-    margin-top: auto;                  /* Zahlen auf einer Linie - siehe oben */
-    padding-top: var(--space-1);
-    font-size: 20px;
+.solved__time {
+    margin: var(--space-3) 0 0;
+    text-align: center;
+    font-size: 40px;
     font-weight: 700;
+    line-height: 1.1;
     font-variant-numeric: tabular-nums;
+    letter-spacing: -.01em;
 }
+.solved__meta {
+    margin: var(--space-1) 0 var(--space-4);
+    text-align: center;
+    font-size: var(--text-caption);
+    line-height: var(--leading-caption);
+    color: var(--muted);
+    text-wrap: balance;
+}
+
