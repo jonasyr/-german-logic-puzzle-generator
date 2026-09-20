@@ -145,7 +145,17 @@ export function createOverviewCanvas({
     function renderReadout() {
         if (!selected) {
             readoutPair.textContent = 'Keine Zelle gewählt';
-            readoutCats.textContent = currentTool() ? 'Tippen markiert' : 'Tippen wählt nur aus';
+            /*
+             * Keine zweite Auskunft ueber dasselbe Werkzeug.
+             *
+             * Hier stand "TIPPEN MARKIERT" beziehungsweise "Tippen waehlt nur
+             * aus". Seit die Statuszeile ueber dem Gitter im Ruhezustand sagt,
+             * was ein Tipp bewirkt ("Tippen schliesst aus."), stand dieselbe
+             * Aussage zweimal auf einem Bildschirm - hier in Versalien und
+             * ungenauer. Diese Zeile fuellt jetzt ihren eigenen Zweck: die
+             * Aufforderung, ueberhaupt eine Zelle zu waehlen.
+             */
+            readoutCats.textContent = 'Tippe eine Zelle an';
             return;
         }
         const rowCategory = puzzle.categories[selected.rowCategoryIndex];

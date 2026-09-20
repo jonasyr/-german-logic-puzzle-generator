@@ -601,8 +601,20 @@
     align-items: center;
     gap: 6px 10px;
 }
-/* The readout takes the first row on its own - it is the one thing here that
-   can be long. The tools and the fit button share the second. */
+/*
+ * "Einpassen" gehoert nicht in die Werkzeugreihe.
+ *
+ * Es stand neben den vier Markier-Knoepfen und las sich als fuenftes
+ * Werkzeug - obwohl die Legende darunter nur vier Zeichen erklaert und
+ * "Einpassen" die Ansicht zoomt, statt etwas zu markieren. Die Gruppierung
+ * fuer Hilfsmittel war schon richtig (eigenes role="group" nur um die vier),
+ * das Auge sah nur etwas anderes.
+ *
+ * Jetzt teilt es die erste Zeile mit der Ableseanzeige - beides Auskunft und
+ * Handhabung der ANSICHT - und die vier Werkzeuge bekommen ihre Zeile allein.
+ * Das kostet keine Hoehe und gibt jedem Knopf mehr Breite, weil er sich die
+ * Reihe nicht mehr mit einem Textknopf teilt.
+ */
 .overview-readout { grid-column: 1 / -1; }
 .overview-marks {
     /* Row pinned explicitly: with only the column set, auto-placement pushed the
@@ -615,6 +627,29 @@
     gap: 6px;
 }
 .overview-fit { grid-row: 2; grid-column: 2; justify-self: end; }
+
+/*
+ * "Einpassen" darf nicht wie ein fuenftes Werkzeug aussehen.
+ *
+ * Es teilt sich die Reihe mit den vier Markier-Knoepfen, erklaert wird in der
+ * Legende darunter aber nur deren vier Zeichen - und es markiert nichts,
+ * sondern passt die Ansicht ein. Die Gruppierung fuer Hilfsmittel war schon
+ * richtig (das role="group" umfasst nur die vier), das Auge sah etwas anderes.
+ *
+ * Die Geometrie bleibt deshalb unangetastet: bei 320px liegt dieses Layout auf
+ * der gemessenen Grenze, ab der die eingepasste Zelle unter die Tippschwelle
+ * faellt - der Versuch, die Reihen neu zu verteilen, hat den Waechter prompt
+ * ausschlagen lassen. Getrennt wird nur im Aussehen: kein Knopfkoerper,
+ * sondern beschrifteter Text, wie er einer Ansichtsschaltung zusteht.
+ */
+.overview-fit {
+    border: 0;
+    background: none;
+    padding-inline: var(--space-1);
+    color: var(--accent, var(--text));
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
 .overview-readout { min-width: 0; }
 .overview-readout__pair {
     margin: 0; font-size: 15px; font-weight: 600;
