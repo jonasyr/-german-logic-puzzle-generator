@@ -3,6 +3,23 @@
 **Datum:** 2026-09-20
 **Zweig:** `redesign/mobile-canvas-overview`
 
+> **Zurückgestellt am 2026-09-20, nicht verworfen.**
+>
+> Beim Ausarbeiten stellte sich heraus, dass es nur zwei Werkzeuge gibt, die es
+> ehrlich verdienen, hinter einer Stufe zu liegen — die Stufen trügen also über
+> weite Strecken keine Freischaltung. Statt Tore zu erfinden, um die Lücken zu
+> füllen, werden zuerst die Werkzeuge gebaut; ob eines davon ein Tor verdient,
+> entscheidet sich dann am eigenen Gebrauch.
+>
+> Damit fiel auch der Maßstab weg, nach dem die zwei Werkzeuge ausgewählt
+> worden waren: gefragt war „was darf man sperren?", nicht „was ist am
+> wertvollsten?". Neu sortiert nach Wert beginnt die Arbeit an anderer Stelle —
+> siehe `2026-09-20-erster-falscher-schluss`.
+>
+> Die Überlegungen unten gelten unverändert, falls später doch Punkte kommen:
+> die Formel, die Platzierung im Gelöst-Dialog statt auf dem Startbildschirm,
+> und der Grund dafür.
+
 ## Warum
 
 Die Frage, aus der das hier entstanden ist, war die richtige: *„Level — aber

@@ -23,7 +23,7 @@ import { createProgressReporter } from '../duel/progressReporter.js';
 import {
     MARK_SYMBOLS, createPlayState, storageKeyFor,
     setMarkWith, undoMark, clearMarks, save, load, recordFailedCheck,
-    resetForNewAttempt,
+    resetForNewAttempt, firstWrongMark, knowsMarkOrder,
 } from './playState.js';
 
 const { cellKey, buildTruthSet, evaluate, findContradictions } = window.PlayLogic;
@@ -330,7 +330,8 @@ function requestCheck() {
 
     askConfirm({
         title: 'Markierungen prüfen?',
-        text: 'Falsche Markierungen werden rot hervorgehoben. Das kann dir Lösungswege verraten.',
+        text: 'Die erste falsche Markierung wird hervorgehoben. '
+            + 'Wie viele es insgesamt sind, erfährst du dazu.',
         confirmLabel: 'Fehler anzeigen',
         onConfirm: checkNow,
     });
@@ -357,15 +358,32 @@ function requestClear() {
 function checkNow() {
     if (!state.puzzle) return;
     const result = evaluate(state.marks, state.truth);
-    state.wrong = result.wrong;
+    /*
+     * Nur eine Stelle hervorheben, nicht alle.
+     *
+     * Alle auf einmal rot zu färben verriet halbe Lösungswege - daher die
+     * Warnung im Bestätigungsdialog. Eine Stelle sagt „hier ist es gekippt",
+     * und das ist das, was man wissen will.
+     *
+     * state.wrong traegt deshalb nur diese eine; alles Weitere - Malen,
+     * Zuruecknehmen, Aufraeumen - folgt daraus von selbst.
+     */
+    const earliest = firstWrongMark(state, result.wrong);
+    state.wrong = earliest ? new Set([earliest]) : new Set();
     paintAll();
 
     if (result.solved) { handleSolved(); return; }
-    if (state.wrong.size > 0) {
-        recordFailedCheck(state, state.wrong.size);
+    if (result.wrong.size > 0) {
+        recordFailedCheck(state, result.wrong.size);
         persist();
-        const label = state.wrong.size === 1 ? 'Markierung stimmt' : 'Markierungen stimmen';
-        setStatus(`${state.wrong.size} ${label} nicht – rot hervorgehoben. Die Hervorhebung verschwindet, sobald du weiterspielst.`);
+        const count = result.wrong.size;
+        const label = count === 1 ? 'Markierung stimmt' : 'Markierungen stimmen';
+        // Wie schlimm es steht, bleibt sichtbar. Wo es überall steht, nicht.
+        const which = knowsMarkOrder(state)
+            ? 'Die erste davon ist hervorgehoben.'
+            : 'Eine davon ist hervorgehoben.';
+        setStatus(`${count} ${label} nicht. ${which} `
+            + 'Die Hervorhebung verschwindet, sobald du weiterspielst.');
         return;
     }
     setStatus(`Bisher alles richtig. Es fehlen noch ${result.missing} sichere Zuordnungen.`, true);

@@ -343,3 +343,47 @@ test('a room link still opens the duel, which is what it is for', async ({ page 
   await expect(page.locator('#screen-duel-entry')).toHaveClass(/is-active/);
   await expect(page.locator('#duel-entry-hint')).not.toBeEmpty();
 });
+
+/*
+ * „Prüfen" zeigt eine Stelle, nicht alle.
+ *
+ * Vorher wurde jede falsche Markierung auf einmal rot - wer fünf rote Felder
+ * sieht, bekommt die halbe Lösung geschenkt, und genau davor warnte der
+ * Bestätigungsdialog. Eine Stelle sagt „hier ist es gekippt", und das ist das,
+ * was man wissen will.
+ *
+ * Dass es die FRÜHESTE ist, ist der eigentliche Gehalt: irgendeine zu zeigen
+ * wäre beliebig, die erste ist der Punkt, ab dem alles Weitere darauf aufbaut.
+ */
+test('Pruefen hebt nur den ersten falschen Schluss hervor', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await withPlayer(page);
+  await page.goto('/');
+  await generateAndPlay(page);
+
+  await page.locator('#play-view').click();
+  await expect(page.locator('#screen-play')).toHaveAttribute('data-view', 'pager');
+  await page.locator('#overview-mark-yes').click();
+
+  // Drei sichere Zuordnungen in derselben Zeile: höchstens eine kann stimmen,
+  // also sind mindestens zwei falsch - ohne die Lösung zu kennen.
+  const cells = page.locator('.play-pager .pair-page').first().locator('.cell');
+  const keys: string[] = [];
+  for (const index of [0, 1, 2]) {
+    const cell = cells.nth(index);
+    keys.push((await cell.getAttribute('data-key'))!);
+    await cell.click();
+  }
+
+  await page.locator('#play-check').click();
+  await page.locator('#confirm-ok').click();
+
+  const status = await page.locator('#play-status').textContent();
+  expect(status, 'die Gesamtzahl bleibt sichtbar').toMatch(/[2-9] Markierungen stimmen nicht/);
+  expect(status).toContain('Die erste davon ist hervorgehoben');
+
+  // Genau eine Stelle, und zwar die zuerst getippte.
+  await expect(page.locator('.play-pager .cell.is-wrong')).toHaveCount(1);
+  await expect(page.locator(`.play-pager .cell[data-key="${keys[0]}"]`)).toHaveClass(/is-wrong/);
+});

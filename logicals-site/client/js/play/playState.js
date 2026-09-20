@@ -81,6 +81,41 @@ export function recordFailedCheck(state, wrongCount) {
 }
 
 /**
+ * Die früheste falsche Markierung, nach Tipp-Reihenfolge.
+ *
+ * „Prüfen" hob jede falsche Markierung auf einmal hervor - deshalb warnt der
+ * Bestätigungsdialog, das könne Lösungswege verraten. Wer fünf Felder rot
+ * sieht, bekommt die halbe Lösung geschenkt. Eine einzige Stelle verrät
+ * weniger und lehrt mehr: nicht „hier ist überall etwas faul", sondern „hier
+ * ist es gekippt".
+ *
+ * Der Undo-Stapel ist die Reihenfolge: jeder Eintrag ein Tipp, und innerhalb
+ * eines Eintrags steht die eigene Markierung vor den Kreuzen, die sie
+ * erzwungen hat. Bei einer falschen Bestätigung zeigt das damit die Ursache
+ * statt des abgeleiteten Symptoms.
+ *
+ * Nach einem Neustart ist der Stapel leer - die Rücknahme-Historie gehört zur
+ * Sitzung, nicht zum Spielstand. Dann kommt irgendeine der falschen Stellen
+ * zurück; der Aufrufer darf sie nur nicht „die erste" nennen.
+ *
+ * @returns {string|null} ein Zellenschlüssel, oder null wenn nichts falsch ist
+ */
+export function firstWrongMark(state, wrong) {
+    if (!wrong || wrong.size === 0) return null;
+    for (const change of state.undo) {
+        for (const { key } of change.marks) {
+            if (wrong.has(key)) return key;
+        }
+    }
+    return wrong.values().next().value ?? null;
+}
+
+/** Ob die Reihenfolge überhaupt bekannt ist - siehe firstWrongMark. */
+export function knowsMarkOrder(state) {
+    return state.undo.length > 0;
+}
+
+/**
  * Sets one cell and maintains the crosses its confirmation implies.
  *
  * The whole change - the cell, every cross added or withdrawn, and the
