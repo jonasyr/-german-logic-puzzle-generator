@@ -539,20 +539,44 @@ summary {
     gap: var(--space-2);
     margin: 0 0 var(--space-4);
 }
+/*
+ * Drei Kacheln, deren Beschriftungen nicht ineinanderlaufen.
+ *
+ * "FEHLPRUEFUNGEN" ist bei 11px und .05em Sperrung breiter als eine Kachel
+ * auf einem 375px-Schirm. Ohne Umbruch lief es ueber den Rand hinaus und
+ * stiess auf dem Geraet ohne Luecke an "MARKIERUNGEN" - zwei Woerter, die
+ * als eines gelesen wurden.
+ *
+ * Das Wort darf jetzt umbrechen, mit Trennung wo die Engine sie kennt. Weil
+ * die Kacheln als Rasterkinder ohnehin gleich hoch sind, haelt
+ * `margin-top: auto` die Zahlen trotzdem auf einer Linie, egal ob die
+ * Beschriftung darueber ein- oder zweizeilig ist.
+ */
 .solved__stat {
     padding: var(--space-3) var(--space-2);
     border: var(--hairline) solid var(--line);
     border-radius: var(--radius);
     text-align: center;
+    display: flex;
+    flex-direction: column;
 }
 .solved__stat dt {
     font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: .05em;
+    letter-spacing: .03em;
+    line-height: 1.3;
     color: var(--muted);
+    /* Manuelle Trennung im Markup (&shy;); `manual` achtet sie und erfindet
+       keine eigenen Stellen. `anywhere` bleibt als letzte Rettung fuer sehr
+       schmale Schirme. */
+    -webkit-hyphens: manual;
+    hyphens: manual;
+    overflow-wrap: anywhere;
 }
 .solved__stat dd {
     margin: var(--space-1) 0 0;
+    margin-top: auto;                  /* Zahlen auf einer Linie - siehe oben */
+    padding-top: var(--space-1);
     font-size: 20px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;

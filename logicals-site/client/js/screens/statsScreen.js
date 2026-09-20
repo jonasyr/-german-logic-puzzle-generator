@@ -60,7 +60,15 @@ function personalSection(stats) {
         list.append(statRow('Fehlprüfungen', `${de(earlier)} → ${de(later)} ${trend}`));
     }
 
-    list.append(statRow('Serie', `${stats.streak} ${stats.streak === 1 ? 'Tag' : 'Tage'}`));
+    /*
+     * "Serie" allein beantwortet nicht, woraus sie besteht.
+     *
+     * Gezaehlt werden ausschliesslich Tagesraetsel (siehe dailyStreak). Wer
+     * zwei Sammlungsraetsel geloest hat und dann "Serie 0 Tage" liest, haelt
+     * das fuer einen Fehler - so geschehen. Der Zusatz kostet nichts und
+     * beantwortet die Frage an Ort und Stelle.
+     */
+    list.append(statRow('Serie (Tagesrätsel)', `${stats.streak} ${stats.streak === 1 ? 'Tag' : 'Tage'}`));
     list.append(statRow('Gesamtzeit', formatSpan(stats.totalMs)));
     if (stats.best) list.append(statRow('Beste Zeit', formatDuration(stats.best.elapsedMs)));
     if (stats.longest) list.append(statRow('Längstes Rätsel', formatDuration(stats.longest.elapsedMs)));

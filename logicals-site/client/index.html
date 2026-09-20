@@ -400,6 +400,9 @@
                 <div class="overview-viewport" id="overview-viewport">
                     <canvas id="overview-canvas" aria-hidden="true"></canvas>
                     <div class="overview-mirror" id="overview-mirror"></div>
+                    <!-- aria-hidden: der Spiegel daneben traegt die Bedeutung fuer
+                         Screenreader, die Uebersicht ist rein visuell. -->
+                    <p class="overview-minimap-label" aria-hidden="true">Übersicht</p>
                     <canvas class="overview-minimap" id="overview-minimap" width="152" height="152" aria-hidden="true"></canvas>
                 </div>
                 <div class="overview-actions">
@@ -517,12 +520,19 @@
                 <dt>Zeit</dt>
                 <dd id="solved-time">0:00</dd>
             </div>
+            <!-- Weiche Trennstriche, kein Verlass auf die Engine.
+                 "FEHLPRUEFUNGEN" passt bei 375px nicht in eine Kachel. Wo es
+                 bricht, entscheidet sonst der Browser - und Chromium bringt
+                 keine deutschen Trennmuster mit, bricht also mitten im Wort
+                 ("FEHLPRUEFU/NGEN"). Bei festen Oberflaechentexten muss man
+                 sich darauf nicht verlassen: &shy; setzt die Stelle selbst,
+                 sichtbar nur wenn wirklich umbrochen wird. -->
             <div class="solved__stat">
-                <dt>Fehlprüfungen</dt>
+                <dt>Fehl&shy;prüfungen</dt>
                 <dd id="solved-checks">0</dd>
             </div>
             <div class="solved__stat">
-                <dt>Markierungen</dt>
+                <dt>Markie&shy;rungen</dt>
                 <dd id="solved-marks">0</dd>
             </div>
         </dl>

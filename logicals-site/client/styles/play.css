@@ -72,11 +72,19 @@
     line-height: 1.25;
     flex: 1;
     min-width: 0;
+    /*
+     * Eine Zeile mit Auslassungspunkten - keine Klammerung.
+     *
+     * Hier stand `display: -webkit-box` mit `-webkit-line-clamp: 2`. Die
+     * konnte nie wirken, weil `.bar h2` `white-space: nowrap` setzt: bei
+     * nowrap gibt es keine zweite Zeile zum Klammern. Schlimmer, in dieser
+     * Kombination zeigt Safari die Auslassungspunkte NICHT - auf dem Geraet
+     * brach der Titel hart ab ("1. Finale beim Street-Food-Fe"), als waere er
+     * abgeschnitten statt gekuerzt. Ohne die tote Regel bleibt das schlichte
+     * Muster uebrig, das ueberall sonst in der App funktioniert.
+     */
     overflow: hidden;
     text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
 }
 
 .timer {
@@ -603,6 +611,40 @@
  * half is the UPPER LEFT triangle and the dead space is the lower right. Parked
  * top right - as it was - the minimap sat squarely on the first row block.
  */
+/*
+ * Die Uebersicht traegt ihren Namen.
+ *
+ * Unbeschriftet und ueber dem Gitter schwebend haben drei Durchsichten sie
+ * unabhaengig fuer einen Darstellungsfehler gehalten - "ein loses Kaestchen
+ * ohne erkennbaren Zweck". Sie ist keiner: sie zeigt, welcher Ausschnitt des
+ * Gitters gerade sichtbar ist.
+ *
+ * Die Beschriftung sitzt IN der Kachel auf ihrer Oberkante, nicht daneben -
+ * so kostet sie keinen zusaetzlichen Platz und kann nichts weiter verdecken.
+ */
+.overview-minimap-label {
+    position: absolute;
+    /*
+     * Ausdruecklich UEBER der Kachel verankert.
+     *
+     * Ohne `bottom` faellt ein absolut positioniertes Element auf die Stelle
+     * zurueck, an der es im Fluss gestanden haette - hier ganz oben, direkt
+     * unter den Kategorie-Ueberschriften. Dort las sich "UEBERSICHT" wie eine
+     * weitere Kategorie neben "ANKUNFT": schlimmer als gar keine
+     * Beschriftung. Die Zahl ist die Hoehe der Kachel plus ihr Abstand.
+     */
+    right: 6px;
+    bottom: calc(6px + 76px);
+    margin: 0 0 2px;
+    width: 76px;
+    text-align: center;
+    font-size: 9px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    pointer-events: none;
+    z-index: 1;
+}
 .overview-minimap {
     position: absolute; right: 6px; bottom: 6px;
     width: 76px; height: 76px;
@@ -1032,7 +1074,7 @@
     #app:has(#screen-play.is-active) { max-width: 1340px; }
 
     .play-bar { position: static; padding-top: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
-    .play-bar h2 { font-size: 22px; -webkit-line-clamp: 1; }
+    .play-bar h2 { font-size: 22px; }
     .play-toolbar { position: static; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
     .timer { font-size: 22px; padding: 4px 14px; min-width: 84px; }
 
@@ -1260,6 +1302,7 @@
     }
 
     .overview-minimap { width: 58px; height: 58px; }
+    .overview-minimap-label { width: 58px; bottom: calc(6px + 58px); font-size: 8px; }
     .clues-sheet { height: 92vh; height: 92svh; }
     .sheet-handle { padding: var(--space-1) 0 0; }
     /* min-height stays at the 44pt floor: the header is a button. */
@@ -1324,6 +1367,6 @@
         text-overflow: ellipsis;
     }
     .play-bar { padding-top: max(4px, var(--safe-top)); padding-bottom: 4px; }
-    .play-bar h2 { font-size: 15px; -webkit-line-clamp: 1; }
+    .play-bar h2 { font-size: 15px; }
     .play-toolbar { padding: 4px 0; }
 }
