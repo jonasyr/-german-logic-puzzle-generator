@@ -103,9 +103,22 @@ for (const device of DEVICES) {
       const left = parseFloat(style.getPropertyValue('--overview-gutter-left'));
       const top = parseFloat(style.getPropertyValue('--overview-gutter-top'));
       const ctx = document.createElement('canvas').getContext('2d')!;
-      // The renderer shrinks labels to fit before it ever truncates; 8px is
-      // the floor it will not go below, so that is the guarantee to assert.
-      ctx.font = '8px system-ui, sans-serif';
+      /*
+       * Mit der Groesse messen, die der Renderer wirklich benutzt.
+       *
+       * Hier stand fest 8px - die Untergrenze, unter die er nie geht. Solange
+       * die Beschriftungen dort landeten, war das dasselbe. Seit die Gutter
+       * auf LABEL_TARGET_PX bemessen werden, zeichnet er groesser, und ein
+       * Waechter mit fester Annahme laesst Ueberlauf durch. Eine feste 10
+       * waere ebenso falsch: im Querformat ist der obere Gutter flacher, der
+       * Renderer schrumpft dort weiter, und der Waechter meldete prompt einen
+       * Ueberlauf, den es nicht gab. Also fragen statt annehmen.
+       */
+      const labelPx = parseFloat(
+        getComputedStyle(document.getElementById('overview-canvas')!)
+          .getPropertyValue('--overview-label-px'),
+      ) || 8;
+      ctx.font = `${labelPx}px system-ui, sans-serif`;
       const labels = [...document.querySelectorAll('.overview-mirror__cell')]
         .map(cell => cell.getAttribute('aria-label') ?? '')
         .flatMap(label => {

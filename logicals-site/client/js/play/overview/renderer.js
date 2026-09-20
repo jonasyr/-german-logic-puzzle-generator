@@ -44,11 +44,40 @@ const GUTTER = {
  * same type size, which is what makes the header read as one thing.
  */
 export function computeGutters(ctx, layout, puzzle, cssWidth, cssHeight) {
-    ctx.font = `400 ${LABEL_MAX_PX}px system-ui, sans-serif`;
+    /*
+     * Bemessen am Ziel, nicht am Maximum.
+     *
+     * Bei LABEL_MAX_PX gemessen wachsen die Gutter so weit, dass ein
+     * 5x5-Raetsel bei 375x812 gemessen auf exakt 12.5px Zellgroesse faellt -
+     * die Schwelle, ab der ein Tipp keiner Zelle mehr eindeutig zuzuordnen
+     * ist. Auf der Grenze zu sitzen heisst, dass die naechste Aenderung sie
+     * reisst. LABEL_TARGET_PX laesst Luft und ist immer noch deutlich mehr,
+     * als die Beschriftungen vorher bekamen.
+     */
+    ctx.font = `400 ${LABEL_TARGET_PX}px system-ui, sans-serif`;
     const widest = texts => texts.reduce((max, text) => Math.max(max, ctx.measureText(text).width), 0);
 
+    /*
+     * Der linke Gutter misst sich an BEIDEN Beschriftungssaetzen.
+     *
+     * Vorher nur an den Zeilenbeschriftungen. Da beide Seiten sich eine
+     * Schriftgroesse teilen (drawHeaders, "ONE size for both sides"), und
+     * fontToFit den schmaleren der beiden Raeume als Grenze nimmt, hielt der
+     * linke Gutter die Spaltenbeschriftungen klein - obwohl oben Platz war.
+     *
+     * Gemessen bei 320x568: links 71px, bemessen an "17:00 Uhr" (48px);
+     * oben 83px, bemessen an "Flammkuchen" (69px). Die gemeinsame Grenze war
+     * damit 50px, und "Flammkuchen" musste von 11px auf 8px schrumpfen - die
+     * Untergrenze - obwohl es oben 71px Lauf gehabt haette.
+     *
+     * Wer eine Groesse teilt, muss auch den Platz danach bemessen.
+     */
+    const widestLabel = Math.max(
+        widest(rowLabels(layout, puzzle)),
+        widest(columnLabels(layout, puzzle)),
+    );
     const left = Math.min(
-        Math.max(GUTTER.left.min, widest(rowLabels(layout, puzzle)) + CATEGORY_STRIP + 10),
+        Math.max(GUTTER.left.min, widestLabel + CATEGORY_STRIP + 10),
         Math.max(GUTTER.left.min, cssWidth * GUTTER.left.share),
     );
     const top = Math.min(
@@ -95,6 +124,15 @@ const GLYPH_MIN_CELL_PX = 11;
  */
 const LABEL_MAX_PX = 11;
 const LABEL_MIN_PX = 8;
+/*
+ * Die Groesse, auf die die Gutter bemessen werden.
+ *
+ * Nicht LABEL_MAX_PX: die letzten zwei Pixel Schrift kosten so viel
+ * Gutterbreite, dass ein 5x5-Raetsel auf die Tippschwelle faellt. Gemessen
+ * bei 320x568 kostet dieser Wert dort gar nichts, weil die Einpassung an der
+ * Hoehe haengt, nicht an der Breite.
+ */
+const LABEL_TARGET_PX = 10;
 
 function labelFontPx(cellPx) {
     return Math.max(LABEL_MIN_PX, Math.min(LABEL_MAX_PX, Math.floor(cellPx - 2)));
@@ -308,6 +346,16 @@ function drawHeaders(ctx, { layout, view, puzzle, selected, cssWidth, cssHeight,
         Math.min(gutters.left - CATEGORY_STRIP - 8, gutters.top - 12),
         labelFontPx(size),
     );
+
+    /*
+     * Die gewaehlte Groesse veroeffentlichen, wie die Gutter auch.
+     *
+     * Ein Test kann sie sonst nur annehmen, und eine Annahme war hier schon
+     * falsch: der Waechter mass mit fest 8px, waehrend gezeichnet wurde, was
+     * in den Gutter passte. Die Groesse haengt vom Fenster ab - im Querformat
+     * ist der obere Gutter flacher, also schrumpft sie dort weiter.
+     */
+    ctx.canvas.style.setProperty('--overview-label-px', `${labelPx}px`);
 
     ctx.fillStyle = colors.gutter;
     ctx.fillRect(0, 0, gutters.left, cssHeight);
