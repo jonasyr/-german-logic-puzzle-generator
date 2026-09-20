@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { CELL_SELECTORS, findVeiledCells } from './support/layoutGuard';
 
 async function withPlayer(page: Page) {
   await page.addInitScript(() => Object.defineProperty(navigator, 'maxTouchPoints', { get: () => 5 }));
@@ -381,9 +382,28 @@ test('Pruefen hebt nur den ersten falschen Schluss hervor', async ({ page }) => 
 
   const status = await page.locator('#play-status').textContent();
   expect(status, 'die Gesamtzahl bleibt sichtbar').toMatch(/[2-9] Markierungen stimmen nicht/);
-  expect(status).toContain('Die erste davon ist hervorgehoben');
+  expect(status).toContain('die erste ist hervorgehoben');
+  // Kurz halten. Die Meldung steht jetzt zwar im Fluss statt ueber dem Gitter,
+  // aber jede Zeile, die sie waechst, nimmt die Buehne dem Gitter weg.
+  expect(status!.length, 'die Meldung kostet Buehnenhoehe und muss kurz sein')
+    .toBeLessThan(70);
 
   // Genau eine Stelle, und zwar die zuerst getippte.
   await expect(page.locator('.play-pager .cell.is-wrong')).toHaveCount(1);
   await expect(page.locator(`.play-pager .cell[data-key="${keys[0]}"]`)).toHaveClass(/is-wrong/);
+
+  /*
+   * Und die Stelle muss sichtbar sein.
+   *
+   * Das ist der Punkt, an dem die Meldung einmal versagt hat: sie lag als
+   * Overlay auf der Zeile, deren Markierung sie hervorhob. Weil sie Tipps
+   * durchliess, blieb der Verdeckungs-Waechter gruen - eine Meldung, die auf
+   * eine unsichtbare Zelle zeigt, ist schlimmer als gar keine.
+   *
+   * Bewusst bei 320x568 geprueft, der engsten Ansicht: dort war der Schaden am
+   * groessten, und dort faellt ein Rueckfall zuerst auf.
+   */
+  await page.setViewportSize({ width: 320, height: 568 });
+  const veiled = await findVeiledCells(page, CELL_SELECTORS.pager);
+  expect(veiled, `verhuellte Zellen: ${JSON.stringify(veiled)}`).toEqual([]);
 });

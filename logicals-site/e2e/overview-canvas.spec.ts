@@ -835,7 +835,13 @@ test('the single-pair view shows which marks contradict each other', async ({ pa
   const second = row.locator('.cell').nth(1);
 
   await first.click();
-  await expect(page.locator('#play-status')).toHaveText('');
+  /*
+   * Eine einzelne Bestaetigung widerspricht noch nichts - die Zeile sagt dann
+   * weiter, was ein Tipp bewirkt. Sie ist dauerhaft reserviert, damit eine
+   * erscheinende Meldung das Gitter weder verdeckt noch verschiebt; "keine
+   * Meldung" heisst deshalb Ruhefassung, nicht leer.
+   */
+  await expect(page.locator('#play-status')).toContainText('Tippen setzt eine sichere Zuordnung');
 
   await second.click();
   await expect(page.locator('#play-status')).toContainText('widersprechen sich');
@@ -865,7 +871,9 @@ test('the single-pair view shows which marks contradict each other', async ({ pa
 
   // Undo takes the contradiction away - and with it the marking on both cells.
   await page.locator('#play-undo').click();
-  await expect(page.locator('#play-status')).toHaveText('');
+  // Die Zeile faellt in die Ruhefassung zurueck, nicht auf leer - siehe oben.
+  await expect(page.locator('#play-status')).not.toContainText('widersprechen sich');
+  await expect(page.locator('#play-status')).toContainText('Tippen setzt eine sichere Zuordnung');
   await expect(first).not.toHaveClass(/is-conflict/);
   await expect(second).not.toHaveClass(/is-conflict/);
 });

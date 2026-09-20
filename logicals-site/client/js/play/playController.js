@@ -159,9 +159,36 @@ function clearWrongMarks() {
     keys.forEach(paintCell);
 }
 
+/*
+ * Was die Zeile sagt, wenn es nichts zu melden gibt.
+ *
+ * Die Zeile ist dauerhaft reserviert, damit eine erscheinende Meldung das
+ * Gitter weder verdeckt noch verschiebt - die beiden Regeln, die sich vorher
+ * gegenseitig ausschlossen. Eine dauerhaft leere Zeile waere verschenkte
+ * Gitterhoehe, also traegt sie im Ruhezustand die eine Auskunft, die hier immer
+ * gilt: was ein Tipp auf eine Zelle gerade bewirkt.
+ *
+ * Bisher stand das nur in der Gesamtansicht, als "TIPPEN MARKIERT" in
+ * Versalien - eine Behauptung, keine Antwort auf "was passiert, wenn ich
+ * tippe?". Das Verb sagt es direkt.
+ */
+const TOOL_WORDS = {
+    no: 'schließt aus',
+    yes: 'setzt eine sichere Zuordnung',
+    maybe: 'vermerkt eine Vermutung',
+    clear: 'löscht die Markierung',
+};
+
+function idleStatus() {
+    const current = tool?.current?.();
+    if (!current) return 'Kein Werkzeug gewählt – tippe eines unten an.';
+    return `Tippen ${TOOL_WORDS[current] ?? 'markiert'}.`;
+}
+
 function setStatus(message, isGood = false) {
     const node = el('play-status');
-    node.textContent = message;
+    // Leer heisst hier nicht leer, sondern "nichts Besonderes" - siehe oben.
+    node.textContent = message || idleStatus();
     node.classList.toggle('status-good', isGood);
     node.classList.remove('is-error');
 }
@@ -332,7 +359,7 @@ function requestCheck() {
         title: 'Markierungen prüfen?',
         text: 'Die erste falsche Markierung wird hervorgehoben. '
             + 'Wie viele es insgesamt sind, erfährst du dazu.',
-        confirmLabel: 'Fehler anzeigen',
+        confirmLabel: 'Stelle zeigen',
         onConfirm: checkNow,
     });
 }
@@ -378,12 +405,19 @@ function checkNow() {
         persist();
         const count = result.wrong.size;
         const label = count === 1 ? 'Markierung stimmt' : 'Markierungen stimmen';
-        // Wie schlimm es steht, bleibt sichtbar. Wo es überall steht, nicht.
-        const which = knowsMarkOrder(state)
-            ? 'Die erste davon ist hervorgehoben.'
-            : 'Eine davon ist hervorgehoben.';
-        setStatus(`${count} ${label} nicht. ${which} `
-            + 'Die Hervorhebung verschwindet, sobald du weiterspielst.');
+        /*
+         * Kurz halten - die Zeile liegt ÜBER dem Gitter.
+         *
+         * Die erste Fassung hängte "Die erste davon ist hervorgehoben." an den
+         * bisherigen Satz an, ohne etwas zu streichen. Bei 320x568 wurden
+         * daraus vier Zeilen, die das gesamte Gitter verdeckten - samt der
+         * hervorgehobenen Stelle, von der die Meldung gerade sprach.
+         *
+         * Dass die Hervorhebung beim Weiterspielen verschwindet, lernt man
+         * einmal und liest es danach nie wieder; es kostete zwei Zeilen.
+         */
+        const which = knowsMarkOrder(state) ? 'die erste ist' : 'eine ist';
+        setStatus(`${count} ${label} nicht – ${which} hervorgehoben.`);
         return;
     }
     setStatus(`Bisher alles richtig. Es fehlen noch ${result.missing} sichere Zuordnungen.`, true);
@@ -628,9 +662,17 @@ export function initPlay() {
          * Startwerkzeug 'no' ist und der Zweig dann nur eine ohnehin leere
          * Zeile leert. Die Reihenfolge nicht ohne diesen Punkt ändern.
          */
-        onChange: current => {
-            if (!current) setStatus('Kein Werkzeug gewählt – tippe eines unten an.');
-            else if (el('play-status').textContent.startsWith('Kein Werkzeug')) setStatus('');
+        onChange: () => {
+            /*
+             * Die Ruhefassung nachziehen, eine echte Meldung aber stehen
+             * lassen. Wer nach dem Pruefen das Werkzeug wechselt, um die
+             * gefundene Stelle zu berichtigen, soll nicht verlieren, was dort
+             * gerade steht - das Ergebnis weicht erst der naechsten Handlung.
+             */
+            const shown = el('play-status').textContent;
+            if (shown === '' || shown.startsWith('Tippen ') || shown.startsWith('Kein Werkzeug')) {
+                setStatus('');
+            }
         },
     });
 

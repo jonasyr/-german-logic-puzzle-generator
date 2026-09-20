@@ -64,10 +64,14 @@ export type Occlusion = { index: number; label: string; covering: string };
 /**
  * Zellen, deren Mittelpunkt ein anderes Element liefert.
  *
- * `elementFromPoint` respektiert `pointer-events: none`. Ein Hinweis, der
- * absichtlich ueber dem Gitter schwebt, traegt das und wird uebersprungen; ein
- * Element, das einen Tipp schluckt, traegt es nicht und faellt auf. Genau diese
- * Grenze ist die, die den Spieler interessiert.
+ * `elementFromPoint` respektiert `pointer-events: none`. Ein Element, das einen
+ * Tipp schluckt, traegt das nicht und faellt hier auf.
+ *
+ * ACHTUNG, das ist nur die halbe Frage. Ein Element mit `pointer-events: none`
+ * laesst den Tipp durch und ist fuer diesen Waechter unsichtbar - es kann die
+ * Zelle trotzdem vollstaendig verdecken. Genau so kam die Pruef-Meldung durch:
+ * sie lag deckend ueber der Zeile, deren falsche Markierung sie ankuendigte,
+ * und blieb hier gruen. Fuer die Sicht ist `findVeiledCells` zustaendig.
  */
 export async function findOccludedCells(page: Page, selector: string): Promise<Occlusion[]> {
   return page.evaluate(({ sel, context }) => {
@@ -104,6 +108,79 @@ export async function findOccludedCells(page: Page, selector: string): Promise<O
     });
     return found;
   }, { sel: selector, context: CELL_CONTEXT[selector] ?? null });
+}
+
+/**
+ * Zellen, die ein deckendes Element verhuellt - auch wenn der Tipp durchgeht.
+ *
+ * Die Gegenprobe zu `findOccludedCells`. Dort zaehlt, was einen Tipp schluckt;
+ * hier zaehlt, was die Sicht nimmt. Der Unterschied ist keine Feinheit: eine
+ * Meldung mit `pointer-events: none` laesst jeden Tipp durch und verdeckt die
+ * Zelle trotzdem. Wer nach dem Pruefen erfaehrt, eine Markierung sei
+ * hervorgehoben, und die Hervorhebung liegt unter der Meldung, hat von beidem
+ * nichts.
+ *
+ * Gesucht werden sichtbare Elemente mit deckendem Hintergrund, die sich mit
+ * einer Zelle ueberlappen. Die Zelle gilt als verhuellt, sobald mehr als ein
+ * Drittel ihrer Flaeche darunter liegt - ein Streifen am Rand ist Layout,
+ * ein Drittel ist Verlust.
+ */
+export async function findVeiledCells(page: Page, selector: string): Promise<Occlusion[]> {
+  return page.evaluate(({ sel, veilLimit, context }) => {
+    const describe = (node: Element): string => {
+      const id = node.id ? `#${node.id}` : '';
+      const cls = typeof node.className === 'string' && node.className
+        ? `.${node.className.trim().split(/\s+/).join('.')}` : '';
+      return `${node.tagName.toLowerCase()}${id}${cls}`;
+    };
+
+    /* Deckend heisst: eigener Hintergrund mit Alpha, sichtbar, nicht leer. */
+    const veils = [...document.querySelectorAll<HTMLElement>('body *')].filter(node => {
+      const style = getComputedStyle(node);
+      if (style.visibility === 'hidden' || style.display === 'none') return false;
+      if (Number(style.opacity) < 0.5) return false;
+      const bg = style.backgroundColor;
+      const alpha = bg.startsWith('rgba') ? Number(bg.split(',')[3]?.replace(')', '') ?? '1') : 1;
+      if (bg === 'transparent' || alpha < 0.5) return false;
+      const rect = node.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    });
+
+    /*
+     * Dieselbe Grenze wie in findOccludedCells: weggescrollt ist nicht
+     * verdeckt. Eine Zelle, die unter dem Hinweisblatt liegt, weil das Gitter
+     * dorthin gescrollt ist, bleibt einen Wisch entfernt erreichbar. Ohne
+     * diesen Ausschluss meldet der Waechter das halbe Gitter und wird damit
+     * wertlos - ein Waechter, der immer schreit, wird abgeschaltet.
+     */
+    const viewport = context ? document.querySelector(context.root) : null;
+    const clip = viewport ? viewport.getBoundingClientRect() : null;
+
+    const found: { index: number; label: string; covering: string }[] = [];
+    [...document.querySelectorAll(sel)].forEach((cell, index) => {
+      const rect = cell.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) return;
+      if (clip && (x < clip.left || x > clip.right || y < clip.top || y > clip.bottom)) return;
+      const area = rect.width * rect.height;
+      for (const veil of veils) {
+        if (veil.contains(cell) || cell.contains(veil)) continue;  // Vorfahr, kein Schleier
+        const other = veil.getBoundingClientRect();
+        const overlap = Math.max(0, Math.min(rect.right, other.right) - Math.max(rect.left, other.left))
+          * Math.max(0, Math.min(rect.bottom, other.bottom) - Math.max(rect.top, other.top));
+        if (overlap / area <= veilLimit) continue;
+        found.push({
+          index,
+          label: cell.getAttribute('aria-label') ?? (cell.textContent ?? '').trim(),
+          covering: describe(veil),
+        });
+        return;
+      }
+    });
+    return found;
+  }, { sel: selector, veilLimit: 1 / 3, context: CELL_CONTEXT[selector] ?? null });
 }
 
 /**

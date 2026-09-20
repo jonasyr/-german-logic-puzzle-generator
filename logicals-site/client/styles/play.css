@@ -147,35 +147,69 @@
  *
  * Reserving a line was not enough: "... rot hervorgehoben. Die Hervorhebung
  * verschwindet, sobald du weiterspielst." wraps to two lines on a 375px screen,
- * so any fixed reservation is sometimes wrong. It is an overlay on the stage
- * instead, which cannot resize anything at all - and it sits at the bottom,
- * clear of the column headers along the top edge.
+ * so any fixed reservation is sometimes wrong. It became an overlay on the
+ * stage instead, which cannot resize anything at all.
  *
- * Moving it out of .play-head also fixes a quieter fault: landscape hides the
- * head entirely, so a Pruefen message was invisible there.
+ * DAS WAR DER FEHLER, und er kostete genau das, was die Meldung leisten soll.
+ * Ein Overlay am unteren Buehnenrand liegt auf dem Gitter. Seit "Pruefen" nur
+ * noch EINE Stelle hervorhebt, zeigt die Meldung auf eine bestimmte Zelle - und
+ * verdeckte sie bei 320px zur Haelfte, bei 390px die ganze Zeile. Weil sie
+ * `pointer-events: none` trug, ging jeder Tipp durch und `findOccludedCells`
+ * meldete nichts; die Luecke schliesst jetzt `findVeiledCells`.
+ *
+ * Also zurueck in den Fluss, in die .play-head neben den Duell-Stand. Die
+ * Buehne wird dadurch kleiner, wenn eine Meldung da ist - das ist der Preis,
+ * und er ist billiger als eine verdeckte Zelle. Der Refit erhaelt den Zoom
+ * inzwischen, weshalb der Reflow nicht mehr weh tut.
+ *
+ * Bleibt der Grund, aus dem sie damals ueberhaupt aus der Head auszog: das
+ * Querformat blendet die Head aus, dort waere die Meldung unsichtbar. Dafuer
+ * steht unten eine Ausnahme - im Querformat erscheint die Head allein fuer die
+ * Meldung, ohne die Zielfrage, die dort weiterhin ins Hinweisblatt gehoert.
  */
 .play-status {
-    position: absolute;
-    left: 0;
-    right: 0;
-    /*
-     * Above the action bar, not over it. The bar is one tap-target tall by
-     * definition, and the sheet peek is already named, so the offset is built
-     * from those two rather than from a measured constant that would rot.
-     */
-    bottom: calc(var(--stage-foot) + var(--tap-min) + var(--space-2) * 2);
-    z-index: 4;                 /* under the "Pausiert" veil at 5 */
     margin: 0;
     padding: var(--space-2) var(--space-3);
     border: var(--hairline) solid var(--line);
     border-radius: 10px;
     background: var(--surface);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, .12);
     font-size: 14px;
-    /* A message must never swallow a tap meant for the grid underneath. */
-    pointer-events: none;
+    line-height: 1.35;
+    /*
+     * Platz fuer zwei Zeilen, immer.
+     *
+     * Genau hier lag der alte Zielkonflikt. Eine Zeile zu reservieren war zu
+     * wenig, weil die Meldung bei 320px umbricht; gar nichts zu reservieren
+     * hiess, das Gitter beim Pruefen springen zu lassen. Zwei Zeilen sind die
+     * gemessene Obergrenze - der Waechter in play-sprint haelt die Meldung
+     * unter 70 Zeichen, und 70 Zeichen brechen bei 320px auf zwei Zeilen.
+     *
+     * Wird die Meldung je laenger, springt das Gitter wieder. Deshalb ist die
+     * Laengengrenze ein Test und keine Bitte.
+     *
+     * Polster und Rahmen gehoeren ausdruecklich in die Rechnung: die Box zaehlt
+     * border-box, `min-height: 2 * 1.35em` deckte damit gemessen nur EINE
+     * Textzeile, und das Gitter sprang beim Pruefen von 214 auf 232.
+     */
+    min-height: calc(2 * 1.35em + var(--space-2) * 2 + var(--hairline) * 2);
 }
-.play-status:empty { display: none; }
+
+/*
+ * Auf dem Telefon so schmal wie moeglich.
+ *
+ * Die Reservierung kostet Gitterhoehe, und zwar dauerhaft - bei 320x568 waren
+ * die vollen 56px rund ein Zehntel des Schirms, genug, dass der Waechter
+ * "nichts verdeckt das Gitter" ausschlug. Kleinere Schrift und knapperes
+ * Polster druecken zwei Zeilen auf rund 44px, ohne dass die Zeile aufhoert,
+ * lesbar zu sein.
+ */
+@media (max-width: 899px) {
+    .play-status {
+        padding: var(--space-1) var(--space-2);
+        font-size: 13px;
+        min-height: calc(2 * 1.35em + var(--space-1) * 2 + var(--hairline) * 2);
+    }
+}
 .sheet-body .result-sub { font-size: 15px; margin: 0 0 var(--space-3); }
 
 /*
@@ -818,23 +852,6 @@
     }
     .screen--play[data-view="pager"] .play-overview { grid-row: 2; }
     .screen--play[data-view="pager"] .overview-actions { position: static; }
-    /*
-     * Die Statuszeile bleibt ein Overlay, sitzt aber jetzt im Bereich der ersten
-     * Zeile: ein absolut positioniertes Grid-Kind wird an seinem eigenen
-     * Grid-Bereich ausgerichtet, nicht am ganzen Container. Damit hängt ihr
-     * Abstand nicht mehr an der Höhe der Werkzeugreihe.
-     */
-    .screen--play[data-view="pager"] .play-status {
-        /*
-         * Beide Linien ausdrücklich. "grid-row: 1" heißt Startlinie 1 und Ende
-         * `auto`, und `auto` löst bei absolut positionierten Kindern auf die
-         * Polsterkante des Containers auf - der Bereich umfasste damit die
-         * ganze Bühne, und die Meldung landete gemessen bei 804 statt über der
-         * Werkzeugreihe bei 672.
-         */
-        grid-row: 1 / 2;
-        bottom: var(--space-2);
-    }
 }
 .screen--play[data-view="overview"] .play-pager { display: none; }
 
@@ -993,8 +1010,7 @@
          */
         overflow: hidden;
     }
-    .screen--play[data-view="pager"] .play-pager,
-    .screen--play[data-view="pager"] .play-status { grid-row: auto; }
+    .screen--play[data-view="pager"] .play-pager { grid-row: auto; }
     .screen--play[data-view="pager"] .play-overview {
         grid-row: auto;
         grid-template-columns: minmax(0, 1fr);
@@ -1087,10 +1103,6 @@
      * here put the message in the middle of the grid, over the row labels.
      */
     .play-stage { --stage-foot: calc(60px + var(--safe-bottom)); }
-    .play-status {
-        bottom: calc(var(--stage-foot) + var(--space-2));
-        right: calc(150px + var(--space-3));
-    }
 
     /*
      * A 375px-tall window has no room for the story, the target question and the
@@ -1099,7 +1111,48 @@
      * The narrative belongs to the clue sheet, which is one tap away; the grid
      * is what landscape is for.
      */
-    .play-head { display: none; }
+    /*
+     * Im Querformat bleibt von der Head nur die Statuszeile.
+     *
+     * Ausgeblendet wurde sie hier, weil Zielfrage und Erzaehlung das Gitter
+     * unter die Kante drueckten - bei 375px Hoehe begann es gemessen erst bei
+     * y=243. Die Zielfrage bleibt deshalb weg; fuer sie ist das Hinweisblatt
+     * einen Tipp entfernt.
+     *
+     * Die Statuszeile darf nicht mitverschwinden. Sonst laeuft "Pruefen" im
+     * Querformat vollstaendig ins Leere: der Spieler bestaetigt einen Dialog,
+     * eine Markierung wird hervorgehoben, und nichts sagt ihm, welche oder wie
+     * viele es sind. Zwei Zeilen sind dafuer zu verschmerzen - die Zielfrage,
+     * die hier eingespart wird, war deutlich hoeher.
+     */
+    /*
+     * Die Statuszeile zieht in die Seitenspalte, nicht ueber das Gitter.
+     *
+     * Im Querformat ist Hoehe knapp und Breite reichlich - deshalb sitzen die
+     * Werkzeuge hier schon in einer 150px-Spalte rechts. Die Zeile dort
+     * einzuhaengen kostet null Gitterhoehe: reserviert man sie stattdessen im
+     * Fluss, faellt die eingepasste Zelle unter die 12.5px-Schwelle, ab der ein
+     * Tipp keiner Zelle mehr eindeutig zuzuordnen ist. Gemessen, nicht
+     * geschaetzt - der Waechter "the whole grid fits above the tap floor"
+     * schlug genau dort an.
+     *
+     * Die Zielfrage bleibt weg; fuer sie ist das Hinweisblatt einen Tipp
+     * entfernt. Verdeckt wird nichts: die Spalte enthaelt keine Gitterzellen,
+     * und `findVeiledCells` haelt das nach.
+     */
+    .play-head { display: block; margin-bottom: var(--space-1); }
+    .play-head .goal { display: none; }
+    .play-status {
+        font-size: 12px;
+        padding: 2px var(--space-2);
+        /* Eine Zeile, nicht zwei: im Querformat ist die Zeile breit genug,
+           dass die Meldungen hineinpassen, und jede reservierte Zeile geht
+           hier direkt von der Zellgroesse ab. */
+        min-height: calc(1.35em + 4px + var(--hairline) * 2);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
     .play-bar { padding-top: max(4px, var(--safe-top)); padding-bottom: 4px; }
     .play-bar h2 { font-size: 15px; -webkit-line-clamp: 1; }
     .play-toolbar { padding: 4px 0; }

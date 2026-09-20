@@ -72,7 +72,18 @@ function chapterRow(chapter) {
     row.append(make('h3', { text: chapter.title }));
     row.append(make('p', {
         className: 'list-row__score',
-        text: done ? `${part.solved}/${part.total} ✓` : `${part.solved}/${part.total}`,
+        /*
+         * Eine Schreibweise fuer Fortschritt in der ganzen App: "x von y".
+         *
+         * Vorher stand hier "2/12", waehrend die Kopfzeile "3 von 120 geloest"
+         * und die Kapitelseite "1 von 12 geloest" sagten - drei Notationen fuer
+         * dieselbe Aussage, zwei davon einen Tap auseinander. Schlimmer noch:
+         * die Zeile unter "Weiter spielen" nannte eine RAETSELNUMMER in
+         * derselben Form, sodass "3/12" und "2/12" fuer dasselbe Kapitel
+         * Verschiedenes bedeuteten. Die Nummer heisst jetzt "Nr. 3", der
+         * Fortschritt ueberall "x von y".
+         */
+        text: done ? `${part.solved} von ${part.total} ✓` : `${part.solved} von ${part.total}`,
     }));
 
     /*
@@ -191,7 +202,18 @@ function drawCollection() {
         button.hidden = false;
         button.onclick = () => play(chapter, entry);
         next.hidden = false;
-        next.textContent = `${chapter.title} · ${entry.number} von ${chapter.entries.length}`;
+        /*
+         * Keine "x/12"-Schreibweise hier.
+         *
+         * "3 von 12" liess bei 320px die 12 allein auf der zweiten Zeile
+         * stehen; "3/12" haelt das Paar zwar zusammen, steht dann aber
+         * direkt ueber der Kapitelkarte, die mit demselben Titel "2/12"
+         * zeigt - dort aber "zwei geloest". Gleiche Form, zwei Bedeutungen,
+         * 100 Pixel auseinander. Die Nummer heisst jetzt Nummer; sie deckt
+         * sich mit der Numerierung in der Kapitelliste ("3. 5x5 · mittel").
+         * Das geschuetzte Leerzeichen haelt "Nr." und die Ziffer zusammen.
+         */
+        next.textContent = `${chapter.title} · Nr. ${entry.number}`;
         done.hidden = true;
     } else {
         /*

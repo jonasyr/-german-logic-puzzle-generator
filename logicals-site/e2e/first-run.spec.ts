@@ -91,7 +91,16 @@ test('der weggelegte Werkzeug-Zustand wird benannt, ohne das Gitter zu ruehren',
   });
   expect(await findOccludedCells(page, CELL_SELECTORS.overview)).toEqual([]);
 
-  // Und wieder aufnehmen raeumt die Meldung weg.
+  /*
+   * Und wieder aufnehmen raeumt die Meldung weg.
+   *
+   * "Weg" heisst nicht mehr "leer". Die Statuszeile ist dauerhaft reserviert,
+   * damit eine erscheinende Meldung das Gitter weder verdeckt noch verschiebt;
+   * im Ruhezustand nennt sie deshalb das Werkzeug. Geprueft wird also, dass die
+   * Warnung fort ist UND die Zeile wieder sagt, was ein Tipp bewirkt - eine
+   * leere Zeile waere hier inzwischen der Fehler.
+   */
   await page.locator('#overview-mark-no').click();
-  await expect(page.locator('#play-status')).toBeEmpty();
+  await expect(page.locator('#play-status')).not.toContainText('Kein Werkzeug');
+  await expect(page.locator('#play-status')).toContainText('Tippen schließt aus');
 });

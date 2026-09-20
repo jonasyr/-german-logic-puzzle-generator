@@ -46,8 +46,18 @@ function personalSection(stats) {
 
     if (stats.failedChecksTrend) {
         const { earlier, later } = stats.failedChecksTrend;
-        const arrow = later < earlier ? '↓' : later > earlier ? '↑' : '→';
-        list.append(statRow('Fehlprüfungen', `${earlier.toFixed(1)} → ${later.toFixed(1)} ${arrow}`));
+        /*
+         * Deutsches Dezimalkomma, und der Pfeil sagt, wohin er zeigt.
+         *
+         * toFixed liefert "1.0"; auf einem sonst durchgehend deutschen
+         * Bildschirm liest sich der Punkt wie ein Tippfehler. Und ein blosser
+         * Pfeil nennt nur die Richtung, nicht die Wertung: bei Fehlpruefungen
+         * ist "mehr" schlechter, was man dem Zeichen nicht ansieht. Die Deutung
+         * steht deshalb daneben, statt sie dem Leser aufzubuerden.
+         */
+        const de = value => value.toFixed(1).replace('.', ',');
+        const trend = later < earlier ? '↓ besser' : later > earlier ? '↑ schlechter' : '→ gleich';
+        list.append(statRow('Fehlprüfungen', `${de(earlier)} → ${de(later)} ${trend}`));
     }
 
     list.append(statRow('Serie', `${stats.streak} ${stats.streak === 1 ? 'Tag' : 'Tage'}`));
