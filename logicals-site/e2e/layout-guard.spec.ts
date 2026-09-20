@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
-  CELL_SELECTORS, PHONES, expectStableGrid, findOccludedCells,
+  CELL_SELECTORS, PHONES, findOccludedCells, findVeiledCells,
   findUndersizedControls, hasHorizontalScroll, openSoloPuzzle,
 } from './support/layoutGuard';
 
@@ -22,18 +22,36 @@ for (const phone of PHONES) {
   });
 }
 
-test('eine erscheinende Meldung verschiebt das Gitter nicht', async ({ page }) => {
+/*
+ * Eine erscheinende Meldung darf das Gitter VERSCHIEBEN, aber nichts verdecken.
+ *
+ * Hier stand die umgekehrte Regel: die Meldung durfte das Gitter nicht
+ * bewegen. Erfuellen liess sich das nur, indem sie dauerhaft Platz belegte
+ * oder als Overlay auf dem Gitter lag - und das Overlay verdeckte genau die
+ * Zelle, auf die es zeigte. Die dauerhafte Reservierung kostete auf dem
+ * Telefon rund 44px Gitterhoehe.
+ *
+ * Der Auftraggeber hat entschieden: das Gitter so gross wie moeglich, der
+ * Sprung ist der Preis. Geprueft wird deshalb, was geblieben ist - keine
+ * verdeckte und keine verhuellte Zelle, in beiden Ansichten.
+ */
+test('eine erscheinende Meldung verdeckt keine Zelle', async ({ page }) => {
   test.setTimeout(180_000);
   await page.setViewportSize(PHONES[1].viewport);
   await openSoloPuzzle(page);
 
-  await expectStableGrid(page, '#overview-viewport', async () => {
-    // "Pruefen" auf leerem Gitter braucht keine Rueckfrage und schreibt sofort
-    // in die Statuszeile - der kuerzeste Weg zu erscheinendem Text.
-    await page.locator('#play-check').click();
-    await expect(page.locator('#play-status')).not.toBeEmpty();
-  });
+  // "Pruefen" auf leerem Gitter braucht keine Rueckfrage und schreibt sofort
+  // in die Statuszeile - der kuerzeste Weg zu erscheinendem Text.
+  await page.locator('#play-check').click();
+  await expect(page.locator('#play-status')).not.toBeEmpty();
+
   expect(await findOccludedCells(page, CELL_SELECTORS.overview)).toEqual([]);
+  expect(await findVeiledCells(page, CELL_SELECTORS.overview)).toEqual([]);
+
+  await page.locator('#play-view').click();
+  await expect(page.locator('#screen-play')).toHaveAttribute('data-view', 'pager');
+  expect(await findOccludedCells(page, CELL_SELECTORS.pager)).toEqual([]);
+  expect(await findVeiledCells(page, CELL_SELECTORS.pager)).toEqual([]);
 });
 
 /*

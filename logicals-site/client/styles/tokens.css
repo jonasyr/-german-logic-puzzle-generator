@@ -19,9 +19,25 @@
     --surface-raised: #ffffff;
     --pale: #f3f0ea;
 
-    /* Text */
+    /*
+     * Text
+     *
+     * --muted traegt AAA, nicht nur AA.
+     *
+     * Zwei Screenshot-Durchsichten meldeten den Sekundaertext als zu blass.
+     * Gemessen stimmte das nicht: #5b6475 lag bei 5.96:1 auf Weiss, gegen die
+     * 4.5:1, die AA verlangt. Verkleinerte Screenshots lassen Text dunkler
+     * wirken, als er ist.
+     *
+     * Gehoben wurde trotzdem, auf die 7:1 von AAA - der Text traegt Bedeutung
+     * (Fortschritt, Datum, Erklaerungen), und der Abstand nach oben kostet
+     * nichts. Die Werte reichen auf JEDEM Untergrund der App, auch auf
+     * --surface-sunken, dem schwaechsten Fall:
+     *   hell   #4d5566  7.48 auf Weiss, 7.17 auf Papier, 6.58 auf gesenkt
+     *   dunkel #a6b0c4  7.90 auf Karte, 8.68 auf Papier, 7.12 auf gesenkt
+     */
     --text: #172033;
-    --muted: #5b6475;
+    --muted: #4d5566;
     --on-accent: #ffffff;
     --on-ink: #ffffff;
 
@@ -143,7 +159,7 @@
         --pale: #1e2431;
 
         --text: #e9edf5;
-        --muted: #9aa4b8;
+        --muted: #a6b0c4;
         --on-accent: #24120c;
         --on-ink: #e9edf5;
 

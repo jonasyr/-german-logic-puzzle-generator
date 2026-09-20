@@ -654,14 +654,22 @@ test.describe('dark mode', () => {
 });
 
 /*
- * The regression that started the layout-stability rule.
+ * Die Meldung darf die Buehne bewegen - aber sie muss sie wieder hergeben.
  *
- * #play-status collapsed while empty, so Pruefen made it appear, the stage
- * reflowed by a line, the ResizeObserver fired, and the refit discarded the
- * player's zoom. Measuring the viewport across an appearance and a clearing is
- * what would have caught it.
+ * Urspruenglich stand hier die Regel "eine erscheinende Meldung veraendert die
+ * Gitterhoehe nicht". Erfuellbar war das nur mit dauerhaft reserviertem Platz
+ * oder einem Overlay; das Overlay verdeckte die Zelle, auf die es zeigte, und
+ * die Reservierung kostete auf dem Telefon rund 44px Gitterhoehe. Die
+ * Entscheidung ist gefallen: das Gitter bekommt den Platz, der Sprung wird in
+ * Kauf genommen.
+ *
+ * Was hier bleibt, ist die eigentliche Sorge dahinter: der Reflow loest den
+ * ResizeObserver aus, und ein Refit koennte den Zoom des Spielers verwerfen
+ * oder die Buehne kleiner zurueckgeben, als sie war. Geprueft wird deshalb der
+ * Rundweg - nach dem Leeren muss das Gitter wieder genau so gross sein wie
+ * vorher, nicht ein Stueck kleiner.
  */
-test('showing and clearing the status line does not resize the grid', async ({ page }) => {
+test('the grid gets its height back when the status line clears', async ({ page }) => {
   test.setTimeout(120_000);
   await openPuzzle(page, 375, 812);
 
@@ -673,11 +681,13 @@ test('showing and clearing the status line does not resize the grid', async ({ p
 
   await page.evaluate(() => { document.getElementById('play-status')!.textContent = 'Eine Meldung'; });
   await page.waitForTimeout(200);
-  expect(await gridHeight()).toBeCloseTo(before, 1);
+  const mitMeldung = await gridHeight();
+  expect(mitMeldung, 'die Meldung nimmt Hoehe - das ist gewollt').toBeLessThan(before);
 
   await page.evaluate(() => { document.getElementById('play-status')!.textContent = ''; });
   await page.waitForTimeout(200);
-  expect(await gridHeight()).toBeCloseTo(before, 1);
+  expect(await gridHeight(), 'nach dem Leeren muss die Hoehe zurueckkommen')
+    .toBeCloseTo(before, 1);
 });
 
 /*
@@ -835,13 +845,8 @@ test('the single-pair view shows which marks contradict each other', async ({ pa
   const second = row.locator('.cell').nth(1);
 
   await first.click();
-  /*
-   * Eine einzelne Bestaetigung widerspricht noch nichts - die Zeile sagt dann
-   * weiter, was ein Tipp bewirkt. Sie ist dauerhaft reserviert, damit eine
-   * erscheinende Meldung das Gitter weder verdeckt noch verschiebt; "keine
-   * Meldung" heisst deshalb Ruhefassung, nicht leer.
-   */
-  await expect(page.locator('#play-status')).toContainText('Tippen setzt eine sichere Zuordnung');
+  // Eine einzelne Bestaetigung widerspricht noch nichts - die Zeile bleibt leer.
+  await expect(page.locator('#play-status')).toHaveText('');
 
   await second.click();
   await expect(page.locator('#play-status')).toContainText('widersprechen sich');
@@ -871,9 +876,7 @@ test('the single-pair view shows which marks contradict each other', async ({ pa
 
   // Undo takes the contradiction away - and with it the marking on both cells.
   await page.locator('#play-undo').click();
-  // Die Zeile faellt in die Ruhefassung zurueck, nicht auf leer - siehe oben.
-  await expect(page.locator('#play-status')).not.toContainText('widersprechen sich');
-  await expect(page.locator('#play-status')).toContainText('Tippen setzt eine sichere Zuordnung');
+  await expect(page.locator('#play-status')).toHaveText('');
   await expect(first).not.toHaveClass(/is-conflict/);
   await expect(second).not.toHaveClass(/is-conflict/);
 });

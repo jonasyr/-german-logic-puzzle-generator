@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { CELL_SELECTORS, expectStableGrid, findOccludedCells, openSoloPuzzle } from './support/layoutGuard';
+import { CELL_SELECTORS, findOccludedCells, findVeiledCells, openSoloPuzzle } from './support/layoutGuard';
 
 /*
  * Die Werkzeuge erklaeren sich nicht von selbst.
@@ -78,29 +78,28 @@ test('die Legende steht dauerhaft da und verdeckt nichts', async ({ page }) => {
   expect(await findOccludedCells(page, CELL_SELECTORS.overview)).toEqual([]);
 });
 
-test('der weggelegte Werkzeug-Zustand wird benannt, ohne das Gitter zu ruehren', async ({ page }) => {
+/*
+ * Das weggelegte Werkzeug wird benannt - und verdeckt dabei nichts.
+ *
+ * Der Titel sagte frueher "ohne das Gitter zu ruehren". Diese Regel ist
+ * aufgegeben: die Statuszeile belegt keinen Platz mehr, solange sie nichts zu
+ * sagen hat, weil die Reservierung auf dem Telefon rund 44px Gitterhoehe
+ * kostete. Das Gitter darf sich also bewegen. Was es nicht darf, ist
+ * verschwinden - deshalb stehen hier beide Waechter.
+ */
+test('der weggelegte Werkzeug-Zustand wird benannt, ohne etwas zu verdecken', async ({ page }) => {
   test.setTimeout(180_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await returningPlayer(page);
   await openSoloPuzzle(page);
 
-  await expectStableGrid(page, '#overview-viewport', async () => {
-    // Das aktive Werkzeug erneut druecken legt es weg.
-    await page.locator('#overview-mark-no').click();
-    await expect(page.locator('#play-status')).toContainText('Kein Werkzeug');
-  });
-  expect(await findOccludedCells(page, CELL_SELECTORS.overview)).toEqual([]);
-
-  /*
-   * Und wieder aufnehmen raeumt die Meldung weg.
-   *
-   * "Weg" heisst nicht mehr "leer". Die Statuszeile ist dauerhaft reserviert,
-   * damit eine erscheinende Meldung das Gitter weder verdeckt noch verschiebt;
-   * im Ruhezustand nennt sie deshalb das Werkzeug. Geprueft wird also, dass die
-   * Warnung fort ist UND die Zeile wieder sagt, was ein Tipp bewirkt - eine
-   * leere Zeile waere hier inzwischen der Fehler.
-   */
+  // Das aktive Werkzeug erneut druecken legt es weg.
   await page.locator('#overview-mark-no').click();
-  await expect(page.locator('#play-status')).not.toContainText('Kein Werkzeug');
-  await expect(page.locator('#play-status')).toContainText('Tippen schließt aus');
+  await expect(page.locator('#play-status')).toContainText('Kein Werkzeug');
+  expect(await findOccludedCells(page, CELL_SELECTORS.overview)).toEqual([]);
+  expect(await findVeiledCells(page, CELL_SELECTORS.overview)).toEqual([]);
+
+  // Und wieder aufnehmen raeumt die Meldung weg - restlos, samt ihrer Hoehe.
+  await page.locator('#overview-mark-no').click();
+  await expect(page.locator('#play-status')).toBeEmpty();
 });

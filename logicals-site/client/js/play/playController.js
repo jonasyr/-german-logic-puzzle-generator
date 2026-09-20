@@ -160,35 +160,22 @@ function clearWrongMarks() {
 }
 
 /*
- * Was die Zeile sagt, wenn es nichts zu melden gibt.
+ * Die Zeile sagt etwas - oder sie ist weg.
  *
- * Die Zeile ist dauerhaft reserviert, damit eine erscheinende Meldung das
- * Gitter weder verdeckt noch verschiebt - die beiden Regeln, die sich vorher
- * gegenseitig ausschlossen. Eine dauerhaft leere Zeile waere verschenkte
- * Gitterhoehe, also traegt sie im Ruhezustand die eine Auskunft, die hier immer
- * gilt: was ein Tipp auf eine Zelle gerade bewirkt.
+ * Hier stand einmal eine Ruhefassung ("Tippen schliesst aus."), damit die Zeile
+ * dauerhaft Platz belegen und eine erscheinende Meldung das Gitter nicht
+ * verschieben konnte. Der Platz war den Preis nicht wert: auf dem Telefon
+ * kostete die Reservierung rund 44px Gitterhoehe, an der einen Stelle, an der
+ * die App wirklich Platz braucht. Das Gitter so gross wie moeglich zu halten
+ * wiegt schwerer als ein ruhiges Layout - der Sprung beim Pruefen ist bewusst
+ * in Kauf genommen.
  *
- * Bisher stand das nur in der Gesamtansicht, als "TIPPEN MARKIERT" in
- * Versalien - eine Behauptung, keine Antwort auf "was passiert, wenn ich
- * tippe?". Das Verb sagt es direkt.
+ * Verdeckt wird trotzdem nichts: die Zeile steht im Fluss UEBER dem Gitter,
+ * nicht darauf. Das war der eigentliche Fehler, und der bleibt behoben.
  */
-const TOOL_WORDS = {
-    no: 'schließt aus',
-    yes: 'setzt eine sichere Zuordnung',
-    maybe: 'vermerkt eine Vermutung',
-    clear: 'löscht die Markierung',
-};
-
-function idleStatus() {
-    const current = tool?.current?.();
-    if (!current) return 'Kein Werkzeug gewählt – tippe eines unten an.';
-    return `Tippen ${TOOL_WORDS[current] ?? 'markiert'}.`;
-}
-
 function setStatus(message, isGood = false) {
     const node = el('play-status');
-    // Leer heisst hier nicht leer, sondern "nichts Besonderes" - siehe oben.
-    node.textContent = message || idleStatus();
+    node.textContent = message;
     node.classList.toggle('status-good', isGood);
     node.classList.remove('is-error');
 }
@@ -568,7 +555,18 @@ export function openPlay(puzzle, context) {
     el('play-timer').hidden = loadPrefs().hideClock;
     el('play-title').textContent = `${puzzle.number}. ${puzzle.title}`;
     el('play-story').textContent = puzzle.story;
-    el('play-goal').textContent = `Zielfrage: ${puzzle.targetQuestion}`;
+    /*
+     * Die Zielfrage an beiden Orten.
+     *
+     * Ueber dem Gitter, solange Platz ist - und im Hinweisblatt immer. Das
+     * Querformat blendet die Kopfzeile aus, und auf dem Telefon weicht sie dem
+     * Gitter; ohne die zweite Stelle waere die Frage dann schlicht weg, was sie
+     * im Querformat bisher auch war. Im Blatt steht sie am richtigen Ort: sie
+     * ist die Frage, auf die die Hinweise antworten.
+     */
+    const zielfrage = `Zielfrage: ${puzzle.targetQuestion}`;
+    el('play-goal').textContent = zielfrage;
+    el('play-goal-sheet').textContent = zielfrage;
 
     // Both views are built every time; the pager owns buttons, the overview a
     // canvas, and paintCell fans out over whatever is registered.
@@ -662,17 +660,18 @@ export function initPlay() {
          * Startwerkzeug 'no' ist und der Zweig dann nur eine ohnehin leere
          * Zeile leert. Die Reihenfolge nicht ohne diesen Punkt ändern.
          */
-        onChange: () => {
+        onChange: current => {
             /*
-             * Die Ruhefassung nachziehen, eine echte Meldung aber stehen
-             * lassen. Wer nach dem Pruefen das Werkzeug wechselt, um die
-             * gefundene Stelle zu berichtigen, soll nicht verlieren, was dort
-             * gerade steht - das Ergebnis weicht erst der naechsten Handlung.
+             * Das Werkzeug wegzulegen ist ein stiller Zustand: danach bleibt
+             * jeder Tipp auf dem Gitter wirkungslos, und nichts sagte, warum.
+             * Nur dafuer erscheint hier eine Meldung - und sie verschwindet
+             * wieder, sobald ein Werkzeug aufgenommen wird. Eine echte
+             * Pruef-Meldung bleibt dabei stehen: wer nach dem Pruefen das
+             * Werkzeug wechselt, um die gefundene Stelle zu berichtigen, soll
+             * nicht verlieren, was dort steht.
              */
-            const shown = el('play-status').textContent;
-            if (shown === '' || shown.startsWith('Tippen ') || shown.startsWith('Kein Werkzeug')) {
-                setStatus('');
-            }
+            if (!current) setStatus('Kein Werkzeug gewählt – tippe eines unten an.');
+            else if (el('play-status').textContent.startsWith('Kein Werkzeug')) setStatus('');
         },
     });
 
