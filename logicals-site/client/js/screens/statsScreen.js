@@ -9,7 +9,6 @@
 import { clear, make } from '../dom.js';
 
 import { headToHead, personalStats } from '../stats/statistics.js';
-import { levelAt } from '../stats/level.js';
 
 
 function formatDuration(milliseconds) {
@@ -35,23 +34,9 @@ function section(title) {
     return node;
 }
 
-function personalSection(stats, experience) {
+function personalSection(stats) {
     const node = section('Deine Entwicklung');
     const list = make('dl', { className: 'stats-list' });
-
-    /*
-     * Erfahrung zuerst: sie fasst alles darunter zusammen.
-     *
-     * Sie fehlt, wenn weder Netz noch gemerkter Stand da sind - dann bleibt
-     * die Zeile weg statt eine Null zu behaupten, die niemand verdient hat.
-     * Gerechnet wird sie im Worker ueber ALLE Ergebnisse, waehrend alles
-     * andere hier aus den letzten hundert stammt; deshalb steht sie bewusst
-     * ohne den Zusatz "ueber die letzten 100" darunter.
-     */
-    if (experience) {
-        const stufe = levelAt(experience.xp);
-        list.append(statRow('Erfahrung', `${experience.xp} · Stufe ${stufe.level}`));
-    }
 
     for (const entry of stats.byDifficulty) {
         // Median, not mean: one abandoned evening would drag an average
@@ -75,14 +60,6 @@ function personalSection(stats, experience) {
         list.append(statRow('Fehlprüfungen', `${de(earlier)} → ${de(later)} ${trend}`));
     }
 
-    /*
-     * "Serie" allein beantwortet nicht, woraus sie besteht.
-     *
-     * Gezaehlt werden ausschliesslich Tagesraetsel (siehe dailyStreak). Wer
-     * zwei Sammlungsraetsel geloest hat und dann "Serie 0 Tage" liest, haelt
-     * das fuer einen Fehler - so geschehen. Der Zusatz kostet nichts und
-     * beantwortet die Frage an Ort und Stelle.
-     */
     list.append(statRow('Serie (Tagesrätsel)', `${stats.streak} ${stats.streak === 1 ? 'Tag' : 'Tage'}`));
     list.append(statRow('Gesamtzeit', formatSpan(stats.totalMs)));
     if (stats.best) list.append(statRow('Beste Zeit', formatDuration(stats.best.elapsedMs)));
@@ -145,12 +122,14 @@ function duelSection(entry) {
  * @param {HTMLElement} node
  * @param {Array<object>} results  neueste zuerst
  * @param {string} today  Datum in Berliner Zeit, `YYYY-MM-DD`
- * @param {{ xp: number } | null} [experience]  serverseitig ueber ALLE
- *   Ergebnisse summiert; null, wenn weder Netz noch gemerkter Stand da sind
+ *
+ * Erfahrung steht bewusst NICHT hier: sie hat ihren Platz im Kopf des
+ * Bildschirms. Zweimal dieselbe Zahl auf einem Schirm ist genau der Fehler,
+ * den "2/12" neben "3/12" schon einmal gemacht hat.
  */
-export function renderStatsInto(node, results, today, experience = null) {
+export function renderStatsInto(node, results, today) {
     const body = clear(node);
     if (!results.length) return;
-    body.append(personalSection(personalStats(results, today), experience));
+    body.append(personalSection(personalStats(results, today)));
     for (const entry of headToHead(results)) body.append(duelSection(entry));
 }

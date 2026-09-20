@@ -414,3 +414,103 @@
     border-left: 3px solid var(--accent);
     padding-left: calc(var(--space-5) - 3px);
 }
+
+/* --- Der Kopf der Ergebnisse: wer spielt, und wie weit --------------------- */
+
+/*
+ * "Ergebnisse" war ein Aktenschrank - eine Liste und eine Tabelle. Der Ring
+ * macht daraus einen Ort, an dem etwas ueber einen steht, und beantwortet die
+ * Frage, die die blosse Zahl offenlaesst: wie weit ist es noch. "812 · Stufe
+ * 7" sagt das nicht, "Noch 288 bis Stufe 8" schon.
+ *
+ * Deshalb steht er ueber der Reiterleiste und nicht in einem Reiter: sonst
+ * waere er in der Haelfte der Faelle versteckt.
+ */
+.profile {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-1);
+    margin-bottom: var(--space-5);
+}
+
+.profile__ring {
+    position: relative;
+    width: 112px;
+    height: 112px;
+}
+.profile__ring svg { width: 100%; height: 100%; display: block; }
+.profile__track,
+.profile__fill {
+    fill: none;
+    stroke-width: 8;
+}
+/*
+ * Die Bahn muss man sehen, sonst sieht man nur den Fortschritt.
+ *
+ * Mit --surface-sunken war sie gemessen kaum vom Papier zu unterscheiden, und
+ * ein Stand von vier Prozent las sich dann als loser oranger Nubbel oben am
+ * Kreis statt als gefuellter Teil eines Rings. Die Hairline-Farbe der App ist
+ * ruhig genug, um nicht abzulenken, und bei acht Pixeln Strichbreite deutlich
+ * genug, um den Kreis als Kreis zu zeigen.
+ */
+.profile__track { stroke: var(--line); }
+.profile__fill {
+    stroke: var(--accent);
+    stroke-linecap: round;
+    /*
+     * Umfang bei r=52: 2·π·52 = 326.73. Der Fortschritt wird ueber den
+     * Versatz gesetzt (siehe historyScreen.js) - voll heisst Versatz 0.
+     */
+    stroke-dasharray: 326.73;
+    stroke-dashoffset: 326.73;
+}
+
+/* Mittig im Ring, nicht darunter: die Zahl gehoert in den Kreis, den sie
+   beschreibt. Eine nackte 7 sagt nicht, was sie ist - deshalb das Wort. */
+.profile__badge {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 1px;
+}
+.profile__badge-word {
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.profile__badge-number {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.profile__name {
+    margin: var(--space-2) 0 0;
+    font-size: var(--text-title);
+    line-height: var(--leading-title);
+    font-weight: 600;
+}
+.profile__gap {
+    margin: 0;
+    font-size: var(--text-caption);
+    line-height: var(--leading-caption);
+    color: var(--muted);
+}
+.profile__gap:empty { display: none; }
+
+/*
+ * Auf schmalen Schirmen kleiner.
+ *
+ * Der Kopf kostet Hoehe, bevor die erste Ergebniskarte kommt. Bei 320px
+ * bleibt es so bei rund 150px statt 175.
+ */
+@media (max-width: 360px) {
+    .profile__ring { width: 88px; height: 88px; }
+    .profile__badge-number { font-size: 24px; }
+    .profile__name { font-size: var(--text-body); line-height: var(--leading-body); }
+}

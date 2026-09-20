@@ -247,6 +247,54 @@ test('the statistics screen reports development and the head-to-head', async ({ 
   await expect(page.locator('.stats-scope')).toContainText('letzten 100');
 });
 
+test('der Kopf zeigt Stufe, Fortschritt und was noch fehlt', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await withPlayer(page, STATS_HISTORY);
+  await page.route('**/api/players/*/experience', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ xp: 812, solved: 21 }),
+  }));
+  await page.goto('/');
+  await page.locator('#history-button').click();
+
+  // 812 liegt in Stufe 7 (ab 800), die naechste beginnt bei 1100.
+  await expect(page.locator('#profile-level')).toHaveText('7');
+  await expect(page.locator('#profile-gap')).toHaveText('Noch 288 bis Stufe 8');
+  await expect(page.locator('#history-player')).toHaveText('Ada');
+
+  /*
+   * Der Ring zeigt denselben Anteil, den die Zeile nennt: 12 von 300 in der
+   * Stufe, also 4 Prozent bemalt und 96 Prozent Versatz. Geprueft wird der
+   * Versatz, weil genau er falsch herum sein kann - voll heisst 0, nicht der
+   * ganze Umfang.
+   */
+  const versatz = await page.locator('#profile-fill')
+    .evaluate(node => parseFloat((node as SVGElement).style.strokeDashoffset));
+  const umfang = 2 * Math.PI * 52;
+  expect(versatz).toBeGreaterThan(umfang * 0.9);
+  expect(versatz).toBeLessThan(umfang);
+
+  // Und die Zahl steht nur einmal auf dem Schirm, nicht auch in der Tabelle.
+  await page.locator('#history-tab-stats').click();
+  await expect(page.locator('#stats-body')).not.toContainText('Erfahrung');
+});
+
+test('ohne Erfahrungsstand bleibt nur der Name stehen', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await withPlayer(page, STATS_HISTORY);
+  // Kein Netz fuer die Erfahrung, und kein gemerkter Stand.
+  await page.route('**/api/players/*/experience', route => route.abort());
+  await page.goto('/');
+  await page.locator('#history-button').click();
+
+  // Lieber nichts als eine falsche Zahl - dieselbe Regel wie im Geloest-Dialog.
+  await expect(page.locator('#profile-ring')).toBeHidden();
+  await expect(page.locator('#profile-gap')).toBeEmpty();
+  await expect(page.locator('#history-player')).toHaveText('Ada');
+});
+
 test('mit der vollständigen Historie rechnet die Statistik über alles', async ({ page }) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 375, height: 812 });

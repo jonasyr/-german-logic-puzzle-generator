@@ -2,6 +2,7 @@ import { clear, el, make, setHint } from '../dom.js';
 import { listPlayerHistory, listPlayerResults } from '../players/playerApi.js';
 import { renderStatsInto } from './statsScreen.js';
 import { loadExperience } from '../stats/experience.js';
+import { levelAt } from '../stats/level.js';
 import { berlinDate } from '../play/dailyPuzzle.js';
 
 /** Tagesdatum auf Deutsch - oder nichts, wenn der Wert keins hergibt. */
@@ -74,7 +75,7 @@ function resultCard(result) {
 }
 
 export async function loadHistoryScreen(player) {
-    el('history-player').textContent = `Ergebnisse von ${player.displayName}`;
+    el('history-player').textContent = player.displayName;
     const list = clear(el('history-list'));
     setHint('history-hint', 'Ergebnisse werden geladen …');
     try {
@@ -97,8 +98,8 @@ export async function loadHistoryScreen(player) {
          */
         const alle = await listPlayerHistory(player.id);
         const vollstaendig = alle.length > 0;
-        renderStatsInto(el('stats-body'), vollstaendig ? alle : results, berlinDate(),
-            await loadExperience(player.id));
+        renderStatsInto(el('stats-body'), vollstaendig ? alle : results, berlinDate());
+        renderProfile(await loadExperience(player.id));
         // Sagen, womit gerechnet wurde - nicht behaupten, was gewollt war.
         el('stats-scope').textContent = results.length
             ? (vollstaendig ? 'Über alle gelösten Rätsel.' : 'Über die letzten 100 Rätsel.')
@@ -126,4 +127,40 @@ export function initHistoryTabs() {
             }
         });
     }
+}
+
+/** Umfang des Rings: 2·π·52, passend zum r=52 im Markup. */
+const RING_LENGTH = 2 * Math.PI * 52;
+
+/**
+ * Zeichnet Stufe und Fortschritt in den Kopf.
+ *
+ * Ohne Stand bleibt der Ring weg und es steht nur der Name da - dieselbe Regel
+ * wie im Gelöst-Dialog: lieber nichts als eine falsche Zahl. Bei 0 Punkten ist
+ * der Ring leer und darunter steht, wie weit es bis Stufe 2 ist; das ist kein
+ * Sonderfall, sondern der Zustand am ersten Tag.
+ *
+ * @param {{ xp: number } | null} experience
+ */
+function renderProfile(experience) {
+    const ring = el('profile-ring');
+    const gap = el('profile-gap');
+    if (!experience) {
+        ring.hidden = true;
+        gap.textContent = '';
+        return;
+    }
+
+    const stufe = levelAt(experience.xp);
+    el('profile-level').textContent = String(stufe.level);
+
+    // Voll heißt Versatz 0; der Rest des Umfangs bleibt unbemalt.
+    const anteil = stufe.levelSpan > 0
+        ? Math.max(0, Math.min(1, stufe.intoLevel / stufe.levelSpan))
+        : 0;
+    el('profile-fill').style.strokeDashoffset = String(RING_LENGTH * (1 - anteil));
+
+    const fehlt = Math.max(0, stufe.next - experience.xp);
+    gap.textContent = `Noch ${fehlt} bis Stufe ${stufe.level + 1}`;
+    ring.hidden = false;
 }

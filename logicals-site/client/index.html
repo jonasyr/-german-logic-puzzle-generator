@@ -219,7 +219,28 @@
             </button>
             <h2>Ergebnisse</h2>
         </header>
-        <p class="result-sub" id="history-player"></p>
+        <!-- Der Kopf dieses Bildschirms: wer spielt, und wie weit.
+             Ueber der Reiterleiste, nicht in einem Reiter - sonst waere er in
+             der Haelfte der Faelle versteckt, und "Ergebnisse" bliebe ein
+             Aktenschrank statt eines Ortes, an dem etwas ueber einen steht.
+             Faellt der Stand aus, bleibt nur die Namenszeile stehen. -->
+        <header class="profile" id="history-profile">
+            <div class="profile__ring" id="profile-ring" hidden>
+                <svg viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+                    <circle class="profile__track" cx="60" cy="60" r="52" />
+                    <!-- Bei -90 Grad gedreht, damit der Fortschritt oben
+                         beginnt und nicht rechts. -->
+                    <circle class="profile__fill" id="profile-fill"
+                            cx="60" cy="60" r="52" transform="rotate(-90 60 60)" />
+                </svg>
+                <p class="profile__badge" aria-hidden="true">
+                    <span class="profile__badge-word">Stufe</span>
+                    <span class="profile__badge-number" id="profile-level"></span>
+                </p>
+            </div>
+            <p class="profile__name" id="history-player"></p>
+            <p class="profile__gap" id="profile-gap"></p>
+        </header>
         <!-- Zwei Sichten auf dieselbe Abfrage. Als zwei Bildschirme lasen sie
              verschiedene Umfänge (50 gegen 100) und gaben damit verschiedene
              Antworten auf "meine Ergebnisse". -->

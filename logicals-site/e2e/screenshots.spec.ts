@@ -47,19 +47,26 @@ async function seed(page: Page, opts: { intro?: boolean; player?: boolean } = {}
     status: 200, contentType: 'application/json',
     body: JSON.stringify({ xp: 812, solved: 21 }),
   }));
+  /*
+   * Die Feldnamen muessen publicResult im Worker spiegeln, sonst zeigen die
+   * Aufnahmen etwas anderes als die App. Zweimal schon danebengegriffen:
+   * `solvedAt` statt `completedAt` liess "Invalid Date" erscheinen, `title`
+   * statt `puzzleTitle` liess die Raetselnamen ganz verschwinden - beide Male
+   * wurde ein Fehler gemeldet, den es nicht gab.
+   */
   await page.route('**/api/players/*/results**', route => route.fulfill({
     status: 200, contentType: 'application/json',
     body: JSON.stringify({
       results: [
         {
           id: 2, seed: 4711, difficulty: 'mittel', elapsedMs: 250_000, failedChecks: 1,
-          completedAt: '2026-09-19T20:00:00Z', title: 'Beobachtungsnacht in der Sternwarte',
+          completedAt: '2026-09-19T20:00:00Z', puzzleTitle: 'Beobachtungsnacht in der Sternwarte',
           configurationJson: JSON.stringify({ categoryCount: 4, valuesPerCategory: 4 }),
           duel: { outcome: 'won', opponent: 'Bo', opponentElapsedMs: 265_000, opponentFailedChecks: 2 },
         },
         {
           id: 1, seed: 42, difficulty: 'leicht', elapsedMs: 180_000, failedChecks: 0,
-          completedAt: '2026-09-18T19:00:00Z', title: 'Finale beim Street-Food-Festival',
+          completedAt: '2026-09-18T19:00:00Z', puzzleTitle: 'Finale beim Street-Food-Festival',
           configurationJson: JSON.stringify({ categoryCount: 3, valuesPerCategory: 4 }),
         },
       ],
@@ -113,7 +120,7 @@ for (const v of VARIANTEN) {
 
     await toStart(page);
     await page.locator('#history-button').click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(600);
     await shot('04-ergebnisse');
     await page.locator('#history-tab-stats').click();
     await page.waitForTimeout(400);
