@@ -394,6 +394,24 @@ html { scroll-padding-bottom: calc(var(--tap-min) * 2 + var(--space-5) * 2 + var
     gap: 6px;
     transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
+/*
+ * Zwei feste Reiter teilen sich die Breite.
+ *
+ * Die Leiste zieht sich ueber die volle Breite, ihre Reiter sassen aber
+ * auto-breit am linken Rand - rechts blieb zwei Drittel leere Flaeche, die wie
+ * ein fehlender dritter Reiter aussah. Vier Durchsichten haben das gemeldet.
+ *
+ * Eigene Klasse, weil dieselbe Leiste im Spiel die Kategoriepaare traegt: dort
+ * sind es sechs Reiter, die nicht nebeneinander passen und deshalb scrollen
+ * muessen. Gleichverteilung waere dort falsch.
+ */
+.segmented--even { overflow-x: visible; }
+.segmented--even .segmented__item {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+}
+
 .segmented__item[aria-selected="true"] {
     background: var(--surface);
     color: var(--text);
