@@ -16,6 +16,10 @@ async function withPlayer(page: Page) {
    * als Differenz, damit die Formel allein im Worker lebt.
    */
   let abrufe = 0;
+  // Die Statistik rechnet ueber alle Ergebnisse und holt sie hier.
+  await page.route('**/api/players/*/history', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ results: [] }),
+  }));
   await page.route('**/api/players/*/experience', route => route.fulfill({
     status: 200, contentType: 'application/json',
     body: JSON.stringify(abrufe++ === 0 ? { xp: 800, solved: 20 } : { xp: 845, solved: 21 }),

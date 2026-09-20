@@ -43,6 +43,24 @@ export async function createPlayer(displayName) {
     return player;
 }
 
+/**
+ * Alle Ergebnisse dieses Spielers, schmal - fuer die Statistik.
+ *
+ * Eigene Abfrage, weil listPlayerResults bei 100 gedeckelt ist und eine
+ * Statistik ueber die letzten hundert eine andere Aussage ist als eine ueber
+ * alle. Wirft nicht: ohne Netz gibt es eine leere Liste, und der Bildschirm
+ * laesst die Statistik dann weg statt eine halbe zu zeigen.
+ */
+export async function listPlayerHistory(playerId) {
+    try {
+        const response = await fetch(`/api/players/${playerId}/history`);
+        if (!response.ok) return [];
+        return (await response.json()).results ?? [];
+    } catch {
+        return [];
+    }
+}
+
 export async function listPlayerResults(playerId, limit = 50) {
     let response;
     try { response = await fetch(`/api/players/${playerId}/results?limit=${limit}`); }

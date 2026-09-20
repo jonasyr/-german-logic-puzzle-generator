@@ -46,7 +46,32 @@ export interface ResultRepository {
    * werden nur die drei Felder, die die Formel braucht, keine ganzen Zeilen.
    */
   listExperienceInputs(playerId: number): Promise<ExperienceInput[]>;
+  /**
+   * Alle Zeilen, die die Statistik braucht - ohne Deckel.
+   *
+   * listByPlayer hält bei 100. Eine Statistik über die letzten hundert ist
+   * eine andere Aussage als eine über alle, und die Erfahrung daneben zählt
+   * bereits über alle - zwei Maßstäbe auf einem Bildschirm.
+   *
+   * Geliefert werden nur die Felder, die statistics.js und dailyStreak lesen,
+   * nicht die ganze Zeile: Titel, Thema und Fingerabdruck braucht hier
+   * niemand, und sie machen bei tausend Zeilen den Unterschied.
+   */
+  listStatsInputs(playerId: number): Promise<StatsInput[]>;
 }
+
+/** Was die Statistik von einem Ergebnis liest - nicht mehr. */
+export type StatsInput = {
+  difficulty: string;
+  elapsedMs: number;
+  failedChecks: number;
+  completedAt: string;
+  seed: number;
+  configurationJson: string;
+  roomId: number | null;
+  opponentName: string | null;
+  opponentElapsedMs: number | null;
+};
 
 const SELECT_COLUMNS = `
   id,
@@ -153,6 +178,28 @@ export function createResultsRepository(db: D1Database): ResultRepository {
         ORDER BY completed_at ASC, id ASC
       `).bind(roomId).all<ResultRecord>();
       return result.results ?? [];
+    },
+
+    async listStatsInputs(playerId) {
+      const { results } = await db.prepare(`
+        SELECT
+          r.difficulty,
+          r.elapsed_ms AS elapsedMs,
+          r.failed_checks AS failedChecks,
+          r.completed_at AS completedAt,
+          r.seed,
+          r.configuration_json AS configurationJson,
+          r.room_id AS roomId,
+          p.display_name AS opponentName,
+          o.elapsed_ms AS opponentElapsedMs
+        FROM results r
+        LEFT JOIN results o
+          ON o.room_id = r.room_id AND o.room_id IS NOT NULL AND o.player_id <> r.player_id
+        LEFT JOIN players p ON p.id = o.player_id
+        WHERE r.player_id = ?
+        ORDER BY r.completed_at DESC
+      `).bind(playerId).all<StatsInput>();
+      return results ?? [];
     },
 
     async listExperienceInputs(playerId) {

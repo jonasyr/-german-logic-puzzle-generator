@@ -234,11 +234,11 @@
         </div>
         <div id="history-panel-stats" role="tabpanel" aria-labelledby="history-tab-stats" hidden>
             <div id="stats-body"></div>
-            <!-- Genau sagen, worauf sich die Grenze bezieht. Die Erfahrung
-                 zaehlt ueber ALLE Ergebnisse - der Worker summiert sie, statt
-                 die gedeckelte Liste zu nehmen. "Ueber die letzten 100
-                 Raetsel." allein behauptete das Gegenteil. -->
-            <p class="stats-scope">Zeiten und Fehlprüfungen über die letzten 100 Rätsel. Erfahrung über alle.</p>
+            <!-- Der Text wird gesetzt, nicht behauptet: die Statistik rechnet
+                 ueber ALLE Ergebnisse, faellt aber auf die letzten hundert
+                 zurueck, wenn die ungedeckelte Abfrage ausfaellt. Eine feste
+                 Zeile waere dann gelogen. Siehe historyScreen.js. -->
+            <p class="stats-scope" id="stats-scope"></p>
         </div>
         <p class="hint" id="history-hint" role="status"></p>
     </section>

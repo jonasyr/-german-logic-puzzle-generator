@@ -46,6 +46,23 @@ class MemoryResults implements ResultRepository {
     return [...new Set(seeds)].sort((a, b) => a - b);
   }
 
+  /* Ungedeckelt, wie die echte Abfrage - siehe listExperienceInputs. */
+  async listStatsInputs(playerId: number) {
+    return this.results
+      .filter(result => result.playerId === playerId)
+      .map(result => ({
+        difficulty: result.difficulty,
+        elapsedMs: result.elapsedMs,
+        failedChecks: result.failedChecks,
+        completedAt: result.completedAt,
+        seed: result.seed,
+        configurationJson: result.configurationJson,
+        roomId: result.roomId,
+        opponentName: null,
+        opponentElapsedMs: null,
+      }));
+  }
+
   /*
    * Ungedeckelt, wie die echte Abfrage: genau das ist der Punkt dieser
    * Methode - listByPlayer haelt bei 100, Erfahrung zaehlt alles.

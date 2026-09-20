@@ -91,6 +91,31 @@ export function createApp(overrides: AppOverrides = {}) {
           return json({ seeds });
         }
 
+        const historyAllMatch = url.pathname.match(/^\/api\/players\/(\d+)\/history$/);
+        if (historyAllMatch && request.method === 'GET') {
+          /*
+           * Ungedeckelt, für die Statistik. Die Ergebnisliste daneben bleibt
+           * bei 100 - fünfhundert Karten zu zeichnen ist ein eigenes Problem.
+           * Hier zählt die Vollständigkeit, nicht die Darstellung.
+           */
+          const rows = await resultsFor(env, overrides)
+            .listStatsInputs(Number(historyAllMatch[1]));
+          return json({
+            results: rows.map(row => ({
+              difficulty: row.difficulty,
+              elapsedMs: row.elapsedMs,
+              failedChecks: row.failedChecks,
+              completedAt: row.completedAt,
+              seed: row.seed,
+              // Geparst, weil isDailyResult ein Objekt liest, keinen Text.
+              configuration: JSON.parse(row.configurationJson || '{}'),
+              roomId: row.roomId,
+              opponentName: row.opponentName ?? null,
+              opponentElapsedMs: row.opponentElapsedMs ?? null,
+            })),
+          });
+        }
+
         const experienceMatch = url.pathname.match(/^\/api\/players\/(\d+)\/experience$/);
         if (experienceMatch && request.method === 'GET') {
           /*

@@ -201,6 +201,30 @@ describe('die Eingaben für die Erfahrung', () => {
     expect(inputs[0]).toHaveProperty('configurationJson');
   });
 
+  it('liefert für die Statistik alle Zeilen, ungedeckelt', async () => {
+    /*
+     * Dieselbe Begründung wie bei der Erfahrung: listByPlayer hält bei 100,
+     * und eine Statistik über die letzten hundert ist eine andere Aussage als
+     * eine über alle. Geprüft wird die Menge UND dass die Felder da sind, die
+     * statistics.js und dailyStreak lesen.
+     */
+    const database = seeded();
+    const repository = createResultsRepository(adapter(database));
+    const vorher = (await repository.listStatsInputs(1)).length;
+
+    for (let index = 0; index < 120; index += 1) {
+      insert(database, 500 + index, 1, null, 50_000, 0,
+        `2026-09-18T06:${String(index % 60).padStart(2, '0')}:00Z`);
+    }
+
+    const zeilen = await repository.listStatsInputs(1);
+    expect(zeilen).toHaveLength(vorher + 120);
+    for (const feld of ['difficulty', 'elapsedMs', 'failedChecks', 'completedAt',
+      'seed', 'configurationJson', 'roomId']) {
+      expect(zeilen[0]).toHaveProperty(feld);
+    }
+  });
+
   it('gibt die Ergebnisse anderer Spieler nicht mit aus', async () => {
     const database = seeded();
     const repository = createResultsRepository(adapter(database));

@@ -39,6 +39,10 @@ async function seed(page: Page, opts: { intro?: boolean; player?: boolean } = {}
       ? JSON.stringify({ player: { id: 2, displayName: 'Neu', createdAt: '2026-09-20T00:00:00Z' } })
       : JSON.stringify({ players: [{ id: 1, displayName: 'Ada', createdAt: '2026-09-17T00:00:00Z' }] }),
   }));
+  // Die Statistik rechnet ueber alle Ergebnisse und holt sie hier.
+  await page.route('**/api/players/*/history', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ results: [] }),
+  }));
   await page.route('**/api/players/*/experience', route => route.fulfill({
     status: 200, contentType: 'application/json',
     body: JSON.stringify({ xp: 812, solved: 21 }),

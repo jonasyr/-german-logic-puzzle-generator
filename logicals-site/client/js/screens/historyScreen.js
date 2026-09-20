@@ -1,5 +1,5 @@
 import { clear, el, make, setHint } from '../dom.js';
-import { listPlayerResults } from '../players/playerApi.js';
+import { listPlayerHistory, listPlayerResults } from '../players/playerApi.js';
 import { renderStatsInto } from './statsScreen.js';
 import { loadExperience } from '../stats/experience.js';
 import { berlinDate } from '../play/dailyPuzzle.js';
@@ -84,10 +84,25 @@ export async function loadHistoryScreen(player) {
         const results = await listPlayerResults(player.id, 100);
         setHint('history-hint', results.length ? '' : 'Noch keine abgeschlossenen Rätsel.');
         for (const result of results) list.append(resultCard(result));
-        // Erfahrung kommt aus einer eigenen Abfrage, weil sie ueber ALLE
-        // Ergebnisse zaehlt und diese Liste bei 100 gedeckelt ist.
-        renderStatsInto(el('stats-body'), results, berlinDate(),
+        /*
+         * Die Statistik bekommt ihre eigene, ungedeckelte Liste.
+         *
+         * Die Karten oben zeigen weiter die letzten hundert - fuenfhundert
+         * Karten zu zeichnen ist ein eigenes Problem. Die Kennzahlen daneben
+         * rechnen ueber alles, genau wie die Erfahrung, damit auf einem
+         * Bildschirm nicht zwei Massstaebe nebeneinander stehen.
+         *
+         * Faellt die Abfrage aus, wird mit den hundert gerechnet: eine
+         * Statistik aus einem Ausschnitt ist eine bessere Auskunft als keine.
+         */
+        const alle = await listPlayerHistory(player.id);
+        const vollstaendig = alle.length > 0;
+        renderStatsInto(el('stats-body'), vollstaendig ? alle : results, berlinDate(),
             await loadExperience(player.id));
+        // Sagen, womit gerechnet wurde - nicht behaupten, was gewollt war.
+        el('stats-scope').textContent = results.length
+            ? (vollstaendig ? 'Über alle gelösten Rätsel.' : 'Über die letzten 100 Rätsel.')
+            : '';
     } catch (error) { setHint('history-hint', error.message, true); }
 }
 

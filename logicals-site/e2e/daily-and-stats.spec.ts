@@ -236,8 +236,32 @@ test('the statistics screen reports development and the head-to-head', async ({ 
   await expect(body).toContainText('0:15');            // 15s ahead
   await expect(body).toContainText('du bist schneller');
 
-  // And it never implies it covers everything.
+  /*
+   * Und die Zeile sagt, WOMIT gerechnet wurde.
+   *
+   * Hier steht "letzten 100", weil dieser Test die ungedeckelte Abfrage nicht
+   * bedient - die Statistik faellt dann auf die Ergebnisliste zurueck. Eine
+   * feste Zeile "ueber alle" waere in genau diesem Fall gelogen, und der
+   * Rueckfall ist kein Sonderfall, sondern der Zustand ohne Netz.
+   */
   await expect(page.locator('.stats-scope')).toContainText('letzten 100');
+});
+
+test('mit der vollständigen Historie rechnet die Statistik über alles', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await withPlayer(page, STATS_HISTORY);
+  // Dieselben Zeilen, aber über die ungedeckelte Abfrage geliefert.
+  await page.route('**/api/players/*/history', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ results: STATS_HISTORY }),
+  }));
+  await page.goto('/');
+  await page.locator('#history-button').click();
+  await page.locator('#history-tab-stats').click();
+
+  await expect(page.locator('#stats-body')).toContainText('Deine Entwicklung');
+  await expect(page.locator('.stats-scope')).toContainText('Über alle');
 });
 
 test('an empty history says so instead of showing zeroes', async ({ page }) => {
