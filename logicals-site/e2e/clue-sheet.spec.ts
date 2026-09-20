@@ -98,3 +98,33 @@ test('ganz aufziehen scrollt weiterhin und behaelt die Stelle', async ({ page })
   await page.waitForTimeout(400);
   expect(await page.locator('#sheet-body').evaluate(node => node.scrollTop)).toBe(0);
 });
+
+/*
+ * Der Pfeil sagt, was der naechste Tipp tut.
+ *
+ * Er stand in allen drei Zustaenden auf "hoch" - geschlossen, halb und ganz
+ * offen sahen gleich aus, und nichts zeigte an, dass Tippen auch schliesst.
+ * Geprueft wird die gedrehte Darstellung, nicht die Klasse: eine Regel, die
+ * sich spaeter woanders hin verirrt, faellt damit trotzdem auf.
+ */
+test('der Pfeil am Hinweisblatt zeigt die naechste Handlung', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openPuzzleWithManyClues(page);
+
+  const drehung = () => page.locator('.sheet-chevron')
+    .evaluate(node => getComputedStyle(node).transform);
+
+  // Zugeklappt und halb offen oeffnet der naechste Tipp weiter: Pfeil unveraendert.
+  const zu = await drehung();
+  await page.locator('#sheet-toggle').click();          // halb
+  await expect(page.locator('#clues-sheet')).toHaveAttribute('data-detent', 'half');
+  await page.waitForTimeout(400);
+  expect(await drehung(), 'halb offen oeffnet weiter, der Pfeil bleibt').toBe(zu);
+
+  // Ganz offen schliesst der naechste Tipp - und nur da dreht sich der Pfeil.
+  await page.locator('#sheet-toggle').click();          // ganz
+  await expect(page.locator('#clues-sheet')).toHaveAttribute('data-detent', 'full');
+  await page.waitForTimeout(400);
+  expect(await drehung(), 'ganz offen muss der Pfeil nach unten zeigen').not.toBe(zu);
+});

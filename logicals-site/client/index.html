@@ -66,13 +66,13 @@
                     <button class="btn btn--primary btn--large btn--block" type="button" id="resume-button" hidden>Weiterspielen</button>
                     <p class="start-note" id="resume-detail" hidden></p>
                     <p class="hint start-hint" id="start-hint" role="status" aria-live="polite"></p>
-                    <button class="btn btn--primary btn--large btn--block" id="start-button" type="button" disabled>Rätsel erstellen</button>
+                    <button class="btn btn--primary btn--large btn--block" id="start-button" type="button" disabled>Neues Rätsel</button>
                     <button class="btn btn--on-dark btn--block" id="duel-join-button" type="button" disabled>Duell beitreten</button>
                 </section>
 
                 <section class="start-group" aria-labelledby="start-group-more">
                     <h2 class="start-group__caption" id="start-group-more">Mehr</h2>
-                    <button class="btn btn--on-dark btn--block" id="history-button" type="button" disabled>Ergebnisse &amp; Statistik</button>
+                    <button class="btn btn--on-dark btn--block" id="history-button" type="button" disabled>Ergebnisse</button>
                     <button class="btn btn--on-dark btn--block" id="settings-button" type="button">Einstellungen</button>
                 </section>
             </div>
@@ -165,7 +165,7 @@
                        spellcheck="false" enterkeyhint="go" placeholder="ABC123" />
             </label>
             <p class="hint" id="duel-entry-hint" role="status" aria-live="polite"></p>
-            <button class="btn btn--primary btn--block" id="duel-entry-submit" type="submit">Raum öffnen</button>
+            <button class="btn btn--primary btn--block" id="duel-entry-submit" type="submit">Duell beitreten</button>
         </form>
     </section>
 
@@ -251,29 +251,42 @@
         <div class="form">
             <section class="group">
                 <div class="rows" role="group" aria-labelledby="caption-assist">
+                    <!-- Jede Erklaerung steht bei ihrem Schalter.
+                         Vorher hingen zwei Absaetze unter der ganzen Karte: man
+                         musste erraten, dass der erste zum ersten Schalter
+                         gehoert - und fuer den dritten gab es gar keinen. -->
                     <label class="row">
-                        <span class="row__label">Triviale Kreuze automatisch setzen</span>
+                        <span class="row__text">
+                            <span class="row__label">Triviale Kreuze automatisch setzen</span>
+                            <span class="row__note">
+                                Eine sichere Zuordnung kreuzt den Rest ihrer Zeile und Spalte
+                                im selben Block aus – und gibt ihn wieder frei, wenn du sie
+                                zurücknimmst. Selbst gesetzte Kreuze bleiben erhalten.
+                            </span>
+                        </span>
                         <input class="row__switch" type="checkbox" id="field-autoCross" checked />
                     </label>
                     <label class="row">
-                        <span class="row__label">Uhr ausblenden</span>
+                        <span class="row__text">
+                            <span class="row__label">Uhr ausblenden</span>
+                            <span class="row__note">
+                                Die Uhr läuft weiter und die Zeit wird weiter gespeichert –
+                                sie wird nur nicht angezeigt.
+                            </span>
+                        </span>
                         <input class="row__switch" type="checkbox" id="field-hideClock" />
                     </label>
                     <label class="row">
-                        <span class="row__label">Duell-Funktionen ausblenden</span>
+                        <span class="row__text">
+                            <span class="row__label">Duell-Funktionen ausblenden</span>
+                            <span class="row__note">
+                                Versteckt „Duell beitreten“ auf dem Startbildschirm und
+                                „Duell starten“ beim neuen Rätsel.
+                            </span>
+                        </span>
                         <input class="row__switch" type="checkbox" id="field-hideDuel" />
                     </label>
                 </div>
-                <p class="group__note">
-                    Setzt du eine sichere Zuordnung, werden die übrigen Felder ihrer Zeile und
-                    Spalte im selben Block ausgekreuzt – und wieder freigegeben, wenn du die
-                    Zuordnung zurücknimmst. Kreuze, die du selbst gesetzt hast, bleiben immer
-                    erhalten.
-                </p>
-                <p class="group__note">
-                    Die Uhr läuft weiter und die Zeit wird auch weiterhin gespeichert – sie wird
-                    nur nicht angezeigt.
-                </p>
             </section>
         </div>
     </section>

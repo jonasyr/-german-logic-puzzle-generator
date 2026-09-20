@@ -173,6 +173,30 @@
     line-height: var(--leading-body);
 }
 
+/*
+ * Beschriftung und Erklaerung als ein Block links vom Schalter.
+ *
+ * Die Erklaerungen standen frueher als lose Absaetze unter der ganzen Karte,
+ * in der Reihenfolge der Schalter - eine Zuordnung, die man erraten musste und
+ * die beim dritten Schalter schlicht fehlte. Direkt unter der Beschriftung ist
+ * sie nicht zu verwechseln.
+ *
+ * Die Zeilen werden dadurch hoeher, und das `align-items: center` der Zeile
+ * zentriert den Schalter dazu - das behebt nebenbei den Versatz, den
+ * zweizeilige Beschriftungen vorher erzeugten.
+ */
+.row__text {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.row__note {
+    font-size: var(--text-caption);
+    line-height: var(--leading-caption);
+    color: var(--muted);
+}
+
 .row__control {
     flex: 0 1 auto;
     min-width: 0;

@@ -388,9 +388,24 @@ test('Pruefen hebt nur den ersten falschen Schluss hervor', async ({ page }) => 
   expect(status!.length, 'die Meldung kostet Buehnenhoehe und muss kurz sein')
     .toBeLessThan(70);
 
-  // Genau eine Stelle, und zwar die zuerst getippte.
+  /*
+   * Genau eine Stelle, und sie gehoert zu den drei getippten.
+   *
+   * Hier stand einmal `keys[0]` - die zuerst getippte Zelle muesse die
+   * hervorgehobene sein. Das ist nur wahr, wenn sie tatsaechlich falsch ist,
+   * und welche der drei die richtige Zuordnung traegt, entscheidet das
+   * Raetsel. generateAndPlay setzt keinen Seed, also ist es bei jedem Lauf ein
+   * anderes: der Test ging durch, solange der Zufall mitspielte, und fiel,
+   * sobald die erste getippte Zelle die richtige war.
+   *
+   * Dass von mehreren falschen die ZUERST GESETZTE gewaehlt wird, ist eine
+   * reine Funktion und wird in test/first-wrong.test.ts an festen Eingaben
+   * geprueft - dort deterministisch, wie es hingehoert. Hier gehoert die
+   * Verdrahtung hin: eine Stelle, aus der eigenen Tippfolge, nicht mehr.
+   */
   await expect(page.locator('.play-pager .cell.is-wrong')).toHaveCount(1);
-  await expect(page.locator(`.play-pager .cell[data-key="${keys[0]}"]`)).toHaveClass(/is-wrong/);
+  const markiert = await page.locator('.play-pager .cell.is-wrong').getAttribute('data-key');
+  expect(keys, 'die Stelle muss eine der selbst getippten sein').toContain(markiert);
 
   /*
    * Und die Stelle muss sichtbar sein.

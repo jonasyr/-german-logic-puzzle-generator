@@ -741,6 +741,27 @@
 .sheet-header .sheet-count { color: var(--muted); font-size: 14px; font-weight: 400; }
 
 /*
+ * Der Pfeil zeigt, was der naechste Tipp tut - nicht, wo das Blatt steht.
+ *
+ * Er stand in jedem Zustand auf "hoch": geschlossen, halb offen und ganz
+ * offen sahen identisch aus. Wer das Blatt zumachen wollte, hatte kein
+ * Zeichen dafuer, dass Tippen das ueberhaupt kann.
+ *
+ * Der Knopf durchlaeuft peek -> half -> full -> peek. Aus den ersten beiden
+ * Zustaenden oeffnet der naechste Tipp weiter, aus dem dritten schliesst er.
+ * Genau dort dreht sich der Pfeil. aria-expanded pflegt cluesSheet bereits,
+ * das hier ist die sichtbare Entsprechung.
+ */
+.sheet-chevron {
+    display: inline-block;
+    transition: transform .18s ease;
+}
+.clues-sheet[data-detent="full"] .sheet-chevron { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+    .sheet-chevron { transition: none; }
+}
+
+/*
  * At peek the body does not scroll: nothing of it is on screen, so a gesture
  * there would move content nobody can see while overscroll-behavior stops it
  * reaching the page - the "I keep sliding and it never comes" trap.

@@ -26,7 +26,7 @@ self.addEventListener('message', (event: MessageEvent<WorkerRequest>) => {
         ok: true,
         data: {
           themes: [
-            { id: STANDARD_THEME_ID, title: 'Standard (alle Themen abwechselnd)' },
+            { id: STANDARD_THEME_ID, title: 'Alle Themen abwechselnd' },
             ...listGermanThemes(),
           ],
           limits: BOOKLET_LIMITS,
