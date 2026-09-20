@@ -56,7 +56,9 @@ function personalSection(stats) {
          * steht deshalb daneben, statt sie dem Leser aufzubuerden.
          */
         const de = value => value.toFixed(1).replace('.', ',');
-        const trend = later < earlier ? '↓ besser' : later > earlier ? '↑ schlechter' : '→ gleich';
+        // Geschuetztes Leerzeichen: sonst bleibt der Pfeil in der ersten Zeile
+        // haengen und die Wertung steht allein in der zweiten.
+        const trend = later < earlier ? '↓\u00a0besser' : later > earlier ? '↑\u00a0schlechter' : '→\u00a0gleich';
         list.append(statRow('Fehlprüfungen', `${de(earlier)} → ${de(later)} ${trend}`));
     }
 

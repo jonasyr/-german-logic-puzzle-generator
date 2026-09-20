@@ -812,7 +812,8 @@
  * Schirm tippt - das Naheliegende - traf nichts.
  */
 .play-stage.is-locked::after {
-    content: "Pausiert · zum Weiterspielen tippen";
+    /* Geschuetzte Leerzeichen, sonst faellt "tippen" allein in die zweite Zeile. */
+    content: "Pausiert · zum\00a0Weiterspielen\00a0tippen";
     position: absolute; inset: 0;
     display: grid; place-items: center;
     text-align: center;

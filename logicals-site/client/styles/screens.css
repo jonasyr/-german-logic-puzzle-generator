@@ -429,8 +429,8 @@
 .profile {
     display: grid;
     justify-items: center;
-    gap: var(--space-1);
-    margin-bottom: var(--space-5);
+    gap: 2px;
+    margin-bottom: var(--space-4);
 }
 
 .profile__ring {
@@ -456,7 +456,16 @@
 .profile__track { stroke: var(--line); }
 .profile__fill {
     stroke: var(--accent);
-    stroke-linecap: round;
+    /*
+     * Stumpfe Enden, keine runden.
+     *
+     * Runde Enden verlaengern den Bogen um je eine halbe Strichbreite und
+     * runden ihn ab. Bei vier Prozent bleibt davon keine Kurve uebrig,
+     * sondern eine Pille - die breiter wirkt als die Bahn und auf ihr zu
+     * liegen scheint statt in ihr. Zwei Durchsichten haben das unabhaengig
+     * als Renderfehler gelesen. Stumpf geschnitten ist ein kurzer Bogen ein
+     * kurzer Bogen.
+     */
     /*
      * Umfang bei r=52: 2·π·52 = 326.73. Der Fortschritt wird ueber den
      * Versatz gesetzt (siehe historyScreen.js) - voll heisst Versatz 0.
@@ -490,7 +499,7 @@
 }
 
 .profile__name {
-    margin: var(--space-2) 0 0;
+    margin: var(--space-1) 0 0;
     font-size: var(--text-title);
     line-height: var(--leading-title);
     font-weight: 600;
@@ -509,8 +518,21 @@
  * Der Kopf kostet Hoehe, bevor die erste Ergebniskarte kommt. Bei 320px
  * bleibt es so bei rund 150px statt 175.
  */
+/*
+ * Auf schmalen Schirmen deutlich kleiner.
+ *
+ * Gemessen bei 320x568 reichte der Kopf bis y=312 und die erste Ergebniskarte
+ * begann erst bei 336 - nach 59 Prozent des Schirms. Fuer einen Bildschirm,
+ * der Ergebnisse zeigen soll, ist das zu viel Zeremonie vor dem Inhalt.
+ */
 @media (max-width: 360px) {
-    .profile__ring { width: 88px; height: 88px; }
-    .profile__badge-number { font-size: 24px; }
-    .profile__name { font-size: var(--text-body); line-height: var(--leading-body); }
+    .profile { margin-bottom: var(--space-3); }
+    .profile__ring { width: 68px; height: 68px; }
+    .profile__badge-word { font-size: 8px; }
+    .profile__badge-number { font-size: 20px; }
+    .profile__name {
+        margin-top: 2px;
+        font-size: var(--text-body);
+        line-height: var(--leading-body);
+    }
 }
