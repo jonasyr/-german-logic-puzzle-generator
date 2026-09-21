@@ -565,9 +565,20 @@
          weiter, ohne zu wissen, dass das Rennen entschieden war. -->
     <dialog class="confirm" id="opponent-dialog" aria-labelledby="opponent-title">
         <h3 class="confirm__title" id="opponent-title"></h3>
-        <p class="confirm__text">Du kannst weiterspielen – deine Zeit zählt trotzdem.</p>
+        <!-- Sagt beide Folgen, statt zu beruhigen.
+             Hier stand "Du kannst weiterspielen - deine Zeit zählt trotzdem."
+             Gemeint war "dein Ergebnis wird trotzdem gewertet", gelesen wurde
+             "die Uhr läuft gerade weiter" - und ausgerechnet der Entwickler
+             verstand es nicht. Schlimmer: es klang beruhigend, wo die Wahrheit
+             das Gegenteil ist. Wer abbricht und später weiterspielt, wird mit
+             mode 'solo' fortgesetzt (siehe resumeSavedGame), das Ergebnis
+             zählt dann als eigenes Rätsel und NICHT als Duell.
+             Und die Uhr läuft tatsächlich weiter, auch während dieser Dialog
+             offen steht: createAuthoritativeTimer rechnet aus der Wanduhr
+             gegen den Startzeitpunkt des Raums, ein Dialog hält sie nicht an. -->
+        <p class="confirm__text">Die Uhr läuft weiter. Spielst du zu Ende, zählt deine Zeit im Duell. Brichst du ab, findest du das Rätsel unter „Weiterspielen“ – dann zählt es als eigenes Rätsel, nicht als Duell.</p>
         <form method="dialog" class="confirm__actions">
-            <button class="btn btn--ghost" type="submit" value="later" id="opponent-later">Später beenden</button>
+            <button class="btn btn--ghost" type="submit" value="later" id="opponent-later">Alleine beenden</button>
             <button class="btn btn--primary" type="submit" value="stay" id="opponent-stay" autofocus>Weiterspielen</button>
         </form>
     </dialog>
