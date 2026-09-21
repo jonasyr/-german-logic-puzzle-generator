@@ -55,23 +55,41 @@
             <button class="start-who" id="player-button" type="button">Spieler auswählen</button>
 
             <div class="start-actions">
-                <!-- Gruppiert, weil sieben gleich aussehende Knöpfe untereinander
-                     nicht sagen, welcher wozu gehört. Spielen zuerst. -->
+                <!--
+                     Gruppiert, weil sieben gleich aussehende Knöpfe untereinander
+                     nicht sagen, welcher wozu gehört.
+
+                     Unter „Spielen" stehen vier Einträge, die sich in der ART
+                     unterscheiden: da weitermachen, wo man war; das heutige;
+                     das lange Vorhaben; zu zweit. „Eigenes Rätsel" gehört nicht
+                     dazu - es ist kein weiteres Angebot, sondern ein Werkzeug,
+                     mit dem man sich selbst eins baut. Es stammt aus der Zeit
+                     vor der Sammlung, als der Generator das Produkt war, und
+                     stand seither zwischen den Angeboten, ohne eines zu sein.
+
+                     Die Reihenfolge folgt der Dringlichkeit: ein unterbrochenes
+                     Rätsel ist der stärkste Anspruch, dann das Tagesrätsel, das
+                     nur heute gilt.
+                -->
                 <section class="start-group" aria-labelledby="start-group-play">
                     <h2 class="start-group__caption" id="start-group-play">Spielen</h2>
+                    <button class="btn btn--primary btn--large btn--block" type="button" id="resume-button" hidden>Weiterspielen</button>
+                    <p class="start-note" id="resume-detail" hidden></p>
+                    <p class="hint start-hint" id="start-hint" role="status" aria-live="polite"></p>
                     <button class="btn btn--primary btn--large btn--block" type="button" id="daily-button" disabled>Rätsel des Tages</button>
                     <p class="start-note" id="daily-detail" hidden></p>
                     <button class="btn btn--on-dark btn--block" type="button" id="collection-button">Sammlung</button>
                     <p class="start-note" id="collection-detail" hidden></p>
-                    <button class="btn btn--primary btn--large btn--block" type="button" id="resume-button" hidden>Weiterspielen</button>
-                    <p class="start-note" id="resume-detail" hidden></p>
-                    <p class="hint start-hint" id="start-hint" role="status" aria-live="polite"></p>
-                    <button class="btn btn--primary btn--large btn--block" id="start-button" type="button" disabled>Neues Rätsel</button>
                     <button class="btn btn--on-dark btn--block" id="duel-join-button" type="button" disabled>Duell beitreten</button>
                 </section>
 
                 <section class="start-group" aria-labelledby="start-group-more">
                     <h2 class="start-group__caption" id="start-group-more">Mehr</h2>
+                    <!-- Kein btn--primary im Markup: refreshStartScreen hat es
+                         ohnehin bei jedem Zeichnen wieder heruntergestuft. Ein
+                         Versprechen, das der Code sofort zurücknimmt, gehört
+                         nicht ins Markup. -->
+                    <button class="btn btn--on-dark btn--block" id="start-button" type="button" disabled>Eigenes Rätsel</button>
                     <button class="btn btn--on-dark btn--block" id="history-button" type="button" disabled>Ergebnisse</button>
                     <button class="btn btn--on-dark btn--block" id="settings-button" type="button">Einstellungen</button>
                 </section>
@@ -85,7 +103,7 @@
             <button class="btn btn--ghost btn--back" type="button" data-goto="screen-start" aria-label="Zurück">
                 <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Zurück</span>
             </button>
-            <h2>Neues Rätsel</h2>
+            <h2>Eigenes Rätsel</h2>
         </header>
 
         <form id="config-form" class="form">

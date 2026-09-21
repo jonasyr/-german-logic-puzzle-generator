@@ -122,13 +122,20 @@ test('ohne Netz bleibt die Sammlung benutzbar', async ({ page, context }) => {
   }
 });
 
-test('der Startbildschirm behält vier Knöpfe im Spielen-Teil', async ({ page }) => {
-  // Die Knopfwand wurde heute erst beseitigt. Ein fünfter Eintrag wäre ihr
-  // Anfang, und dieser Test ist die Bremse dagegen.
+test('der Startbildschirm behält drei Knöpfe im Spielen-Teil', async ({ page }) => {
+  /*
+   * Die Knopfwand war einmal das Problem, und dieser Test ist die Bremse
+   * dagegen. Aus vier wurden drei: „Eigenes Rätsel" steht jetzt unter „Mehr".
+   * Es ist kein weiteres Angebot, sondern ein Werkzeug, mit dem man sich
+   * selbst eins baut - es stand zwischen den Angeboten, ohne eines zu sein.
+   *
+   * Sichtbar sind hier drei, weil „Weiterspielen" ohne unterbrochenes Rätsel
+   * verborgen bleibt; mit einem sind es vier.
+   */
   await ada(page, []);
   await page.goto('/');
   const group = page.locator('#screen-start .start-group').first();
-  await expect(group.locator('.btn:visible')).toHaveCount(4);
+  await expect(group.locator('.btn:visible')).toHaveCount(3);
 });
 
 for (const phone of PHONES) {

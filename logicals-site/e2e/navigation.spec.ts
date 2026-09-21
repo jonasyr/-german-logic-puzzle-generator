@@ -164,14 +164,22 @@ test('der Startbildschirm ordnet seine Knoepfe in benannte Gruppen', async ({ pa
   await expect(groups.nth(0)).toContainText('Spielen');
   await expect(groups.nth(1)).toContainText('Mehr');
 
-  // Spielen zuerst, und zwar alle vier Wege ins Raetsel.
+  /*
+   * Unter "Spielen" stehen nur Angebote - Wege, die einem ein Raetsel geben.
+   * Sie unterscheiden sich in der ART: das heutige, das lange Vorhaben, zu
+   * zweit (und "Weiterspielen", wenn eines offen ist).
+   */
   const play = groups.nth(0);
-  for (const id of ['#daily-button', '#start-button', '#duel-join-button']) {
+  for (const id of ['#resume-button', '#daily-button', '#collection-button', '#duel-join-button']) {
     await expect(play.locator(id)).toHaveCount(1);
   }
-  // Nachschlagen und Einstellen gehoeren nicht dazwischen.
+  /*
+   * Unter "Mehr" steht, was kein Angebot ist: nachschlagen, einstellen - und
+   * "Eigenes Raetsel", ein Werkzeug, mit dem man sich selbst eins baut. Es
+   * stand frueher zwischen den Angeboten, ohne eines zu sein.
+   */
   const more = groups.nth(1);
-  for (const id of ['#history-button', '#settings-button']) {
+  for (const id of ['#start-button', '#history-button', '#settings-button']) {
     await expect(more.locator(id)).toHaveCount(1);
   }
 

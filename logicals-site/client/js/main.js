@@ -179,9 +179,8 @@ function refreshStartScreen() {
     const daily = el('daily-button');
     daily.classList.toggle('btn--primary', !record);
     daily.classList.toggle('btn--on-dark', Boolean(record));
-    const start = el('start-button');
-    start.classList.remove('btn--primary');
-    start.classList.add('btn--on-dark');
+    // "Eigenes Rätsel" steht seit dem Umbau unter „Mehr" und ist dort
+    // dauerhaft ruhig - es musste hier nicht mehr heruntergestuft werden.
 
     renderCollectionNote(player).catch(() => { /* best effort, wie die Serie */ });
     refreshDailyButton().catch(() => { /* best effort; see above */ });
