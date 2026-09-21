@@ -1,0 +1,80 @@
+/*
+ * Aufnahmestrecke fuer den Duell-Ablauf. Laeuft nur mit SHOTS=1.
+ *
+ * Braucht zwei Browser-Zusammenhaenge und die Duell-Attrappe - deshalb eine
+ * eigene Datei statt eines Eintrags in der Hauptstrecke.
+ */
+import { expect, test, type Page } from '@playwright/test';
+import { createDuelState, installDuelApi, ROOM_CODE } from './support/duelServer';
+
+test.skip(!process.env.SHOTS, 'Aufnahmestrecke - mit SHOTS=1 starten');
+
+const solve = async (page: Page) => {
+  await page.locator('#play-solution-button').evaluate((button: HTMLButtonElement) => button.click());
+  await page.locator('#confirm-ok').click();
+  const labels = await page.locator('#play-solution-table').evaluate(container => {
+    const headers = [...container.querySelectorAll('th')].map(cell => cell.textContent || '');
+    return [...container.querySelectorAll('tbody tr')].flatMap(row => {
+      const values = [...row.querySelectorAll('td')].map(cell => cell.textContent || '');
+      return headers.flatMap((_, left) => headers.slice(left + 1).map((__, offset) =>
+        `${values[left]} / ${values[left + offset + 1]}`));
+    });
+  });
+  await page.locator('#overview-mark-yes').evaluate((button: HTMLButtonElement) => button.click());
+  await page.locator('.play-pager .cell').evaluateAll((cells, wanted) => {
+    for (const label of wanted as string[]) {
+      const cell = cells.find(c => (c as HTMLElement).dataset.label === label) as HTMLButtonElement;
+      cell.click();
+    }
+  }, labels);
+};
+
+test('duell-abschluss', async ({ browser }) => {
+  test.setTimeout(240_000);
+  const state = createDuelState();
+
+  const hostContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const guestContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const host = await hostContext.newPage();
+  const guest = await guestContext.newPage();
+  await installDuelApi(host, { playerId: 1, displayName: 'Ada', state });
+  await installDuelApi(guest, { playerId: 2, displayName: 'Bea', state });
+
+  await host.goto('/');
+  await host.locator('#start-button').click();
+  await host.locator('#field-categoryCount').selectOption('3');
+  await host.locator('#field-valuesPerCategory').selectOption('4');
+  await host.locator('#field-difficulty').selectOption('leicht');
+  await host.locator('#duel-start-button').click();
+  await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 120_000 });
+  await host.screenshot({ path: 'shots/duell-01-lobby-host.png' });
+
+  await guest.goto(`/?room=${ROOM_CODE}`);
+  await expect(guest.locator('#screen-duel-entry')).toHaveClass(/is-active/);
+  await guest.locator('#duel-entry-submit').click();
+  await expect(guest.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 30_000 });
+  await expect(host.locator('.duel-member')).toHaveCount(2, { timeout: 10_000 });
+  await guest.screenshot({ path: 'shots/duell-02-lobby-gast.png' });
+
+  await host.locator('#duel-ready').click();
+  await guest.locator('#duel-ready').click();
+  await expect(host.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 30_000 });
+  await expect(guest.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 30_000 });
+
+  // Der Gastgeber loest zuerst: das ist der Zustand, der den Gast betrifft.
+  await solve(host);
+  await expect(host.locator('#screen-duel-result')).toHaveClass(/is-active/, { timeout: 30_000 });
+  await host.waitForTimeout(600);
+  await host.screenshot({ path: 'shots/duell-03-fertig-wartet.png' });
+  // Und was der Gast in genau diesem Moment sieht - er spielt noch.
+  await guest.waitForTimeout(600);
+  await guest.screenshot({ path: 'shots/duell-04-gast-spielt-noch.png' });
+
+  await solve(guest);
+  await expect(guest.locator('#duel-result-list .duel-result-card')).toHaveCount(2, { timeout: 30_000 });
+  await guest.waitForTimeout(600);
+  await guest.screenshot({ path: 'shots/duell-05-beide-fertig.png' });
+
+  await hostContext.close();
+  await guestContext.close();
+});
