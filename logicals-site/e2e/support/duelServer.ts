@@ -78,6 +78,19 @@ export async function installDuelApi(page: Page, options: DuelApiOptions): Promi
       return json({ players: [{ id: playerId, displayName, createdAt: '2026-09-17T00:00:00Z' }] });
     }
 
+    /*
+     * Erfahrung: im Duell verdient wie im Einzelspiel, also muss die Attrappe
+     * sie auch hier liefern. Die Feldnamen spiegeln sumExperience im Worker -
+     * drei Scheinfehler sind in diesem Projekt schon aus falschen Feldnamen
+     * entstanden.
+     */
+    if (/^\/api\/players\/\d+\/experience$/.test(url.pathname)) {
+      return json({ xp: 845, solved: 21 });
+    }
+    if (/^\/api\/players\/\d+\/history$/.test(url.pathname)) {
+      return json({ results: [] });
+    }
+
     const body = request.method() === 'POST' ? request.postDataJSON() : {};
 
     /*

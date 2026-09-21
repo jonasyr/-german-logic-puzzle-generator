@@ -224,8 +224,26 @@
                 <div class="spinner"></div>
             </div>
             <div class="duel-result-list" id="duel-result-list"></div>
+            <!-- Erfahrung: erscheint nachträglich, wenn der Stand da ist.
+                 Derselbe Aufbau und dieselben Klassen wie im Gelöst-Dialog -
+                 eine Zeile, ein Balken, keine Kachel. Ein zweiter Satz Regeln
+                 für dieselbe Sache wäre die Stelle, an der beide Bildschirme
+                 auseinanderlaufen. Ohne Netz bleibt der Block weg. -->
+            <div class="solved__xp" id="duel-xp" hidden>
+                <p class="solved__xp-line">
+                    <span class="solved__xp-gain" id="duel-xp-gain"></span>
+                    <span class="solved__xp-level" id="duel-xp-level"></span>
+                </p>
+                <div class="solved__xp-track" aria-hidden="true">
+                    <span class="solved__xp-fill" id="duel-xp-fill"></span>
+                </div>
+            </div>
             <p class="hint" id="duel-result-hint" role="status" aria-live="polite"></p>
-            <button class="btn btn--primary btn--block" type="button" data-goto="screen-start">Neues Rätsel</button>
+            <!-- Sagt, was er tut. Er hiess "Neues Rätsel" und führte zur
+                 Startseite - und der Bildschirm, den er zu meinen schien,
+                 heißt inzwischen "Eigenes Rätsel". Ein Knopf, der etwas
+                 anderes verspricht als er tut. -->
+            <button class="btn btn--ghost btn--block" type="button" id="duel-result-home" data-goto="screen-start">Zur Startseite</button>
         </div>
     </section>
 

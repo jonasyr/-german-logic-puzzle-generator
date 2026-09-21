@@ -167,6 +167,22 @@ test('two devices load the same runtime puzzle and enter play from one start ins
   await expect(guest.locator('#duel-result-list .duel-result-card')).toHaveCount(2);
   await expect(host.locator('#duel-result-list .duel-result-card')).toHaveCount(2, { timeout: 5_000 });
 
+  /*
+   * Der Knopf hiess "Neues Raetsel", fuehrte aber zu screen-start - und der
+   * Bildschirm, den er zu meinen schien, heisst inzwischen "Eigenes Raetsel".
+   * Ein Knopf, der etwas anderes verspricht als er tut.
+   */
+  await expect(host.locator('#duel-result-home')).toHaveText('Zur Startseite');
+
+  /*
+   * Erfahrung wird im Duell verdient - dasselbe Ergebnis, dieselbe Formel -
+   * und war hier nie zu sehen. Sie wird nachgetragen, sobald der Stand da
+   * ist, genau wie im Einzelspieler-Dialog; ohne Netz bleibt der Block weg,
+   * weil eine falsche Zahl schlechter waere als keine.
+   */
+  await expect(host.locator('#duel-xp')).toBeVisible({ timeout: 20_000 });
+  await expect(host.locator('#duel-xp-level')).toHaveText(/^Noch \d+ bis Stufe \d+$/);
+
   await hostContext.close();
   await guestContext.close();
 });

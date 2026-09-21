@@ -30,3 +30,34 @@ export function renderDuelResults(room, currentPlayerId) {
     el('duel-result-waiting').hidden = complete;
     return complete;
 }
+
+/**
+ * Trägt den Erfahrungsstand nach, sobald er vorliegt.
+ *
+ * Gleiche Form und gleiche Regel wie showSolvedExperience im Einzelspiel:
+ * ohne Stand bleibt der Block weg, weil eine falsche Zahl schlechter wäre als
+ * keine. Der Zuwachs ist die Differenz zum gemerkten Stand - so muss die
+ * Formel nicht auch im Client stehen, sondern bleibt allein im Worker.
+ *
+ * Rechts steht, was fehlt, nicht wo man ist: in welcher Stufe man sich
+ * befindet, zeigt der Balken darunter ohnehin.
+ *
+ * @param {{ gain: number|null, xp: number, level: number,
+ *           intoLevel: number, levelSpan: number } | null} standing
+ */
+export function renderDuelExperience(standing) {
+    const block = el('duel-xp');
+    if (!standing) { block.hidden = true; return; }
+
+    el('duel-xp-gain').textContent = standing.gain === null || standing.gain <= 0
+        ? `${standing.xp} Erfahrung`
+        : `+${standing.gain}`;
+    const fehlt = Math.max(0, standing.levelSpan - standing.intoLevel);
+    el('duel-xp-level').textContent = `Noch ${fehlt} bis Stufe ${standing.level + 1}`;
+
+    const anteil = standing.levelSpan > 0
+        ? Math.max(0, Math.min(1, standing.intoLevel / standing.levelSpan))
+        : 0;
+    el('duel-xp-fill').style.width = `${Math.round(anteil * 100)}%`;
+    block.hidden = false;
+}
