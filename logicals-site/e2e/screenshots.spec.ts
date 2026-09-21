@@ -139,7 +139,7 @@ for (const v of VARIANTEN) {
     await toStart(page);
     await page.locator('#duel-join-button').click();
     await page.waitForTimeout(350);
-    await shot('08-duell-beitreten');
+    await shot('08-duell');
 
     await toStart(page);
     await openPuzzle(page);

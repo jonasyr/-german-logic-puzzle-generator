@@ -211,9 +211,18 @@ async function resumeDuelSession(session, { explicit } = { explicit: true }) {
     await enterLobby(activeSession, room);
 }
 
-export function initDuelController({ onOpenPlay }) {
+/**
+ * @param {{ onOpenPlay: Function, onCreateDuel: (options: object) => Promise<void>,
+ *           onCustomDuel: () => void }} handlers
+ */
+export function initDuelController({ onOpenPlay, onCreateDuel, onCustomDuel }) {
     openPlay = onOpenPlay;
-    initDuelEntry(joinDuel);
+    /*
+     * Erzeugen und Beitreten kommen beide von hier, gehen aber verschiedene
+     * Wege: Beitreten braucht nur den Code, Erzeugen braucht den Generator -
+     * und der haengt an main.js, nicht an der Lobby.
+     */
+    initDuelEntry({ onJoin: joinDuel, onCreate: onCreateDuel, onCustom: onCustomDuel });
     el('duel-ready').addEventListener('click', async () => {
         if (!activeSession) return;
         el('duel-ready').disabled = true;

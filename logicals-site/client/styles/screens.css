@@ -147,12 +147,32 @@
     gap: var(--space-4);
 }
 
-.duel-entry {
+/*
+ * Der Duell-Bildschirm traegt zwei Bloecke: starten und beitreten. Die Karte
+ * sitzt deshalb um den einzelnen Block, nicht um den ganzen Bildschirm - ein
+ * Rahmen um beides liesse die zwei Wege wie einen aussehen.
+ */
+.duel-entry__block {
     border: var(--hairline) solid var(--line);
     border-radius: var(--radius);
     background: var(--surface);
     padding: var(--space-5);
+    display: grid;
+    gap: var(--space-4);
 }
+
+/* Die Quellen: gestapelt, volle Breite - nebeneinander unterschreiten drei
+   Knoepfe auf 320px die Tapbreite. Die Zeile unter einem Knopf sagt sein Ziel,
+   dieselbe Trennung wie beim Tagesraetsel auf dem Startbildschirm. */
+.duel-sources { display: grid; gap: var(--space-3); }
+/* Eigene Farbe: .start-note ist fuer den dunklen Startbildschirm gedacht und
+   traegt --on-ink. Auf der hellen Karte hier waere das unlesbar. */
+.duel-sources .start-note {
+    margin: calc(var(--space-3) * -1 + 2px) 0 0;
+    color: var(--muted);
+    opacity: 1;
+}
+.duel-sources .start-note[hidden] { display: none; }
 
 .duel-code-field { display: grid; gap: var(--space-2); color: var(--muted); font-size: var(--text-caption); }
 .duel-code-field input {
@@ -236,7 +256,7 @@
 
 @media (max-width: 520px) {
     .start-card { padding: var(--space-7) var(--space-5); }
-    .duel-entry { padding: var(--space-4); }
+    .duel-entry__block { padding: var(--space-4); }
     .duel-result-list { grid-template-columns: 1fr; }
 }
 

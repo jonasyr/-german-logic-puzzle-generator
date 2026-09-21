@@ -35,13 +35,16 @@ test('a duel learned about from a poll still starts exactly once', async ({ brow
   });
 
   await host.goto('/');
-  await host.locator('#start-button').click();
+  await host.locator('#duel-join-button').click();
+  await host.locator('#duel-source-custom').click();
   await host.locator('#field-categoryCount').selectOption('3');
   await host.locator('#field-valuesPerCategory').selectOption('4');
   await host.locator('#field-difficulty').selectOption('leicht');
-  // 'Duell starten' erzeugt selbst; ein Druck auf 'Spielen' davor wuerde im
-  // Solo-Spiel landen, weil es kein Heft mehr gibt, das beides anboete.
-  await host.locator('#duel-start-button').click();
+  // Der Konfigurator traegt nur noch einen Knopf, und der heisst hier
+  // 'Duell starten': die Wahl zwischen allein und Duell faellt einen Schritt
+  // frueher, auf dem Duell-Bildschirm.
+  await expect(host.locator('#generate-button')).toHaveText('Duell starten');
+  await host.locator('#generate-button').click();
   await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE);
 
   await guest.goto(`/?room=${ROOM_CODE}`);

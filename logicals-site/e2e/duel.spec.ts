@@ -24,13 +24,16 @@ test('two devices load the same runtime puzzle and enter play from one start ins
   await installDuelApi(guest, { playerId: 2, displayName: 'Bea', state });
 
   await host.goto('/');
-  await host.locator('#start-button').click();
+  await host.locator('#duel-join-button').click();
+  await host.locator('#duel-source-custom').click();
   await host.locator('#field-categoryCount').selectOption('3');
   await host.locator('#field-valuesPerCategory').selectOption('4');
   await host.locator('#field-difficulty').selectOption('leicht');
-  // 'Duell starten' erzeugt selbst; ein Druck auf 'Spielen' davor wuerde im
-  // Solo-Spiel landen, weil es kein Heft mehr gibt, das beides anboete.
-  await host.locator('#duel-start-button').click();
+  // Der Konfigurator traegt nur noch einen Knopf, und der heisst hier
+  // 'Duell starten': die Wahl zwischen allein und Duell faellt einen Schritt
+  // frueher, auf dem Duell-Bildschirm.
+  await expect(host.locator('#generate-button')).toHaveText('Duell starten');
+  await host.locator('#generate-button').click();
   await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE);
   await host.reload();
   await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE);
@@ -210,11 +213,13 @@ test('ein laufendes Duell wird nicht ohne Rueckfrage verlassen', async ({ browse
   await installDuelApi(guest, { playerId: 2, displayName: 'Bea', state });
 
   await host.goto('/');
-  await host.locator('#start-button').click();
+  await host.locator('#duel-join-button').click();
+  await host.locator('#duel-source-custom').click();
   await host.locator('#field-categoryCount').selectOption('3');
   await host.locator('#field-valuesPerCategory').selectOption('4');
   await host.locator('#field-difficulty').selectOption('leicht');
-  await host.locator('#duel-start-button').click();
+  await expect(host.locator('#generate-button')).toHaveText('Duell starten');
+  await host.locator('#generate-button').click();
   await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 60_000 });
 
   await guest.goto(`/?room=${ROOM_CODE}`);
@@ -259,11 +264,13 @@ test('ein Raumlink wirkt einmal und kapert spaetere Starts nicht', async ({ brow
   await installDuelApi(guest, { playerId: 2, displayName: 'Bea', state });
 
   await host.goto('/');
-  await host.locator('#start-button').click();
+  await host.locator('#duel-join-button').click();
+  await host.locator('#duel-source-custom').click();
   await host.locator('#field-categoryCount').selectOption('3');
   await host.locator('#field-valuesPerCategory').selectOption('4');
   await host.locator('#field-difficulty').selectOption('leicht');
-  await host.locator('#duel-start-button').click();
+  await expect(host.locator('#generate-button')).toHaveText('Duell starten');
+  await host.locator('#generate-button').click();
   await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 120_000 });
 
   await guest.goto(`/?room=${ROOM_CODE}`);
@@ -304,11 +311,13 @@ test('wer noch spielt, erfaehrt dass der andere fertig ist', async ({ browser })
   await installDuelApi(guest, { playerId: 2, displayName: 'Bea', state });
 
   await host.goto('/');
-  await host.locator('#start-button').click();
+  await host.locator('#duel-join-button').click();
+  await host.locator('#duel-source-custom').click();
   await host.locator('#field-categoryCount').selectOption('3');
   await host.locator('#field-valuesPerCategory').selectOption('4');
   await host.locator('#field-difficulty').selectOption('leicht');
-  await host.locator('#duel-start-button').click();
+  await expect(host.locator('#generate-button')).toHaveText('Duell starten');
+  await host.locator('#generate-button').click();
   await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 60_000 });
 
   await guest.goto(`/?room=${ROOM_CODE}`);

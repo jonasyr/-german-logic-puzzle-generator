@@ -16,6 +16,7 @@ import {
 } from './screens/collectionScreen.js';
 import { initPlay, openPlay } from './play/playController.js';
 import { createDuelForPuzzle, initDuelController, openRoomFromUrl } from './duel/lobbyController.js';
+import { setDuelPlayer } from './screens/duelEntryScreen.js';
 import { initDuelResultController } from './duel/duelResultController.js';
 import { clearResume, loadResume } from './play/resumeStore.js';
 import { loadPrefs } from './play/playPrefs.js';
@@ -42,6 +43,54 @@ const state = { options: null };
  *
  * @param {'play'|'duel'} intent
  */
+/*
+ * Wofuer der Konfigurator gerade offen ist.
+ *
+ * Er trug frueher zwei Knoepfe - "Spielen" und "Duell starten" - und war
+ * damit der einzige Weg in ein Duell. Die Wahl faellt jetzt einen Schritt
+ * frueher, auf dem Duell-Bildschirm; hierher kommt man mit einer Absicht,
+ * und der Knopf sagt, welche es ist. Ein zweiter Knopf waere jetzt eine
+ * Abzweigung, die es nicht mehr gibt.
+ */
+let configIntent = 'play';
+
+function openConfig(intent) {
+    configIntent = intent;
+    // Opening the settings before the generator options have loaded must not
+    // leave the seed field empty.
+    ensureSeed();
+    el('generate-button').textContent = intent === 'duel' ? 'Duell starten' : 'Spielen';
+    setHint('config-hint', '');
+    showScreen('screen-config');
+}
+
+/**
+ * Ein Duell aus fertigen Optionen - Sammlung oder Tagesraetsel.
+ *
+ * Denselben Weg geht `generate('duel')` fuer das eigene Raetsel; getrennt
+ * bleibt nur, woher die Optionen kommen. Der Hinweis landet auf dem
+ * Bildschirm, von dem aus gestartet wurde, sonst laese ihn niemand.
+ */
+async function startDuelFrom(options, hintId) {
+    setBusy('Rätsel wird erzeugt und geprüft …');
+    try {
+        const data = await fetchBooklet(options);
+        const puzzle = data.booklet.puzzles[0];
+        if (!puzzle) throw new Error('Das Rätsel konnte nicht erzeugt werden.');
+        state.options = data.booklet.config;
+        await createDuelForPuzzle({
+            player: getSelectedPlayer(),
+            options: data.booklet.config,
+            puzzle,
+            puzzleIndex: 0,
+        });
+    } catch (error) {
+        setHint(hintId, error.message, true);
+    } finally {
+        clearBusy();
+    }
+}
+
 async function generate(intent) {
     const options = collectOptions();
     setBusy('Rätsel wird erzeugt und geprüft …');
@@ -182,6 +231,9 @@ function refreshStartScreen() {
     // "Eigenes Rätsel" steht seit dem Umbau unter „Mehr" und ist dort
     // dauerhaft ruhig - es musste hier nicht mehr heruntergestuft werden.
 
+    // Der Duell-Bildschirm schlaegt ein Sammlungsraetsel vor und braucht dafuer
+    // denselben Spieler wie die Sammlung selbst.
+    setDuelPlayer(player);
     renderCollectionNote(player).catch(() => { /* best effort, wie die Serie */ });
     refreshDailyButton().catch(() => { /* best effort; see above */ });
 }
@@ -227,12 +279,7 @@ async function resumeSavedGame() {
 
 function wire() {
     wireBackButtons();
-    el('start-button').addEventListener('click', () => {
-        // Opening the settings before the generator options have loaded must not
-        // leave the seed field empty.
-        ensureSeed();
-        showScreen('screen-config');
-    });
+    el('start-button').addEventListener('click', () => openConfig('play'));
     el('resume-button').addEventListener('click', resumeSavedGame);
     el('daily-button').addEventListener('click', playDaily);
 
@@ -245,14 +292,8 @@ function wire() {
 
     el('config-form').addEventListener('submit', event => {
         event.preventDefault();
-        generate('play');
+        generate(configIntent);
     });
-
-    // Das Duell verschwindet vollständig, wenn der Spieler es ausgeblendet hat.
-    // Dieselbe Regel hing vorher am Heft, das es nicht mehr gibt.
-    const duelStart = el('duel-start-button');
-    duelStart.hidden = loadPrefs().hideDuel;
-    duelStart.addEventListener('click', () => generate('duel'));
 
     // Zwei Wege hinein: vom Start, und aus dem laufenden Spiel. Der Weg aus dem
     // Spiel läuft nicht über die Duell-Rückfrage - man verlässt das Duell dabei
@@ -268,7 +309,11 @@ function wire() {
     el('play-settings').addEventListener('click', () => showScreen('screen-settings'));
 
     initPlay();
-    initDuelController({ onOpenPlay: openPlay });
+    initDuelController({
+        onOpenPlay: openPlay,
+        onCreateDuel: options => startDuelFrom(options, 'duel-create-hint'),
+        onCustomDuel: () => openConfig('duel'),
+    });
     initDuelResultController();
 }
 

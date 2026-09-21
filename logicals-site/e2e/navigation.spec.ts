@@ -204,3 +204,50 @@ test('die Gruppen ueberleben das Ausblenden der Duell-Funktionen', async ({ page
   await expect(page.locator('#screen-start .start-group')).toHaveCount(2);
   await expect(page.locator('#daily-button')).toBeVisible();
 });
+
+/*
+ * Das Duell ist ein eigener Weg, kein Anhaengsel des Konfigurators.
+ *
+ * Vorher lag der einzige Weg in ein Duell als zweiter Knopf neben "Spielen"
+ * im Konfigurator: wer zu zweit spielen wollte, musste erst ein eigenes
+ * Raetsel bauen - obwohl Sammlung und Tagesraetsel dafuer besser taugen,
+ * weil beide dieselbe Aufgabe stellen, ohne dass jemand Regler dreht.
+ */
+test('das Duell hat einen eigenen Einstieg mit Quellenauswahl', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await withPlayer(page);
+  await page.goto('/');
+  await expect(page.locator('#duel-join-button')).toBeEnabled({ timeout: 30_000 });
+  await page.locator('#duel-join-button').click();
+
+  // Beide Wege stehen hier, nicht nur einer.
+  await expect(page.locator('#duel-source-collection')).toBeVisible();
+  await expect(page.locator('#duel-source-daily')).toBeVisible();
+  await expect(page.locator('#duel-source-custom')).toBeVisible();
+  await expect(page.locator('#duel-entry-submit')).toBeVisible();
+
+  // Jede Quelle sagt, was sie meint - sonst waere die Wahl geraten.
+  await expect(page.locator('#duel-source-collection-note')).not.toBeEmpty();
+  await expect(page.locator('#duel-source-daily-note')).not.toBeEmpty();
+
+  /*
+   * "Eigenes Raetsel" fuehrt in den Konfigurator, und der weiss, wofuer er
+   * offen ist. Frueher trug er dafuer einen zweiten Knopf; jetzt sagt der
+   * einzige, was er tut.
+   */
+  await page.locator('#duel-source-custom').click();
+  await expect(page.locator('#screen-config')).toHaveClass(/is-active/);
+  await expect(page.locator('#generate-button')).toHaveText('Duell starten');
+
+  // Und zurueck fuehrt auf den Duell-Bildschirm, nicht auf den Start.
+  await page.goBack();
+  await expect(page.locator('#screen-duel-entry')).toHaveClass(/is-active/);
+
+  /*
+   * Ueber "Eigenes Raetsel" auf dem Startbildschirm ist derselbe Konfigurator
+   * wieder der zum Alleinspielen. Die Beschriftung darf nicht haengenbleiben.
+   */
+  await page.goBack();
+  await page.locator('#start-button').click();
+  await expect(page.locator('#generate-button')).toHaveText('Spielen');
+});

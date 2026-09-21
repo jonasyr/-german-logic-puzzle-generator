@@ -80,7 +80,7 @@
                     <p class="start-note" id="daily-detail" hidden></p>
                     <button class="btn btn--on-dark btn--block" type="button" id="collection-button">Sammlung</button>
                     <p class="start-note" id="collection-detail" hidden></p>
-                    <button class="btn btn--on-dark btn--block" id="duel-join-button" type="button" disabled>Duell beitreten</button>
+                    <button class="btn btn--on-dark btn--block" id="duel-join-button" type="button" disabled>Duell</button>
                 </section>
 
                 <section class="start-group" aria-labelledby="start-group-more">
@@ -155,36 +155,53 @@
 
             <p class="hint" id="config-hint"></p>
 
-            <!-- Beide Wege auf derselben Tiefe. Das Duell hing vorher am
-                 Heft-Bildschirm, den es nicht mehr gibt. -->
-            <!-- Gestapelt, nicht nebeneinander: "Duell starten" neben "Spielen"
-                 unterschreitet auf einem 320px-Gerät die Tapbreite. -->
+            <!-- Ein Knopf, nicht zwei. Wer hierher kommt, hat sich fuer den Weg
+                 schon entschieden: ueber "Eigenes Raetsel" zum Alleinspielen,
+                 ueber "Duell > Eigenes Raetsel" zum Wettlauf. Die Beschriftung
+                 sagt, welcher es ist. -->
             <div class="action-bar">
                 <button class="btn btn--primary btn--block" type="submit" id="generate-button">Spielen</button>
-                <button class="btn btn--ghost btn--block" type="button" id="duel-start-button">Duell starten</button>
             </div>
         </form>
     </section>
 
-    <!-- 3. Duell beitreten -->
+    <!-- 3. Duell: starten oder beitreten -->
     <section class="screen screen--duel" id="screen-duel-entry">
         <header class="bar">
             <button class="btn btn--ghost btn--back" type="button" data-goto="screen-start" aria-label="Zurück">
                 <span class="chevron" aria-hidden="true">‹</span><span class="btn__label">Zurück</span>
             </button>
-            <h2>Duell beitreten</h2>
+            <h2>Duell</h2>
         </header>
-        <form id="duel-entry-form" class="duel-entry">
-            <p class="result-sub">Gib den sechsstelligen Code vom anderen Gerät ein.</p>
-            <label class="duel-code-field" for="duel-code">
-                <span>Raumcode</span>
-                <input id="duel-code" name="code" type="text" minlength="6" maxlength="6" required
-                       inputmode="text" autocomplete="one-time-code" autocapitalize="characters"
-                       spellcheck="false" enterkeyhint="go" placeholder="ABC123" />
-            </label>
-            <p class="hint" id="duel-entry-hint" role="status" aria-live="polite"></p>
-            <button class="btn btn--primary btn--block" id="duel-entry-submit" type="submit">Duell beitreten</button>
-        </form>
+        <div class="duel-entry">
+            <!-- Starten zuerst: beitreten kann nur, wer einen Code bekommen hat,
+                 und wer einen hat, kommt ueber den Link ohnehin direkt hierher.
+                 Die haeufigere Handlung steht oben. -->
+            <section class="duel-entry__block">
+                <h3 class="group__caption" id="caption-duel-create">Duell starten</h3>
+                <p class="result-sub">Wähle das Rätsel. Den Code gibst du danach weiter.</p>
+                <div class="duel-sources" role="group" aria-labelledby="caption-duel-create">
+                    <button class="btn btn--primary btn--block" type="button" id="duel-source-collection">Aus der Sammlung</button>
+                    <p class="start-note" id="duel-source-collection-note" hidden></p>
+                    <button class="btn btn--fill btn--block" type="button" id="duel-source-daily">Rätsel des Tages</button>
+                    <p class="start-note" id="duel-source-daily-note" hidden></p>
+                    <button class="btn btn--fill btn--block" type="button" id="duel-source-custom">Eigenes Rätsel</button>
+                </div>
+                <p class="hint" id="duel-create-hint" role="status" aria-live="polite"></p>
+            </section>
+
+            <form id="duel-entry-form" class="duel-entry__block">
+                <h3 class="group__caption">Mit Code beitreten</h3>
+                <label class="duel-code-field" for="duel-code">
+                    <span>Raumcode</span>
+                    <input id="duel-code" name="code" type="text" minlength="6" maxlength="6" required
+                           inputmode="text" autocomplete="one-time-code" autocapitalize="characters"
+                           spellcheck="false" enterkeyhint="go" placeholder="ABC123" />
+                </label>
+                <p class="hint" id="duel-entry-hint" role="status" aria-live="polite"></p>
+                <button class="btn btn--fill btn--block" id="duel-entry-submit" type="submit">Beitreten</button>
+            </form>
+        </div>
     </section>
 
     <!-- 5. Duell-Lobby -->

@@ -41,11 +41,13 @@ test('duell-abschluss', async ({ browser }) => {
   await installDuelApi(guest, { playerId: 2, displayName: 'Bea', state });
 
   await host.goto('/');
-  await host.locator('#start-button').click();
+  await host.locator('#duel-join-button').click();
+  await host.locator('#duel-source-custom').click();
   await host.locator('#field-categoryCount').selectOption('3');
   await host.locator('#field-valuesPerCategory').selectOption('4');
   await host.locator('#field-difficulty').selectOption('leicht');
-  await host.locator('#duel-start-button').click();
+  await expect(host.locator('#generate-button')).toHaveText('Duell starten');
+  await host.locator('#generate-button').click();
   await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 120_000 });
   await host.screenshot({ path: 'shots/duell-01-lobby-host.png' });
 
@@ -102,11 +104,13 @@ test('duell-aufgabe', async ({ browser }) => {
   await installDuelApi(guest, { playerId: 2, displayName: 'Bea', state });
 
   await host.goto('/');
-  await host.locator('#start-button').click();
+  await host.locator('#duel-join-button').click();
+  await host.locator('#duel-source-custom').click();
   await host.locator('#field-categoryCount').selectOption('3');
   await host.locator('#field-valuesPerCategory').selectOption('4');
   await host.locator('#field-difficulty').selectOption('leicht');
-  await host.locator('#duel-start-button').click();
+  await expect(host.locator('#generate-button')).toHaveText('Duell starten');
+  await host.locator('#generate-button').click();
   await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 120_000 });
 
   await guest.goto(`/?room=${ROOM_CODE}`);

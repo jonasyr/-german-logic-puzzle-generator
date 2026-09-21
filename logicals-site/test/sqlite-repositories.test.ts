@@ -172,6 +172,37 @@ describe('die gelösten Katalog-Seeds', () => {
 
     expect(await repository.listSolvedSeeds(1, 1_000_000)).toEqual([1000001]);
   });
+
+  /*
+   * Ein Sammlungsraetsel zaehlt fuer die Sammlung, egal wie es gespielt wurde.
+   *
+   * Seit das Duell seine Raetsel aus der Sammlung nehmen kann, ist das keine
+   * Nebensache mehr: wer ein Kapitel im Wettlauf durchspielt, wuerde sonst
+   * nichts davon in seiner Sammlung wiederfinden. Die Abfrage filtert nach
+   * Seed, nicht nach Raum - hier festgehalten, damit ein spaeteres
+   * "nur Einzelspiel zaehlt" auffliegt, statt still zu wirken.
+   */
+  it('zaehlt ein im Duell geloestes Katalograetsel mit', async () => {
+    const database = seeded();
+    // Ein eigener Raum: in Raum 5 der Vorlage haben beide schon gespielt, und
+    // je Raum und Spieler gibt es genau ein Ergebnis.
+    database.exec(`
+      INSERT INTO rooms (
+        id, code, host_player_id, configuration_json, booklet_seed, puzzle_index,
+        puzzle_fingerprint, puzzle_title, puzzle_theme_id, effective_puzzle_seed,
+        state, starts_at, expires_at, created_at
+      ) VALUES (
+        6, 'DEF345', 1, '{}', 1000003, 0, 'f', 'Museum', 'museum', 1000003,
+        'complete', '2026-09-18T03:00:00Z', '2026-09-19T03:00:00Z', '2026-09-18T03:00:00Z'
+      );
+    `);
+    insert(database, 20, 1, 6, 50_000, 0, '2026-09-18T03:00:00Z', 1_000_003);
+    insert(database, 21, 2, 6, 61_000, 0, '2026-09-18T03:00:00Z', 1_000_003);
+    const repository = createResultsRepository(adapter(database));
+
+    expect(await repository.listSolvedSeeds(1, 1_000_000)).toEqual([1000003]);
+    expect(await repository.listSolvedSeeds(2, 1_000_000)).toEqual([1000003]);
+  });
 });
 
 describe('die Eingaben für die Erfahrung', () => {

@@ -167,11 +167,15 @@ test('hiding the duel removes every way into one', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#duel-join-button')).toBeHidden();
 
-  // And not just the lobby button - the way to start one too. It used to sit on
-  // the booklet card; it sits in the settings action bar now.
+  /*
+   * Und nicht nur der Knopf zur Lobby - auch der Weg, eines anzufangen.
+   * Der lag frueher als zweiter Knopf im Konfigurator; inzwischen hat das
+   * Duell einen eigenen Bildschirm, und der haengt allein an dem Knopf, der
+   * hier gerade verborgen ist. Der Konfigurator traegt nur noch "Spielen".
+   */
   await page.locator('#start-button').click();
-  await expect(page.locator('#duel-start-button')).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Duell', exact: true })).toHaveCount(0);
+  await expect(page.locator('#generate-button')).toHaveText('Spielen');
+  await expect(page.getByRole('button', { name: /Duell/ })).toHaveCount(0);
 });
 
 test('the settings screen offers nothing that does not affect playing', async ({ page }) => {
