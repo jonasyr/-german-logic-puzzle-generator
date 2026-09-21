@@ -537,6 +537,15 @@
     </dialog>
 
     <dialog class="confirm solved" id="solved-dialog" aria-labelledby="solved-title">
+        <!-- Schliessen als Kreuz, nicht als Zeile.
+             "Raetsel ansehen" tat nichts anderes als schliessen und kostete
+             dabei eine volle Knopfzeile. Als Kreuz kostet es nichts - und der
+             frei gewordene Platz traegt jetzt "Naechstes Raetsel", damit der
+             staerkste Knopf vorwaerts fuehrt statt aus dem Spiel heraus. -->
+        <form method="dialog" class="solved__dismiss-form">
+            <button class="solved__dismiss" type="submit" value="stay" id="solved-stay"
+                    aria-label="Schließen und Rätsel ansehen">×</button>
+        </form>
         <!-- Ein Kopf, eine Kennzahl, eine Zeile.
              Hier standen ein Kicker "GELOEST" ueber dem Titel "Geschafft!" -
              dasselbe zweimal -, drei Kacheln, deren Beschriftungen bei 320px
@@ -562,6 +571,8 @@
         <div class="solved__xp" id="solved-xp" hidden>
             <p class="solved__xp-line">
                 <span class="solved__xp-gain" id="solved-xp-gain"></span>
+                <!-- Rechts steht, was fehlt, nicht wo man ist: in welcher Stufe
+                     man sich befindet, zeigt der Balken ohnehin. -->
                 <span class="solved__xp-level" id="solved-xp-level"></span>
             </p>
             <div class="solved__xp-track" aria-hidden="true">
@@ -569,8 +580,10 @@
             </div>
         </div>
         <form method="dialog" class="confirm__actions">
-            <button class="btn btn--ghost" type="submit" value="stay" id="solved-stay">Rätsel ansehen</button>
-            <button class="btn btn--primary" type="submit" value="home" id="solved-home" autofocus>Zur Startseite</button>
+            <button class="btn btn--ghost" type="submit" value="home" id="solved-home">Zur Startseite</button>
+            <!-- Nur bei Sammlungs-Raetseln: im freien Spiel und beim
+                 Tagesraetsel gibt es kein "naechstes". -->
+            <button class="btn btn--primary" type="submit" value="next" id="solved-next" hidden autofocus>Nächstes Rätsel</button>
         </form>
     </dialog>
 

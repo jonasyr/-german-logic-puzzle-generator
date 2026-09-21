@@ -16,6 +16,8 @@ import { askConfirm, closeConfirm } from '../ui/confirmDialog.js';
 import { closeSolved, showSolved, showSolvedExperience } from '../ui/solvedDialog.js';
 import { cachedExperience, loadExperience } from '../stats/experience.js';
 import { levelAt } from '../stats/level.js';
+import { entryAfter } from '../catalogue/catalogue.js';
+import { playCatalogueEntry } from '../screens/collectionScreen.js';
 import { showFirstRunIfNeeded } from '../ui/firstRun.js';
 import { createAuthoritativeTimer, createTimer, formatTime } from './playTimer.js';
 import { createCompletionSubmission } from '../results/completion.js';
@@ -66,7 +68,16 @@ function paintCell(key) {
         // over from before notes existed, and it made them invisible to anyone
         // using a screen reader even though the symbol was on screen.
         const description = MARK_DESCRIPTIONS[mark] ?? 'leer';
-        const conflicting = conflicts.has(key);
+        /*
+         * Eine Aussage zur Zeit.
+         *
+         * Solange eine Pruef-Hervorhebung steht, bleiben Widersprueche stumm.
+         * Sonst sind im Gitter zwei Faerbungen, von denen die Meldung darueber
+         * nur eine erklaert - eine Durchsicht hat das als Widerspruch gelesen,
+         * und ein Spieler koennte das auch. Sobald weitermarkiert wird,
+         * verschwindet die Pruefmarke und die Widersprueche kommen zurueck.
+         */
+        const conflicting = conflicts.has(key) && state.wrong.size === 0;
         button.textContent = mark ? MARK_SYMBOLS[mark] : '';
         button.classList.toggle('is-yes', mark === 'yes');
         button.classList.toggle('is-no', mark === 'no');
@@ -320,6 +331,16 @@ function handleSolved() {
         failedChecks: state.failedChecks,
         marks: state.marks.size,
         onHome: () => showScreen('screen-start'),
+        /*
+         * Weiter statt hinaus.
+         *
+         * Wer gerade Nummer 1 von 12 geloest hat, will das naechste - nicht
+         * den Startbildschirm. Woher das Raetsel kam, muss sich das Spiel
+         * dabei nicht merken: der Seed steht in seinen Optionen, und der
+         * Katalog weiss den Rest. Gibt es kein naechstes (freies Spiel,
+         * Tagesraetsel, Kapitelende), bleibt der Knopf weg.
+         */
+        onNext: naechsterEintrag(),
     });
     reportExperience(vorher, queued).catch(error => console.error('Experience failed', error));
 }
@@ -348,6 +369,13 @@ async function reportExperience(vorher, queued) {
         intoLevel: stufe.intoLevel,
         levelSpan: stufe.levelSpan,
     });
+}
+
+/** Der Griff zum naechsten Katalogeintrag - oder null. */
+function naechsterEintrag() {
+    const folgend = entryAfter(state.context?.options?.seed);
+    if (!folgend) return null;
+    return () => playCatalogueEntry(folgend.chapter, folgend.entry);
 }
 
 async function queueCompletion(elapsedMs) {

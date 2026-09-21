@@ -189,13 +189,31 @@ for (const v of VARIANTEN) {
       document.getElementById('solved-checks')!.textContent = '0';
       document.getElementById('solved-marks')!.textContent = '48';
       document.getElementById('solved-xp-gain')!.textContent = '+56';
-      document.getElementById('solved-xp-level')!.textContent = 'Stufe 7';
+      // Rechts steht, was fehlt - nicht, wo man ist.
+      document.getElementById('solved-xp-level')!.textContent = 'noch 288 bis Stufe 8';
       document.getElementById('solved-xp-fill')!.setAttribute('style', 'width: 4%');
       document.getElementById('solved-xp')!.hidden = false;
       (document.getElementById('solved-dialog') as HTMLDialogElement).showModal();
     });
     await page.waitForTimeout(400);
+    // Freies Spiel: kein naechstes Raetsel, also traegt "Zur Startseite" die
+    // Hauptrolle - so, wie showSolved die Klassen setzt.
+    await page.evaluate(() => {
+      const home = document.getElementById('solved-home')!;
+      home.classList.add('btn--primary');
+      home.classList.remove('btn--ghost');
+    });
     await shot('17-geschafft');
+
+    // Und der Sammlungs-Fall: der staerkste Knopf fuehrt weiter, nicht hinaus.
+    await page.evaluate(() => {
+      const home = document.getElementById('solved-home')!;
+      home.classList.remove('btn--primary');
+      home.classList.add('btn--ghost');
+      document.getElementById('solved-next')!.hidden = false;
+    });
+    await page.waitForTimeout(200);
+    await shot('18-geschafft-sammlung');
   });
 }
 

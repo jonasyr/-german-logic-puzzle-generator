@@ -544,6 +544,31 @@ summary {
  */
 /* Der Kicker "GELOEST" ueber dem Titel "Geschafft!" sagte dasselbe zweimal
    und ist weggefallen; die Kacheln ebenso, siehe unten. */
+/*
+ * Schliessen als Kreuz in der Ecke, nicht als Knopfzeile.
+ *
+ * "Raetsel ansehen" tat nichts anderes als den Dialog zu schliessen und
+ * kostete dafuer eine volle Zeile von 44px. Als Kreuz kostet es keine, und
+ * der frei gewordene Platz traegt "Naechstes Raetsel". Die Tapflaeche bleibt
+ * bei 44px, auch wenn das Zeichen klein ist.
+ */
+.solved__dismiss-form { margin: 0; }
+.solved__dismiss {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: var(--tap-min);
+    height: var(--tap-min);
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+.solved__dismiss:hover { color: var(--text); }
+
+#solved-dialog { position: relative; }
 #solved-dialog .confirm__title { text-align: center; }
 .solved__puzzle { margin: 0; text-align: center; color: var(--muted); font-size: 14px; }
 /*

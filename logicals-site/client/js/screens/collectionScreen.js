@@ -130,18 +130,22 @@ function entryRow(chapter, entry, index, next) {
     const fresh = newClueTypeAt(chapter, index);
     if (fresh) row.append(make('p', { className: 'list-row__meta', text: `Neu: „${fresh}“` }));
     if (isSolved) row.append(make('p', { className: 'list-row__score', text: '✓ gelöst' }));
-    row.addEventListener('click', () => play(chapter, entry));
+    row.addEventListener('click', () => playCatalogueEntry(chapter, entry));
     return row;
 }
 
 /**
- * Erzeugt einen Eintrag und öffnet ihn.
+ * Erzeugt einen Katalogeintrag und öffnet ihn.
  *
  * Mit Overlay: 5×5 schwer braucht gemessen 2,4 Sekunden. Ohne Anzeige tippt
  * man und es geschieht scheinbar nichts - lange genug, um ein zweites Mal zu
  * tippen.
+ *
+ * Exportiert, damit der Gelöst-Dialog „Nächstes Rätsel" anbieten kann, ohne
+ * den Umweg über den Sammlungs-Bildschirm. Kein Zyklus: dieser Bildschirm
+ * bekommt `openPlay` injiziert, statt es zu importieren.
  */
-async function play(chapter, entry) {
+export async function playCatalogueEntry(chapter, entry) {
     setHint('chapter-hint', '');
     setHint('collection-hint', '');
     setBusy('Rätsel wird erzeugt …');
@@ -200,7 +204,7 @@ function drawCollection() {
     if (chapter) {
         const entry = nextOpen(chapter, solved);
         button.hidden = false;
-        button.onclick = () => play(chapter, entry);
+        button.onclick = () => playCatalogueEntry(chapter, entry);
         next.hidden = false;
         /*
          * Keine "x/12"-Schreibweise hier.

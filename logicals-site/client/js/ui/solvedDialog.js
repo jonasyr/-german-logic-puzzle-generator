@@ -14,6 +14,7 @@ import { el } from '../dom.js';
 
 let wired = false;
 let onHome = null;
+let onNext = null;
 
 function dialog() {
     return el('solved-dialog');
@@ -26,26 +27,51 @@ function wire() {
     // asynchronous close event, so it stays tied to the deliberate press.
     el('solved-home').addEventListener('click', () => {
         const go = onHome;
-        onHome = null;
+        forget();
         go?.();
     });
-    el('solved-stay').addEventListener('click', () => { onHome = null; });
-    dialog().addEventListener('cancel', () => { onHome = null; });
+    el('solved-next').addEventListener('click', () => {
+        const go = onNext;
+        forget();
+        go?.();
+    });
+    el('solved-stay').addEventListener('click', forget);
+    dialog().addEventListener('cancel', forget);
+}
+
+/** Beide Handlungen fallen lassen - was immer den Dialog geschlossen hat. */
+function forget() {
+    onHome = null;
+    onNext = null;
 }
 
 export function closeSolved() {
-    onHome = null;
+    forget();
     const node = dialog();
     if (typeof node.close === 'function' && node.open) node.close();
 }
 
 /**
  * @param {{ title: string, time: string, failedChecks: number, marks: number,
- *           onHome: () => void }} details
+ *           onHome: () => void, onNext?: (() => void) | null }} details
  */
 export function showSolved(details) {
     wire();
     onHome = details.onHome;
+    onNext = details.onNext ?? null;
+
+    /*
+     * "Naechstes Raetsel" nur, wenn es eines gibt.
+     *
+     * Im freien Spiel und beim Tagesraetsel gibt es keins. Dann traegt "Zur
+     * Startseite" die Hauptrolle - ein ausgegrauter Knopf waere eine leere
+     * Versprechung.
+     */
+    const next = el('solved-next');
+    const home = el('solved-home');
+    next.hidden = !onNext;
+    home.classList.toggle('btn--primary', !onNext);
+    home.classList.toggle('btn--ghost', Boolean(onNext));
 
     el('solved-puzzle').textContent = details.title;
     el('solved-time').textContent = details.time;
@@ -83,7 +109,15 @@ export function showSolvedExperience(standing) {
     el('solved-xp-gain').textContent = standing.gain === null || standing.gain <= 0
         ? `${standing.xp} Erfahrung`
         : `+${standing.gain}`;
-    el('solved-xp-level').textContent = `Stufe ${standing.level}`;
+    /*
+     * Rechts steht, was fehlt - nicht, wo man ist.
+     *
+     * "Stufe 7" beantwortete die Frage nicht, die sich nach einem Gewinn
+     * stellt: wie weit ist es noch. In welcher Stufe man sich befindet, zeigt
+     * der Balken darunter ohnehin.
+     */
+    const fehlt = Math.max(0, standing.levelSpan - standing.intoLevel);
+    el('solved-xp-level').textContent = `noch ${fehlt} bis Stufe ${standing.level + 1}`;
 
     const anteil = standing.levelSpan > 0
         ? Math.max(0, Math.min(1, standing.intoLevel / standing.levelSpan))

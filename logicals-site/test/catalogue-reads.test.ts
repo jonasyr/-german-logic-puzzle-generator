@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  chapterFor, chapters, newClueTypeAt, nextOpen, optionsFor, progressOf, totalProgress,
+  chapterFor, chapters, entryAfter, newClueTypeAt, nextOpen, optionsFor, progressOf, totalProgress,
 } from '../client/js/catalogue/catalogue.js';
 
 const first = () => chapters()[0];
@@ -62,4 +62,33 @@ describe('Katalog lesen', () => {
   it('kennt kein Kapitel, das es nicht gibt', () => {
     expect(chapterFor('gibtsnicht')).toBe(null);
   });
+});
+
+/*
+ * Nach dem Lösen führte der staerkste Knopf im Gelöst-Dialog auf den
+ * Startbildschirm - aus dem Spiel heraus, obwohl gerade Rätsel 1 von 12 eines
+ * Kapitels gelöst wurde. Damit dort "Nächstes Rätsel" stehen kann, muss aus
+ * einem Seed der folgende Eintrag ableitbar sein. Kein neuer Zustand: der
+ * Seed steht ohnehin in den Optionen des laufenden Spiels.
+ */
+describe('der nächste Eintrag nach einem Seed', () => {
+    it('findet den folgenden Eintrag desselben Kapitels', () => {
+        const erstes = chapters()[0].entries[0];
+        const folgend = entryAfter(erstes.seed);
+        expect(folgend).not.toBeNull();
+        expect(folgend!.entry.number).toBe(erstes.number + 1);
+        expect(folgend!.chapter.themeId).toBe(chapters()[0].themeId);
+    });
+
+    it('gibt am Kapitelende nichts zurück - das nächste Kapitel ist ein eigener Schritt', () => {
+        const kapitel = chapters()[0];
+        const letztes = kapitel.entries[kapitel.entries.length - 1];
+        expect(entryAfter(letztes.seed)).toBeNull();
+    });
+
+    it('kennt Seeds ausserhalb des Katalogs nicht', () => {
+        // Freies Spiel würfelt in 0…99.999; dort gibt es kein "nächstes".
+        expect(entryAfter(42)).toBeNull();
+        expect(entryAfter(undefined)).toBeNull();
+    });
 });

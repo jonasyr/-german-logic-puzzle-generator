@@ -8,21 +8,23 @@ async function withPlayer(page: Page) {
     contentType: 'application/json',
     body: JSON.stringify({ players: [{ id: 1, displayName: 'Ada', createdAt: '2026-09-18T00:00:00Z' }] }),
   }));
-  /*
-   * Der Erfahrungsstand kommt vom Server, den es hier nicht gibt.
-   *
-   * Zwei Antworten nacheinander: der Stand VOR dem geloesten Raetsel und der
-   * danach. Nur so entsteht ueberhaupt ein Zuwachs - der Client rechnet ihn
-   * als Differenz, damit die Formel allein im Worker lebt.
-   */
-  let abrufe = 0;
   // Die Statistik rechnet ueber alle Ergebnisse und holt sie hier.
   await page.route('**/api/players/*/history', route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ results: [] }),
   }));
+  /*
+   * Der Erfahrungsstand kommt vom Server, den es hier nicht gibt.
+   *
+   * Geliefert wird der Stand NACH dem Raetsel; der davor liegt unten im
+   * lokalen Speicher. Der Client bildet den Zuwachs als Differenz der beiden,
+   * damit die Formel allein im Worker lebt.
+   *
+   * Ein Zaehler, der beim ersten Abruf den alten Stand zurueckgab, ging
+   * daneben: abgerufen wird nur einmal, und der Zuwachs kam damit auf null.
+   */
   await page.route('**/api/players/*/experience', route => route.fulfill({
     status: 200, contentType: 'application/json',
-    body: JSON.stringify(abrufe++ === 0 ? { xp: 800, solved: 20 } : { xp: 845, solved: 21 }),
+    body: JSON.stringify({ xp: 845, solved: 21 }),
   }));
   // Ein Spieler, der schon einmal hier war, hat die Einfuehrung gesehen.
   // Sie gehoert in first-run.spec.ts und nirgendwo sonst.
@@ -247,13 +249,29 @@ test('solving a puzzle is acknowledged, with a way back to the start', async ({ 
    */
   const xp = page.locator('#solved-xp');
   await expect(xp).toBeVisible({ timeout: 20_000 });
-  await expect(page.locator('#solved-xp-level')).toHaveText(/^Stufe \d+$/);
-  await expect(page.locator('#solved-xp-gain')).not.toBeEmpty();
+  /*
+   * Rechts steht, was fehlt - nicht, wo man ist.
+   *
+   * "Stufe 7" beantwortete die Frage nicht, die sich nach einem Gewinn
+   * stellt: wie weit ist es noch. 845 liegt 45 in Stufe 7 (ab 800), die
+   * naechste beginnt bei 1100 - es fehlen 255. Der Zuwachs ist die Differenz
+   * zum gemerkten Stand von 800.
+   */
+  await expect(page.locator('#solved-xp-level')).toHaveText('noch 255 bis Stufe 8');
+  await expect(page.locator('#solved-xp-gain')).toHaveText('+45');
   // Der Balken zeigt den Weg in der aktuellen Stufe, nie mehr als voll.
   const anteil = await page.locator('#solved-xp-fill')
     .evaluate(node => parseFloat((node as HTMLElement).style.width));
   expect(anteil).toBeGreaterThanOrEqual(0);
   expect(anteil).toBeLessThanOrEqual(100);
+
+  /*
+   * Freies Spiel: es gibt kein naechstes Raetsel, also traegt "Zur
+   * Startseite" die Hauptrolle. Ein ausgegrauter "Naechstes"-Knopf waere eine
+   * leere Versprechung.
+   */
+  await expect(page.locator('#solved-next')).toBeHidden();
+  await expect(page.locator('#solved-home')).toHaveClass(/btn--primary/);
 
   await page.locator('#solved-home').click();
   await expect(page.locator('#screen-start')).toHaveClass(/is-active/);

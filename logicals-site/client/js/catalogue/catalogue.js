@@ -83,6 +83,32 @@ export function optionsFor(chapter, entry) {
  * Was schon der erste Eintrag mitbringt, gilt nicht als neu: das wäre keine
  * Auskunft, sondern Lärm auf jeder Zeile.
  */
+/**
+ * Der Eintrag, der auf diesen Seed folgt - im selben Kapitel.
+ *
+ * Damit der Gelöst-Dialog "Nächstes Rätsel" anbieten kann, ohne dass das
+ * Spiel sich merken muss, woher es kam: der Seed steht ohnehin in seinen
+ * Optionen, und der Katalog weiß den Rest.
+ *
+ * Am Kapitelende bewusst `null` statt des ersten Eintrags im nächsten Kapitel.
+ * Ein Kapitel zu beenden ist ein Moment; ihn zu überspringen, indem man
+ * stillschweigend im nächsten landet, nähme ihn weg.
+ *
+ * @param {number | undefined} seed
+ * @returns {{ chapter: { themeId: string, title: string },
+ *             entry: { number: number, seed: number } } | null}
+ */
+export function entryAfter(seed) {
+    if (!Number.isFinite(seed) || seed < CATALOGUE_SEED_FLOOR) return null;
+    for (const chapter of chapters()) {
+        const index = chapter.entries.findIndex(entry => entry.seed === seed);
+        if (index === -1) continue;
+        const entry = chapter.entries[index + 1];
+        return entry ? { chapter, entry } : null;
+    }
+    return null;
+}
+
 export function newClueTypeAt(chapter, index) {
     if (index === 0) return null;
 
