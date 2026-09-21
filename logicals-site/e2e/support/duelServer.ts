@@ -163,6 +163,23 @@ export async function installDuelApi(page: Page, options: DuelApiOptions): Promi
       return json({ room: snapshot() });
     }
 
+    /*
+     * Aufgeben, wie forfeitRoom im Worker: Zugriff pruefen, Raum schliessen.
+     *
+     * Und wie publicDuelResults liest das einzige verbliebene Ergebnis sich
+     * danach als Sieg - "abgeschlossen mit einem Ergebnis" entsteht auf
+     * keinem anderen Weg, weil der Abschluss sonst zwei Ergebnisse braucht.
+     */
+    if (url.pathname.endsWith('/forfeit')) {
+      if (state.tokens[body.playerId] !== body.memberToken) {
+        return json({ error: 'MEMBER_FORBIDDEN', message: 'Der Raumzugriff ist nicht gültig.' }, 403);
+      }
+      state.room.state = 'complete';
+      if (state.results.length === 1) state.results[0].outcome = 'won';
+      state.room.results = state.results;
+      return json({ room: snapshot() });
+    }
+
     if (url.pathname.endsWith('/progress')) {
       const member = state.members.find(candidate => candidate.playerId === body.playerId)!;
       // A count and nothing else, exactly as the Worker stores it.

@@ -362,6 +362,18 @@ test('wer noch spielt, erfaehrt dass der andere fertig ist', async ({ browser })
 
   await guest.locator('#opponent-later').click();
   await expect(guest.locator('#screen-start')).toHaveClass(/is-active/);
+
+  /*
+   * Und der Sieger erfaehrt, dass er gewonnen hat.
+   *
+   * Vorher drehte sich bei ihm bis in alle Ewigkeit "Warte auf das andere
+   * Geraet ...": der Raum wurde nie geschlossen, der Poll hoerte nie auf,
+   * und nach 24 Stunden verfiel der Raum. Aufgeben meldet das jetzt.
+   */
+  await expect(host.locator('#duel-result-hint'))
+    .toHaveText('Das andere Gerät hat aufgegeben.', { timeout: 30_000 });
+  await expect(host.locator('#duel-result-waiting')).toBeHidden();
+  await expect(host.locator('.duel-result-card__outcome')).toHaveText('Gewonnen');
   await expect(guest.locator('#resume-button')).toBeVisible();
 
   /*
