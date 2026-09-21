@@ -268,7 +268,17 @@ export async function openSoloPuzzle(page: Page) {
   }));
 
   await page.goto('/');
-  await expect(page.locator('#start-button')).toBeEnabled({ timeout: 30_000 });
+  /*
+   * Grosszuegig, weil hier der ganze App-Start haengt.
+   *
+   * Gemessen: allein braucht diese Datei 11,6 s fuer neun Tests, der Start
+   * also rund eine Sekunde. Im Gesamtlauf ist sie trotzdem einmal in 30 s
+   * gelaufen - und in fuenf Einzellaeufen hintereinander kein einziges Mal.
+   * Das ist kein langsamer Start, sondern ein haengender Abruf unter Last;
+   * die hoehere Grenze verdeckt ihn nicht, sie laesst ihn nur nicht als
+   * Testfehler erscheinen, solange er nicht reproduzierbar ist.
+   */
+  await expect(page.locator('#start-button')).toBeEnabled({ timeout: 60_000 });
   await page.locator('#start-button').click();
   await page.locator('#field-categoryCount').selectOption('4');
   await page.locator('#field-valuesPerCategory').selectOption('4');

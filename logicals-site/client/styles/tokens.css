@@ -43,6 +43,8 @@
 
     /* Lines */
     --line: #d5d8de;
+    /* Kante des aktiven Reiters: hell traegt der Schatten, dunkel nicht. */
+    --segment-edge: transparent;
     --line-strong: #172033;
 
     /* The timer chip needs its own surface: in dark mode --ink is almost the
@@ -164,6 +166,7 @@
         --on-ink: #e9edf5;
 
         --line: #2c3444;
+        --segment-edge: #4bb3ad;
         --line-strong: #7b879e;
 
         --timer-bg: #2f3a4f;

@@ -163,6 +163,6 @@ function renderProfile(experience) {
     el('profile-fill').style.strokeDashoffset = String(RING_LENGTH * (1 - anteil));
 
     const fehlt = Math.max(0, stufe.next - experience.xp);
-    gap.textContent = `Noch ${fehlt} bis Stufe ${stufe.level + 1}`;
+    gap.textContent = `Noch ${fehlt} Erfahrung bis Stufe ${stufe.level + 1}`;
     ring.hidden = false;
 }

@@ -214,7 +214,7 @@ for (const v of VARIANTEN) {
        * 800 bis 1100, also 45 drin, 255 fehlen, 15% gefuellt.
        */
       document.getElementById('solved-xp-gain')!.textContent = '+45';
-      document.getElementById('solved-xp-level')!.textContent = 'Noch 255 bis Stufe 8';
+      document.getElementById('solved-xp-level')!.textContent = 'Noch 255 Erfahrung bis Stufe 8';
       document.getElementById('solved-xp-fill')!.setAttribute('style', 'width: 15%');
       document.getElementById('solved-xp')!.hidden = false;
       (document.getElementById('solved-dialog') as HTMLDialogElement).showModal();

@@ -83,7 +83,7 @@ export function renderDuelExperience(standing) {
         ? `${standing.xp} Erfahrung`
         : `+${standing.gain}`;
     const fehlt = Math.max(0, standing.levelSpan - standing.intoLevel);
-    el('duel-xp-level').textContent = `Noch ${fehlt} bis Stufe ${standing.level + 1}`;
+    el('duel-xp-level').textContent = `Noch ${fehlt} Erfahrung bis Stufe ${standing.level + 1}`;
 
     const anteil = standing.levelSpan > 0
         ? Math.max(0, Math.min(1, standing.intoLevel / standing.levelSpan))

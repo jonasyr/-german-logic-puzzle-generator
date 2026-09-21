@@ -220,7 +220,11 @@ function refreshStartScreen() {
     detail.hidden = !record;
     if (record) detail.textContent = describeResume(record);
 
-    el('duel-join-button').hidden = loadPrefs().hideDuel;
+    const duellAus = loadPrefs().hideDuel;
+    el('duel-join-button').hidden = duellAus;
+    // Die Unterzeile gehoert zum Knopf: bliebe sie stehen, erklaerte der
+    // Startbildschirm etwas, das es dort nicht mehr gibt.
+    el('duel-detail').hidden = duellAus;
 
     // Stacked primary buttons compete with each other, so exactly one is primary.
     // An interrupted puzzle is a stronger claim on attention than a fresh one,

@@ -193,7 +193,7 @@ test('two devices load the same runtime puzzle and enter play from one start ins
    * weil eine falsche Zahl schlechter waere als keine.
    */
   await expect(host.locator('#duel-xp')).toBeVisible({ timeout: 20_000 });
-  await expect(host.locator('#duel-xp-level')).toHaveText(/^Noch \d+ bis Stufe \d+$/);
+  await expect(host.locator('#duel-xp-level')).toHaveText(/^Noch \d+ Erfahrung bis Stufe \d+$/);
 
   // Freies Spiel: es gibt kein naechstes Raetsel im Katalog, also bleibt der
   // Knopf weg statt als leere Versprechung ausgegraut dazustehen.

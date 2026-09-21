@@ -81,6 +81,10 @@
                     <button class="btn btn--on-dark btn--block" type="button" id="collection-button">Sammlung</button>
                     <p class="start-note" id="collection-detail" hidden></p>
                     <button class="btn btn--on-dark btn--block" id="duel-join-button" type="button" disabled>Duell</button>
+                    <!-- Der einzige Eintrag ohne Unterzeile - und ausgerechnet
+                         der erklaerungsbeduerftigste. Fest statt geladen: was
+                         ein Duell ist, aendert sich nicht. -->
+                    <p class="start-note" id="duel-detail">Zu zweit dasselbe Rätsel – wer ist schneller?</p>
                 </section>
 
                 <section class="start-group" aria-labelledby="start-group-more">
@@ -205,6 +209,7 @@
                            inputmode="text" autocomplete="one-time-code" autocapitalize="characters"
                            spellcheck="false" enterkeyhint="go" placeholder="ABC123" />
                 </label>
+                <p class="duel-code-help">Den Code bekommst du von der Person, die das Duell gestartet hat. Sie öffnet dieselbe Seite.</p>
                 <p class="hint" id="duel-entry-hint" role="status" aria-live="polite"></p>
                 <button class="btn btn--primary btn--block" id="duel-entry-submit" type="submit">Beitreten</button>
             </form>

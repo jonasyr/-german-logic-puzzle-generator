@@ -266,7 +266,7 @@ test('der Kopf zeigt Stufe, Fortschritt und was noch fehlt', async ({ page }) =>
 
   // 812 liegt in Stufe 7 (ab 800), die naechste beginnt bei 1100.
   await expect(page.locator('#profile-level')).toHaveText('7');
-  await expect(page.locator('#profile-gap')).toHaveText('Noch 288 bis Stufe 8');
+  await expect(page.locator('#profile-gap')).toHaveText('Noch 288 Erfahrung bis Stufe 8');
   await expect(page.locator('#history-player')).toHaveText('Ada');
 
   /*
@@ -386,9 +386,17 @@ test('Duelle haben einen eigenen Reiter', async ({ page }) => {
 
   const duels = page.locator('#duels-body');
   await expect(duels).toContainText('Gegen Bo');
-  await expect(duels).toContainText('1 – 0 – 0');
+  /*
+   * Beschriftete Zeilen statt „1 – 0 – 0": das Zahlentripel ist eine
+   * Sportkonvention, deren Reihenfolge je nach Sportart wechselt.
+   */
+  await expect(duels).toContainText('Gewonnen');
+  await expect(duels).toContainText('Unentschieden');
   await expect(duels).toContainText('0:15');            // 15s Vorsprung
   await expect(duels).toContainText('du bist schneller');
+  // Und der Symbolstreifen hat eine Bildzeile - ein einzelner Punkt in einer
+  // leeren Zeile las sich wie ein haengengebliebener Aufzaehlungspunkt.
+  await expect(duels).toContainText('Letzte Duelle, neueste zuerst');
 
   // Die Reiterleiste bleibt einzeilig, und kein Reiter faellt unter die
   // Tapgroesse.

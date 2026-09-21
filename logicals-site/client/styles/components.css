@@ -432,6 +432,16 @@ html { scroll-padding-bottom: calc(var(--tap-min) * 2 + var(--space-5) * 2 + var
     color: var(--text);
     box-shadow: var(--shadow-card);
 }
+/*
+ * Im Dunkelmodus traegt der Schatten nichts.
+ *
+ * Gemessen: aktive Pille (22,27,38) gegen die Spur (30,36,49) sind 1,1:1 -
+ * der Zustand haengt dort allein an der Schriftfarbe. Im Hellmodus trennt
+ * immerhin der Schatten, dort bleibt die Kante deshalb durchsichtig. Sie
+ * kostet keinen Platz, weil der Rahmen ohnehin reserviert ist; welche Farbe
+ * sie traegt, entscheidet wie ueberall tokens.css.
+ */
+.segmented__item[aria-selected="true"] { border-color: var(--segment-edge); }
 .segmented__item.is-complete::after {
     content: "\2713";
     color: var(--good);

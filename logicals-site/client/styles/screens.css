@@ -374,10 +374,32 @@
     font-variant-numeric: tabular-nums;
     text-align: right;
 }
-.stats-strip { margin: var(--space-3) 0 0; letter-spacing: .3em; color: var(--text); }
+/* Die Zwischenueberschrift traegt keinen Wert und darf deshalb auch keine
+   Trennlinie ziehen - sonst sieht sie aus wie eine Zeile ohne Zahl. */
+.stats-row--group {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-top: var(--space-3);
+}
+.stats-row--group dt {
+    font-size: var(--text-caption);
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.stats-row--group:first-child { margin-top: 0; }
+
+/* Bildzeile ueber dem Symbolstreifen: ohne sie stand bei einem einzigen Duell
+   ein einsamer Punkt in einer leeren Zeile. */
+.stats-caption { margin: var(--space-4) 0 0; font-size: var(--text-caption); color: var(--muted); }
+.stats-strip { margin: var(--space-1) 0 0; letter-spacing: .3em; color: var(--text); }
 .stats-legend { margin: var(--space-1) 0 0; font-size: 11px; color: var(--muted); }
 /* The player's name needs air before the first heading crowds it. */
-#stats-body { margin-top: var(--space-4); }
+/* Beide Reiterinhalte beginnen auf derselben Hoehe. Gemessen: die Statistik
+   setzte 16px unter der Reiterleiste an, die Duelle klebten mit 0px daran. */
+#stats-body,
+#duels-body { margin-top: var(--space-4); }
 /* Says what it covers rather than implying it covers everything. */
 .stats-scope { margin-top: var(--space-5); font-size: 12px; color: var(--muted); }
 

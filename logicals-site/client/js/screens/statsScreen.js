@@ -34,10 +34,27 @@ function section(title) {
     return node;
 }
 
+/**
+ * Eine Zwischenüberschrift innerhalb einer Tabelle.
+ *
+ * Unter „Deine Entwicklung" standen zwei Schwierigkeitszeilen und fünf
+ * Gesamtkennzahlen typografisch gleichrangig — man sah der Tabelle nicht an,
+ * dass „leicht 3:00" und „Beste Zeit 3:00" verschiedene Datenarten sind.
+ *
+ * Als eigene Zeile in derselben Liste, nicht als zweite Liste: die Werte
+ * müssen weiter an derselben Kante fluchten, sonst zerfällt die Spalte.
+ */
+function groupRow(text) {
+    const row = make('div', { className: 'stats-row stats-row--group' });
+    row.append(make('dt', { text }), make('dd', { text: '' }));
+    return row;
+}
+
 function personalSection(stats) {
     const node = section('Deine Entwicklung');
     const list = make('dl', { className: 'stats-list' });
 
+    if (stats.byDifficulty.length) list.append(groupRow('Nach Schwierigkeit'));
     for (const entry of stats.byDifficulty) {
         // Median, not mean: one abandoned evening would drag an average
         // somewhere that describes nobody's experience.
@@ -62,6 +79,7 @@ function personalSection(stats) {
         list.append(statRow('Fehlprüfungen', `${de(earlier)} → ${de(later)} ${trend}`));
     }
 
+    list.append(groupRow('Insgesamt'));
     list.append(statRow('Serie (Tagesrätsel)', `${stats.streak} ${stats.streak === 1 ? 'Tag' : 'Tage'}`));
     list.append(statRow('Gesamtzeit', formatSpan(stats.totalMs)));
     if (stats.best) list.append(statRow('Beste Zeit', formatDuration(stats.best.elapsedMs)));
@@ -78,16 +96,28 @@ function duelSection(entry) {
     const node = section(`Gegen ${entry.opponent}`);
     const list = make('dl', { className: 'stats-list' });
 
-    list.append(statRow('Bilanz', `${entry.won} – ${entry.lost} – ${entry.drawn}`));
+    /*
+     * Drei beschriftete Zeilen statt „1 – 0 – 0".
+     *
+     * Das Zahlentripel ist eine Sportkonvention, deren Reihenfolge je nach
+     * Sportart wechselt — Siege zuerst oder Unentschieden in der Mitte. Wer
+     * sie nicht kennt, liest drei Zahlen ohne Bedeutung, und die Legende
+     * darunter erklärt nur die Symbole.
+     */
+    list.append(statRow('Gewonnen', String(entry.won)));
+    list.append(statRow('Verloren', String(entry.lost)));
+    list.append(statRow('Unentschieden', String(entry.drawn)));
 
     // Signed, so ahead and behind never read the same.
     const margin = entry.averageMarginMs;
     list.append(statRow(
-        margin >= 0 ? 'Ø Vorsprung' : 'Ø Rückstand',
+        margin >= 0 ? 'Dein Ø Vorsprung' : 'Dein Ø Rückstand',
         formatDuration(Math.abs(margin)),
     ));
 
-    for (const [difficulty, who] of Object.entries(entry.fasterAt)) {
+    const nach = Object.entries(entry.fasterAt);
+    if (nach.length) list.append(groupRow('Nach Schwierigkeit'));
+    for (const [difficulty, who] of nach) {
         list.append(statRow(
             difficulty,
             who === 'me' ? 'du bist schneller' : `${entry.opponent} ist schneller`,
@@ -95,6 +125,15 @@ function duelSection(entry) {
     }
 
     node.append(list);
+
+    /*
+     * Der Streifen braucht eine Bildzeile.
+     *
+     * Bei einem einzigen Duell stand dort ein einzelner Punkt linksbündig in
+     * einer sonst leeren Zeile - das las sich wie ein hängengebliebener
+     * Aufzählungspunkt, nicht wie eine Formkurve.
+     */
+    node.append(make('p', { className: 'stats-caption', text: 'Letzte Duelle, neueste zuerst' }));
 
     // A row of symbols is unreadable without being told what they mean, so it
     // is told - once, under the row, rather than left to be inferred.
@@ -108,7 +147,7 @@ function duelSection(entry) {
     node.append(make('p', {
         className: 'stats-legend',
         text: `${OUTCOME_MARK.won} gewonnen · ${OUTCOME_MARK.lost} verloren`
-            + ` · ${OUTCOME_MARK.drawn} unentschieden · neueste zuerst`,
+            + ` · ${OUTCOME_MARK.drawn} unentschieden`,
         attrs: { 'aria-hidden': 'true' },
     }));
     return node;
