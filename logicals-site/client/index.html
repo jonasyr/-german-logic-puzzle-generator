@@ -244,6 +244,10 @@
                  heißt inzwischen "Eigenes Rätsel". Ein Knopf, der etwas
                  anderes verspricht als er tut. -->
             <button class="btn btn--ghost btn--block" type="button" id="duel-result-home" data-goto="screen-start">Zur Startseite</button>
+            <!-- Nur bei Sammlungs-Rätseln. Im freien Spiel und beim Tagesrätsel
+                 gibt es kein nächstes; dann bleibt der Knopf weg, statt als
+                 leere Versprechung ausgegraut dazustehen. -->
+            <button class="btn btn--primary btn--block" type="button" id="duel-result-next" hidden>Nächstes Rätsel</button>
         </div>
     </section>
 

@@ -1,4 +1,6 @@
 import { clear, el, make, setHint } from '../dom.js';
+import { entryAfter } from '../catalogue/catalogue.js';
+import { playCatalogueEntry } from './collectionScreen.js';
 import { formatTime } from '../play/playTimer.js';
 
 const OUTCOME = { won: 'Gewonnen', lost: 'Verloren', tie: 'Unentschieden', waiting: 'Fertig' };
@@ -20,6 +22,21 @@ export function renderDuelResults(room, currentPlayerId) {
         );
         list.append(card);
     }
+    /*
+     * Weiter statt hinaus - dieselbe Regel wie im Gelöst-Dialog.
+     *
+     * Woher das Rätsel kam, muss der Raum sich nicht merken: der Seed steht in
+     * seinen Angaben, und der Katalog weiß den Rest. Am Kapitelende bewusst
+     * nichts - ein Kapitel zu beenden ist ein Moment, und stillschweigend im
+     * nächsten zu landen nähme ihn weg.
+     */
+    const folgend = entryAfter(room.effectivePuzzleSeed);
+    const next = el('duel-result-next');
+    next.hidden = !folgend;
+    next.onclick = folgend
+        ? () => playCatalogueEntry(folgend.chapter, folgend.entry)
+        : null;
+
     const complete = (room.results || []).length === 2;
     const mineStored = (room.results || []).some(result => result.playerId === currentPlayerId);
     setHint('duel-result-hint', complete
