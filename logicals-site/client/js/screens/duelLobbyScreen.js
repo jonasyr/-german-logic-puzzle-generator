@@ -1,7 +1,22 @@
 import { clear, el, make, setHint } from '../dom.js';
 
+/**
+ * Die Form des Raetsels in einer Zeile: „5x5 - leicht".
+ *
+ * Aus der Raumangabe, nicht aus dem erzeugten Raetsel: die Lobby steht, bevor
+ * das Gitter da ist, und der Beitretende hat es noch gar nicht geholt.
+ */
+function shapeOf(configuration) {
+    if (!configuration) return '';
+    const { categoryCount, valuesPerCategory, difficulty } = configuration;
+    if (!categoryCount || !valuesPerCategory) return difficulty ?? '';
+    return `${categoryCount}×${valuesPerCategory}${difficulty ? ` · ${difficulty}` : ''}`;
+}
+
 export function renderDuelLobby(room, currentPlayerId) {
     el('duel-room-code').textContent = room.code;
+    el('duel-puzzle-title').textContent = room.puzzleTitle || 'Rätsel';
+    el('duel-puzzle-shape').textContent = shapeOf(room.configuration);
     const members = clear(el('duel-members'));
     for (const member of room.members) {
         const row = make('div', { className: 'duel-member' });

@@ -416,3 +416,37 @@ test('wer noch spielt, erfaehrt dass der andere fertig ist', async ({ browser })
   await hostContext.close();
   await guestContext.close();
 });
+
+/*
+ * Ein Sammlungsraetsel als Wettlauf.
+ *
+ * Der Punkt des ganzen Umbaus: ein Duell braucht kein selbstgebautes Raetsel
+ * mehr. Aus der Sammlung stellt es beiden dieselbe Aufgabe, ohne dass jemand
+ * Regler dreht - und zaehlt fuer beide Sammlungen, weil die Abfrage nach
+ * Seed filtert und nicht nach Raum (siehe test/sqlite-repositories.test.ts).
+ */
+test('ein Duell laesst sich aus der Sammlung heraus starten', async ({ browser }) => {
+  test.setTimeout(180_000);
+  const state = createDuelState();
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const host = await context.newPage();
+  await installDuelApi(host, { playerId: 1, displayName: 'Ada', state });
+
+  await host.goto('/');
+  await host.locator('#duel-join-button').click();
+  // Der Knopf sagt, welches Raetsel er meint - sonst waere die Wahl geraten.
+  const ziel = await host.locator('#duel-source-collection-note').textContent();
+  expect(ziel).toMatch(/^\d+\. .+/);
+
+  await host.locator('#duel-source-collection').click();
+  await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 120_000 });
+
+  /*
+   * Und es ist wirklich DAS Raetsel aus der Sammlung, nicht irgendeines:
+   * die Lobby traegt seinen Titel, und der steht so auch auf dem Knopf.
+   */
+  await expect(host.locator('#duel-puzzle-title'))
+    .toHaveText(ziel!.replace(/^\d+\.\s*/, ''), { timeout: 10_000 });
+
+  await context.close();
+});
