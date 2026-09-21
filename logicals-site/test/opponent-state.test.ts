@@ -102,10 +102,18 @@ describe('Auswertung fertig', () => {
         expect(stand.hint).toBe('Beide Ergebnisse sind gespeichert.');
     });
 
-    it('ist fertig, wenn der Gegner aufgegeben hat', () => {
-        const stand = duelResultState({ state: 'complete', results: [ada] }, 1);
+    it('ist fertig, wenn der Gegner aufgegeben hat - und nennt ihn beim Namen', () => {
+        const stand = duelResultState({
+            state: 'complete', results: [ada],
+            members: [{ playerId: 1, displayName: 'Ada' }, { playerId: 2, displayName: 'Bea' }],
+        }, 1);
         expect(stand.complete).toBe(true);
-        expect(stand.hint).toBe('Das andere Ger\u00e4t hat aufgegeben.');
+        expect(stand.hint).toBe('Bea hat aufgegeben.');
+    });
+
+    it('kommt auch ohne Mitgliederliste aus', () => {
+        expect(duelResultState({ state: 'complete', results: [ada] }, 1).hint)
+            .toBe('Der Gegner hat aufgegeben.');
     });
 
     it('wartet weiter, solange der Raum laeuft', () => {

@@ -371,7 +371,7 @@ test('wer noch spielt, erfaehrt dass der andere fertig ist', async ({ browser })
    * und nach 24 Stunden verfiel der Raum. Aufgeben meldet das jetzt.
    */
   await expect(host.locator('#duel-result-hint'))
-    .toHaveText('Das andere Gerät hat aufgegeben.', { timeout: 30_000 });
+    .toHaveText('Bea hat aufgegeben.', { timeout: 30_000 });
   await expect(host.locator('#duel-result-waiting')).toBeHidden();
   await expect(host.locator('.duel-result-card__outcome')).toHaveText('Gewonnen');
   await expect(guest.locator('#resume-button')).toBeVisible();

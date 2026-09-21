@@ -31,7 +31,12 @@ export function opponentFinish(room, playerId) {
  *
  * Getrennt vom Zeichnen, damit die Entscheidung ohne DOM prüfbar bleibt.
  *
- * @param {{ state?: string, results?: Array<{ playerId: number }> }} room
+ * Wer aufgegeben hat, wird beim Namen genannt: sein Mitgliedseintrag steht
+ * im Raum, und „Bea hat aufgegeben" sagt dasselbe wie „das andere Gerät",
+ * nur über einen Menschen statt über Hardware.
+ *
+ * @param {{ state?: string, results?: Array<{ playerId: number }>,
+ *           members?: Array<{ playerId: number, displayName: string }> }} room
  * @param {number} playerId
  * @returns {{ complete: boolean, hint: string }}
  */
@@ -42,7 +47,13 @@ export function duelResultState(room, playerId) {
         return { complete: true, hint: 'Beide Ergebnisse sind gespeichert.' };
     }
     if (mineStored && room?.state === 'complete') {
-        return { complete: true, hint: 'Das andere Gerät hat aufgegeben.' };
+        const gegner = (room.members ?? []).find(member => member.playerId !== playerId);
+        return {
+            complete: true,
+            hint: gegner
+                ? `${gegner.displayName} hat aufgegeben.`
+                : 'Der Gegner hat aufgegeben.',
+        };
     }
     return {
         complete: false,

@@ -82,3 +82,55 @@ test('duell-abschluss', async ({ browser }) => {
   await hostContext.close();
   await guestContext.close();
 });
+
+/*
+ * Der zweite Ausgang: der Gegner gibt auf.
+ *
+ * Eigene Strecke, weil der Ablauf sich ab dem Gegner-Dialog trennt - dort
+ * loest der eine weiter, hier steigt er aus. Was der Sieger dann sieht, war
+ * bis eben ein ewiger Wartehinweis.
+ */
+test('duell-aufgabe', async ({ browser }) => {
+  test.setTimeout(240_000);
+  const state = createDuelState();
+
+  const hostContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const guestContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const host = await hostContext.newPage();
+  const guest = await guestContext.newPage();
+  await installDuelApi(host, { playerId: 1, displayName: 'Ada', state });
+  await installDuelApi(guest, { playerId: 2, displayName: 'Bea', state });
+
+  await host.goto('/');
+  await host.locator('#start-button').click();
+  await host.locator('#field-categoryCount').selectOption('3');
+  await host.locator('#field-valuesPerCategory').selectOption('4');
+  await host.locator('#field-difficulty').selectOption('leicht');
+  await host.locator('#duel-start-button').click();
+  await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 120_000 });
+
+  await guest.goto(`/?room=${ROOM_CODE}`);
+  await expect(guest.locator('#screen-duel-entry')).toHaveClass(/is-active/);
+  await guest.locator('#duel-entry-submit').click();
+  await expect(guest.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 30_000 });
+  await host.locator('#duel-ready').click();
+  await guest.locator('#duel-ready').click();
+  await expect(host.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 30_000 });
+  await expect(guest.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 30_000 });
+
+  await solve(host);
+  await expect(host.locator('#screen-duel-result')).toHaveClass(/is-active/, { timeout: 30_000 });
+  await expect(guest.locator('#opponent-dialog')).toBeVisible({ timeout: 40_000 });
+  await guest.locator('#opponent-later').click();
+  await expect(guest.locator('#screen-start')).toHaveClass(/is-active/);
+  await guest.waitForTimeout(400);
+  await guest.screenshot({ path: 'shots/duell-06-aufgeber-start.png' });
+
+  await expect(host.locator('#duel-result-hint'))
+    .toHaveText('Bea hat aufgegeben.', { timeout: 30_000 });
+  await host.waitForTimeout(600);
+  await host.screenshot({ path: 'shots/duell-07-sieger-nach-aufgabe.png' });
+
+  await hostContext.close();
+  await guestContext.close();
+});
