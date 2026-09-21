@@ -117,7 +117,8 @@ export function showSolvedExperience(standing) {
      * der Balken darunter ohnehin.
      */
     const fehlt = Math.max(0, standing.levelSpan - standing.intoLevel);
-    el('solved-xp-level').textContent = `noch ${fehlt} bis Stufe ${standing.level + 1}`;
+    // Gross geschrieben wie im Ergebnis-Kopf: dieselbe Wendung, dieselbe Form.
+    el('solved-xp-level').textContent = `Noch ${fehlt} bis Stufe ${standing.level + 1}`;
 
     const anteil = standing.levelSpan > 0
         ? Math.max(0, Math.min(1, standing.intoLevel / standing.levelSpan))

@@ -188,10 +188,18 @@ for (const v of VARIANTEN) {
       document.getElementById('solved-time')!.textContent = '5:31';
       document.getElementById('solved-checks')!.textContent = '0';
       document.getElementById('solved-marks')!.textContent = '48';
-      document.getElementById('solved-xp-gain')!.textContent = '+56';
-      // Rechts steht, was fehlt - nicht, wo man ist.
-      document.getElementById('solved-xp-level')!.textContent = 'noch 288 bis Stufe 8';
-      document.getElementById('solved-xp-fill')!.setAttribute('style', 'width: 4%');
+      /*
+       * Zahlen, die zusammenpassen.
+       *
+       * Vorher standen hier "+56", "noch 288" und 4% Fuellung nebeneinander -
+       * drei Werte aus drei verschiedenen Zustaenden. Eine Durchsicht hat
+       * prompt gerechnet und einen Widerspruch gemeldet, den es in der App
+       * nicht gibt. Jetzt ein einziger Stand: 845 Punkte, Stufe 7 reicht von
+       * 800 bis 1100, also 45 drin, 255 fehlen, 15% gefuellt.
+       */
+      document.getElementById('solved-xp-gain')!.textContent = '+45';
+      document.getElementById('solved-xp-level')!.textContent = 'Noch 255 bis Stufe 8';
+      document.getElementById('solved-xp-fill')!.setAttribute('style', 'width: 15%');
       document.getElementById('solved-xp')!.hidden = false;
       (document.getElementById('solved-dialog') as HTMLDialogElement).showModal();
     });

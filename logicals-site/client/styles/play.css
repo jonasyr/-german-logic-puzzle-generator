@@ -364,7 +364,19 @@
 }
 .pair-page::-webkit-scrollbar { display: none; }
 /* Sicheres Zentrieren - siehe die Begruendung in .pair-page. */
-.pair-page > :first-child { margin-top: auto; }
+/*
+ * Oben ansetzen, Rest unten sammeln.
+ *
+ * Erst sass das Gitter oben und der gewonnene Platz lag als Leere darunter -
+ * das las sich als unfertig. Also zentriert. Beim naechsten Ansehen las sich
+ * genau das als Fehler: zwischen Reiterleiste und Ueberschrift klafften
+ * gemessen ueber 100px, "wie ein Rendering-Aussetzer".
+ *
+ * Beide Male war die Leere dieselbe, nur an anderer Stelle. Oben ist sie
+ * schlimmer: Inhalt beginnt dort, wo man ihn sucht, und ein Loch zwischen
+ * Reiter und Inhalt trennt zwei Dinge, die zusammengehoeren. Unten sammelt
+ * sich der Rest bei den Werkzeugknoepfen und liest sich als Abstand.
+ */
 .pair-page > :last-child { margin-bottom: auto; }
 
 .pair-page__title {
@@ -812,8 +824,17 @@
  * Schirm tippt - das Naheliegende - traf nichts.
  */
 .play-stage.is-locked::after {
-    /* Geschuetzte Leerzeichen, sonst faellt "tippen" allein in die zweite Zeile. */
-    content: "Pausiert · zum\00a0Weiterspielen\00a0tippen";
+    /*
+     * Zwei gesetzte Zeilen statt eines Umbruchs auf gut Glueck.
+     *
+     * Erst stand hier ein Trennpunkt zwischen beiden Haelften. Mit
+     * geschuetzten Leerzeichen brach die Zeile dann zwar nicht mehr vor
+     * "tippen" - dafuer blieb das "·" am Ende der ersten Zeile haengen und
+     * las sich wie abgerissener Text. Der Punkt faellt weg, der Umbruch wird
+     * gesetzt.
+     */
+    content: "Pausiert\A Zum Weiterspielen tippen";
+    white-space: pre-line;
     position: absolute; inset: 0;
     display: grid; place-items: center;
     text-align: center;

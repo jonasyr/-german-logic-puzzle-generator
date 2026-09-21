@@ -257,7 +257,7 @@ test('solving a puzzle is acknowledged, with a way back to the start', async ({ 
    * naechste beginnt bei 1100 - es fehlen 255. Der Zuwachs ist die Differenz
    * zum gemerkten Stand von 800.
    */
-  await expect(page.locator('#solved-xp-level')).toHaveText('noch 255 bis Stufe 8');
+  await expect(page.locator('#solved-xp-level')).toHaveText('Noch 255 bis Stufe 8');
   await expect(page.locator('#solved-xp-gain')).toHaveText('+45');
   // Der Balken zeigt den Weg in der aktuellen Stufe, nie mehr als voll.
   const anteil = await page.locator('#solved-xp-fill')

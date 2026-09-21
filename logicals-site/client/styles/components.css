@@ -211,11 +211,17 @@
     padding-top: var(--space-3);
     padding-bottom: var(--space-3);
 }
-.row--stacked .row__label {
-    font-size: var(--text-caption);
-    line-height: var(--leading-caption);
-    color: var(--muted);
-}
+/*
+ * Die gestapelte Zeile traegt dieselbe Beschriftung wie die anderen.
+ *
+ * Sie muss gestapelt sein - die Themen-Titel sind ganze Saetze und wurden
+ * nebeneinander alle zu Ellipsen. Aber ihre Beschriftung war zusaetzlich
+ * kleiner und blasser als die der Nachbarzeilen, und genau das liess sie wie
+ * einen Fehler aussehen statt wie ein breiteres Feld: sechs Durchsichten
+ * haben sie unabhaengig als Layoutbruch gemeldet. Gleiche Schrift, gleiche
+ * Farbe - dann ist der Unterschied nur noch die Breite, und die hat einen
+ * Grund.
+ */
 .row--stacked .row__control { text-align: left; }
 
 .row--stacked .row__control { text-align: left; }
@@ -555,18 +561,24 @@ summary {
 .solved__dismiss-form { margin: 0; }
 .solved__dismiss {
     position: absolute;
-    top: 4px;
-    right: 4px;
+    top: var(--space-2);
+    right: var(--space-2);
+    /*
+     * Die Tapflaeche war schon 44px gross, aber unsichtbar - ein nackter
+     * Glyph an der Kante liest sich nicht als Knopf. Eine leise Flaeche macht
+     * aus der Trefferzone eine erkennbare.
+     */
     width: var(--tap-min);
     height: var(--tap-min);
     border: 0;
-    background: none;
+    border-radius: 999px;
+    background: var(--surface-sunken);
     color: var(--muted);
-    font-size: 24px;
+    font-size: 20px;
     line-height: 1;
     cursor: pointer;
 }
-.solved__dismiss:hover { color: var(--text); }
+.solved__dismiss:hover { background: var(--line); color: var(--text); }
 
 #solved-dialog { position: relative; }
 #solved-dialog .confirm__title { text-align: center; }
