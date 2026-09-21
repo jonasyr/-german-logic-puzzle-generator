@@ -95,6 +95,18 @@ img { max-width: 100%; }
 
 /* --- App shell ------------------------------------------------------------ */
 
+/*
+ * Der Startbildschirm traegt seine Raender selbst.
+ *
+ * Er ist eine ganzflaechige dunkle Seite; das Seitenraster von #app liesse
+ * ringsum Papierfarbe stehen und machte aus der Seite eine Karte. Dieselbe
+ * Ausnahme wie beim Spielbildschirm, aus demselben Grund.
+ */
+#app:has(#screen-start.is-active) {
+    padding: 0;
+    max-width: none;
+}
+
 #app {
     max-width: 1040px;
     margin: 0 auto;

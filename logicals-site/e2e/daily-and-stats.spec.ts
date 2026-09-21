@@ -141,7 +141,7 @@ test('an unreachable history still leaves the daily puzzle playable', async ({ p
 /** Writes preferences before the app boots, the way a returning player has them. */
 async function withPrefs(page: Page, prefs: Record<string, boolean>) {
   await page.addInitScript(value => localStorage.setItem('logicals.prefs.v1', JSON.stringify(value)),
-    { autoCross: true, hideClock: false, hideDuel: false, ...prefs });
+    { autoCross: true, hideClock: false, ...prefs });
 }
 
 test('hiding the clock keeps recording the time', async ({ page }) => {
@@ -157,25 +157,6 @@ test('hiding the clock keeps recording the time', async ({ page }) => {
   // Still running underneath: a hidden clock must not cost the result its time.
   await page.waitForTimeout(1600);
   expect(await page.locator('#play-timer').textContent()).not.toBe('0:00');
-});
-
-test('hiding the duel removes every way into one', async ({ page }) => {
-  test.setTimeout(180_000);
-  await page.setViewportSize({ width: 375, height: 812 });
-  await withPlayer(page);
-  await withPrefs(page, { hideDuel: true });
-  await page.goto('/');
-  await expect(page.locator('#duel-join-button')).toBeHidden();
-
-  /*
-   * Und nicht nur der Knopf zur Lobby - auch der Weg, eines anzufangen.
-   * Der lag frueher als zweiter Knopf im Konfigurator; inzwischen hat das
-   * Duell einen eigenen Bildschirm, und der haengt allein an dem Knopf, der
-   * hier gerade verborgen ist. Der Konfigurator traegt nur noch "Spielen".
-   */
-  await page.locator('#start-button').click();
-  await expect(page.locator('#generate-button')).toHaveText('Spielen');
-  await expect(page.getByRole('button', { name: /Duell/ })).toHaveCount(0);
 });
 
 test('the settings screen offers nothing that does not affect playing', async ({ page }) => {

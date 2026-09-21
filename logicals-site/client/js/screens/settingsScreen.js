@@ -13,7 +13,7 @@
 import { el } from '../dom.js';
 import { loadPrefs, savePrefs } from '../play/playPrefs.js';
 
-const KEYS = ['autoCross', 'hideClock', 'hideDuel'];
+const KEYS = ['autoCross', 'hideClock'];
 
 export function initSettingsScreen() {
     const prefs = loadPrefs();

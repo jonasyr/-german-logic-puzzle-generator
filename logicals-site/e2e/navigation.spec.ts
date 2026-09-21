@@ -190,20 +190,17 @@ test('der Startbildschirm ordnet seine Knoepfe in benannte Gruppen', async ({ pa
     .toBeLessThan(dailyBox.height);
 });
 
-test('die Gruppen ueberleben das Ausblenden der Duell-Funktionen', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('logicals.prefs.v1', JSON.stringify({
-    autoCross: true, hideClock: false, hideDuel: true,
-  })));
-  await withPlayer(page);
-  await page.goto('/');
-  await expect(page.locator('#start-button')).toBeEnabled({ timeout: 30_000 });
-
-  await expect(page.locator('#duel-join-button')).toBeHidden();
-  // Eine leere Gruppe waere schlimmer als keine: die Ueberschrift bleibt nur,
-  // solange noch etwas darunter steht.
-  await expect(page.locator('#screen-start .start-group')).toHaveCount(2);
-  await expect(page.locator('#daily-button')).toBeVisible();
-});
+/*
+ * Die Einstellung "Duell-Funktionen ausblenden" gibt es nicht mehr.
+ *
+ * Sie versteckte einen Knopf auf dem Startbildschirm und wirkte erst nach
+ * einem Neuladen, weil der Startbildschirm nur beim Laden und beim Verlassen
+ * des Spiels neu gezeichnet wird - wer sie umlegte und zurueckging, sah
+ * nichts und hielt sie fuer kaputt. Eine Einstellung, die eine Funktion
+ * versteckt statt etwas am Spiel zu aendern, war ohnehin die schwaechste der
+ * drei: das Duell draengt sich nicht auf, es steht als einer von sechs
+ * Knoepfen da.
+ */
 
 /*
  * Das Duell ist ein eigener Weg, kein Anhaengsel des Konfigurators.

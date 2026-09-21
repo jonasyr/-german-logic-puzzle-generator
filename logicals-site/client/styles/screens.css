@@ -5,19 +5,35 @@
 .screen--start { display: none; }
 .screen--start.is-active {
     display: grid;
-    place-items: center;
-    /* svh = the viewport with Safari's toolbars visible, so the card never sits
-       under the address bar on first paint the way 78vh did. */
-    min-height: 78vh;
-    min-height: 78svh;
+    /* Nicht zentriert: eine Karte, die kuerzer ist als der Schirm, stuende
+       sonst mit Luft darueber und darunter - und genau das las sich wie ein
+       Ausschnitt statt wie eine Seite. */
+    align-content: stretch;
+    min-height: 100vh;
+    min-height: 100svh;
 }
 
+/*
+ * Eine Seite, keine Karte.
+ *
+ * Sie sass frueher als abgerundete Flaeche im Seitenraster: Papierfarbe
+ * ringsum, Ecken, und unten abgeschnitten, sobald die Knoepfe laenger wurden
+ * als der Schirm. Jeder andere Bildschirm der App fuellt die Seite - der
+ * erste, den man sieht, tat es als einziger nicht.
+ *
+ * Volle Breite statt eines Rahmens; die Polsterung traegt jetzt die
+ * Sicherheitsabstaende des Geraets, die vorher #app trug (siehe die
+ * :has()-Regel in base.css).
+ */
 .start-card {
-    width: min(560px, 100%);
+    width: 100%;
     background: var(--ink);
     color: var(--on-ink);
-    border-radius: var(--radius-lg);
-    padding: 56px 32px;
+    padding:
+        calc(56px + var(--safe-top))
+        max(32px, var(--safe-right))
+        calc(var(--space-6) + var(--safe-bottom))
+        max(32px, var(--safe-left));
     text-align: center;
     position: relative;
     overflow: hidden;

@@ -19,7 +19,6 @@ import { createDuelForPuzzle, initDuelController, openRoomFromUrl } from './duel
 import { setDuelPlayer } from './screens/duelEntryScreen.js';
 import { initDuelResultController } from './duel/duelResultController.js';
 import { clearResume, loadResume } from './play/resumeStore.js';
-import { loadPrefs } from './play/playPrefs.js';
 import {
     berlinDate, dailyDifficulty, dailyOptions, dailySeed, dailyStreak, isDailyResult,
 } from './play/dailyPuzzle.js';
@@ -219,12 +218,6 @@ function refreshStartScreen() {
     button.hidden = !record;
     detail.hidden = !record;
     if (record) detail.textContent = describeResume(record);
-
-    const duellAus = loadPrefs().hideDuel;
-    el('duel-join-button').hidden = duellAus;
-    // Die Unterzeile gehoert zum Knopf: bliebe sie stehen, erklaerte der
-    // Startbildschirm etwas, das es dort nicht mehr gibt.
-    el('duel-detail').hidden = duellAus;
 
     // Stacked primary buttons compete with each other, so exactly one is primary.
     // An interrupted puzzle is a stronger claim on attention than a fresh one,

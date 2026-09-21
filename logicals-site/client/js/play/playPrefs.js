@@ -28,7 +28,6 @@ const DEFAULTS = {
      */
     hideClock: false,
     /** Removes the competitive parts for anyone who does not want them. */
-    hideDuel: false,
 };
 
 const BOOLEANS = Object.keys(DEFAULTS);
