@@ -179,13 +179,20 @@
                  Die haeufigere Handlung steht oben. -->
             <section class="duel-entry__block">
                 <h3 class="group__caption" id="caption-duel-create">Duell starten</h3>
-                <p class="result-sub">Wähle das Rätsel. Den Code gibst du danach weiter.</p>
+                <!-- Was ein Duell ist, stand nirgends: nicht gegen wen, nicht
+                     ob gleichzeitig, nicht was gewertet wird - und trotzdem
+                     sollte hier gewaehlt werden. -->
+                <p class="result-sub">Ihr löst zu zweit dasselbe Rätsel. Wer zuerst fertig ist, gewinnt. Wähle das Rätsel, den Code gibst du danach weiter.</p>
                 <div class="duel-sources" role="group" aria-labelledby="caption-duel-create">
                     <button class="btn btn--primary btn--block" type="button" id="duel-source-collection">Aus der Sammlung</button>
                     <p class="start-note" id="duel-source-collection-note" hidden></p>
                     <button class="btn btn--fill btn--block" type="button" id="duel-source-daily">Rätsel des Tages</button>
                     <p class="start-note" id="duel-source-daily-note" hidden></p>
                     <button class="btn btn--fill btn--block" type="button" id="duel-source-custom">Eigenes Rätsel</button>
+                    <!-- Eine Unterzeile wie die beiden darueber. Ohne sie war
+                         dieser Knopf der einzige ohne Ziel und sah nach einem
+                         Darstellungsfehler aus. -->
+                    <p class="start-note" id="duel-source-custom-note">Größe und Schwierigkeit selbst wählen</p>
                 </div>
                 <p class="hint" id="duel-create-hint" role="status" aria-live="polite"></p>
             </section>
@@ -199,7 +206,7 @@
                            spellcheck="false" enterkeyhint="go" placeholder="ABC123" />
                 </label>
                 <p class="hint" id="duel-entry-hint" role="status" aria-live="polite"></p>
-                <button class="btn btn--fill btn--block" id="duel-entry-submit" type="submit">Beitreten</button>
+                <button class="btn btn--primary btn--block" id="duel-entry-submit" type="submit">Beitreten</button>
             </form>
         </div>
     </section>
@@ -370,8 +377,8 @@
                         <span class="row__text">
                             <span class="row__label">Duell-Funktionen ausblenden</span>
                             <span class="row__note">
-                                Versteckt „Duell beitreten“ auf dem Startbildschirm und
-                                „Duell starten“ beim neuen Rätsel.
+                                Versteckt „Duell“ auf dem Startbildschirm. Ein Duell
+                                lässt sich dann weder starten noch betreten.
                             </span>
                         </span>
                         <input class="row__switch" type="checkbox" id="field-hideDuel" />

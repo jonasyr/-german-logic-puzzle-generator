@@ -135,7 +135,7 @@ test('duell-aufgabe', async ({ browser }) => {
   await guest.screenshot({ path: 'shots/duell-06-aufgeber-start.png' });
 
   await expect(host.locator('#duel-result-hint'))
-    .toHaveText('Das Duell ist beendet.', { timeout: 30_000 });
+    .toHaveText('Bea kann das R\u00e4tsel sp\u00e4ter allein beenden.', { timeout: 30_000 });
   await host.waitForTimeout(600);
   await host.screenshot({ path: 'shots/duell-07-sieger-nach-aufgabe.png' });
 

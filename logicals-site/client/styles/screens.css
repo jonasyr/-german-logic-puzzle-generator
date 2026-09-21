@@ -165,10 +165,23 @@
    Knoepfe auf 320px die Tapbreite. Die Zeile unter einem Knopf sagt sein Ziel,
    dieselbe Trennung wie beim Tagesraetsel auf dem Startbildschirm. */
 .duel-sources { display: grid; gap: var(--space-3); }
+
+/*
+ * Die Hinweiszeile behaelt ihre reservierte Hoehe - eine Meldung darf nichts
+ * verschieben - zahlt aber nicht zusaetzlich den Abstand des Blocks. Ohne das
+ * Heranziehen standen unter dem letzten Knopf rund 35 Pixel Nichts, die wie
+ * ein Fehler aussahen und keiner waren.
+ */
+.duel-entry__block > .hint { margin-top: calc(var(--space-4) * -1); }
 /* Eigene Farbe: .start-note ist fuer den dunklen Startbildschirm gedacht und
    traegt --on-ink. Auf der hellen Karte hier waere das unlesbar. */
+/*
+ * Die Unterzeile gehoert zum Knopf DARUEBER. Stand sie mittig zwischen zwei
+ * Knoepfen, war die Zuordnung geraten - "Montag - leicht" passt inhaltlich
+ * auch zu "Raetsel des Tages", stand aber darunter.
+ */
 .duel-sources .start-note {
-    margin: calc(var(--space-3) * -1 + 2px) 0 0;
+    margin: calc(var(--space-3) * -1 + 2px) 0 var(--space-2);
     color: var(--muted);
     opacity: 1;
 }
@@ -202,6 +215,19 @@
     font-weight: 700;
     letter-spacing: .18em;
     text-transform: uppercase;
+}
+/*
+ * Der Platzhalter muss als Platzhalter lesbar sein.
+ *
+ * In voller Schwaerze und Staerke las sich "ABC123" wie ein bereits
+ * eingetragener Code: gross, gesperrt, zentriert - prominenter als die
+ * Beschriftung darueber. Wer darauf "Beitreten" drueckt, laeuft in einen
+ * Fehler, den das Feld selbst verursacht hat.
+ */
+.duel-code-field input::placeholder {
+    color: var(--muted);
+    opacity: .55;
+    font-weight: 400;
 }
 
 .duel-code-card {

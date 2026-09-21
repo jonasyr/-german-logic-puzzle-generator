@@ -168,6 +168,15 @@ test('two devices load the same runtime puzzle and enter play from one start ins
   await expect(host.locator('#duel-result-list .duel-result-card')).toHaveCount(1);
   await solve(guest);
   await expect(guest.locator('#duel-result-list .duel-result-card')).toHaveCount(2);
+  /*
+   * Und die Gegner-Meldung steht nicht mehr darueber.
+   *
+   * Sie fragt "weiterspielen oder abbrechen?" - beides ist beantwortet, sobald
+   * man selbst fertig ist. An einer Aufnahme belegt (shots/duell-05): der
+   * Dialog verdeckte beide Ergebniskarten und fragte nach einer Entscheidung,
+   * die es nicht mehr gab.
+   */
+  await expect(guest.locator('#opponent-dialog')).toBeHidden();
   await expect(host.locator('#duel-result-list .duel-result-card')).toHaveCount(2, { timeout: 5_000 });
 
   /*
@@ -380,7 +389,7 @@ test('wer noch spielt, erfaehrt dass der andere fertig ist', async ({ browser })
    * und nach 24 Stunden verfiel der Raum. Aufgeben meldet das jetzt.
    */
   await expect(host.locator('#duel-result-hint'))
-    .toHaveText('Das Duell ist beendet.', { timeout: 30_000 });
+    .toHaveText('Bea kann das R\u00e4tsel sp\u00e4ter allein beenden.', { timeout: 30_000 });
   await expect(host.locator('#duel-result-waiting')).toBeHidden();
   /*
    * Zwei Kacheln, nicht eine: der Aufgebende bleibt stehen, nur ohne

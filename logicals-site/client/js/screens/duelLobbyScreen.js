@@ -34,7 +34,7 @@ export function renderDuelLobby(room, currentPlayerId) {
     }
     const me = room.members.find(member => member.playerId === currentPlayerId);
     el('duel-ready').disabled = !me?.loaded || me?.ready || room.state !== 'waiting';
-    setHint('duel-lobby-hint', room.members.length < 2 ? 'Teile den Code oder Link mit deiner Mitspielerin.' : 'Beide Geräte müssen bereit sein.');
+    setHint('duel-lobby-hint', room.members.length < 2 ? 'Teile Code oder Link mit der anderen Person.' : 'Beide Geräte müssen bereit sein.');
 }
 
 export function renderCountdown(seconds) {

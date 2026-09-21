@@ -32,7 +32,16 @@
 .btn--ghost { background: transparent; border-color: var(--line); color: var(--text); }
 .btn--ghost:hover:not(:disabled) { border-color: var(--text); }
 
-.btn--fill { background: var(--surface-sunken); color: var(--text); }
+/*
+ * Mit sichtbarer Kante.
+ *
+ * Gemessen: die Flaeche (#f3f0ea) steht im Hellmodus mit 1,12:1 gegen eine
+ * weisse Karte - als Flaechenunterschied praktisch nicht vorhanden. Im
+ * Dunkelmodus hob sich derselbe Knopf klar ab, hell war also der schwaechere
+ * Fall. Der Rahmen war ohnehin da, nur durchsichtig: die Kante kostet keinen
+ * Platz und verschiebt nichts.
+ */
+.btn--fill { background: var(--surface-sunken); color: var(--text); border-color: var(--line); }
 .btn--on-dark { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .32); color: var(--on-ink); }
 .btn--on-dark:hover:not(:disabled) { background: rgba(255, 255, 255, .14); }
 

@@ -108,7 +108,7 @@ describe('Auswertung fertig', () => {
             members: [{ playerId: 1, displayName: 'Ada' }, { playerId: 2, displayName: 'Bea' }],
         }, 1);
         expect(stand.complete).toBe(true);
-        expect(stand.hint).toBe('Das Duell ist beendet.');
+        expect(stand.hint).toBe('Bea kann das R\u00e4tsel sp\u00e4ter allein beenden.');
     });
 
     /*
@@ -138,8 +138,23 @@ describe('Auswertung fertig', () => {
         expect(stand.forfeitedBy).toBeNull();
     });
 
-    it('wartet weiter, solange der Raum laeuft', () => {
-        expect(duelResultState({ state: 'active', results: [ada] }, 1).complete).toBe(false);
+    it('wartet weiter, solange der Raum laeuft - und nennt den Gegner beim Namen', () => {
+        /*
+         * "Warte auf das andere Geraet" stand neben einer Lobby und einer
+         * Auswertung, die beide Namen nennen; der Leser musste selbst
+         * uebersetzen, wer gemeint ist.
+         */
+        const stand = duelResultState({
+            state: 'active', results: [ada],
+            members: [{ playerId: 1, displayName: 'Ada' }, { playerId: 2, displayName: 'Bea' }],
+        }, 1);
+        expect(stand.complete).toBe(false);
+        expect(stand.hint).toContain('Warte auf Bea');
+    });
+
+    it('kommt beim Warten auch ohne Namen aus', () => {
+        expect(duelResultState({ state: 'active', results: [ada] }, 1).hint)
+            .toContain('das andere Gerät');
     });
 
     it('wartet auf das eigene Ergebnis, auch wenn der Raum schon zu ist', () => {

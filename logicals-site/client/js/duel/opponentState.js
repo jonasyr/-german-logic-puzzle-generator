@@ -65,11 +65,14 @@ export function duelResultState(room, playerId) {
             complete: true,
             /*
              * Nicht noch einmal „X hat aufgegeben": das steht seit der
-             * eigenen Kachel schon da. Die Zeile sagt stattdessen, was fuer
-             * den Raum gilt - dieselbe Rolle wie „Beide Ergebnisse sind
-             * gespeichert".
+             * eigenen Kachel schon da. Die Zeile sagt stattdessen, was die
+             * Kachel verschweigt — dass der andere nicht verschwunden ist,
+             * sondern sein Rätsel später allein zu Ende bringen kann. „Der
+             * hat aufgegeben" allein liest sich sonst härter, als es ist.
              */
-            hint: 'Das Duell ist beendet.',
+            hint: gegner
+                ? `${gegner.displayName} kann das Rätsel später allein beenden.`
+                : 'Der Gegner kann das Rätsel später allein beenden.',
             forfeitedBy: gegner
                 ? { displayName: gegner.displayName, filled: gegner.filled ?? null }
                 : null,
@@ -79,9 +82,21 @@ export function duelResultState(room, playerId) {
         complete: false,
         forfeitedBy: null,
         hint: mineStored
-            ? 'Dein Ergebnis ist gespeichert. Warte auf das andere Gerät …'
+            ? `Dein Ergebnis ist gespeichert. Warte auf ${gegnerName(room, playerId)} …`
             : 'Dein Ergebnis wird übertragen. Die Auswertung erscheint danach automatisch …',
     };
+}
+
+/**
+ * Der Name des Gegners - oder ein Ersatz.
+ *
+ * „Warte auf das andere Gerät" stand neben einer Lobby und einer Auswertung,
+ * die beide Namen nennen; der Leser musste selbst übersetzen, wer gemeint
+ * ist. Den Namen kennt der Raum, sobald jemand beigetreten ist.
+ */
+function gegnerName(room, playerId) {
+    const gegner = (room?.members ?? []).find(member => member.playerId !== playerId);
+    return gegner?.displayName || 'das andere Gerät';
 }
 
 /**

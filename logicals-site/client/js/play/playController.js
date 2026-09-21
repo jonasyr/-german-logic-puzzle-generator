@@ -301,8 +301,22 @@ function setMark(key, mark) {
     afterMarkChange(setMarkWith(state, key, mark, valueCount(), derivesCrosses()));
 }
 
+/**
+ * Schliesst die Gegner-Meldung, falls sie offen steht.
+ *
+ * Sie fragt "weiterspielen oder abbrechen?" - beides ist beantwortet, sobald
+ * man selbst fertig ist. An einer Aufnahme belegt (shots/duell-05): der
+ * Dialog stand ueber der fertigen Auswertung, verdeckte beide Ergebniskarten
+ * und fragte nach einer Entscheidung, die es nicht mehr gab.
+ */
+function closeOpponentDialog() {
+    const dialog = el('opponent-dialog');
+    if (dialog?.open) dialog.close();
+}
+
 function handleSolved() {
     state.solved = true;
+    closeOpponentDialog();
     timer.stop();
     const elapsedMs = timer.elapsedMs();
     setStatus(`Gelöst in ${formatTime(elapsedMs)}. Alle Zuordnungen stimmen.`, true);
@@ -891,6 +905,9 @@ export function initPlay() {
         sheet.collapse();
         closeConfirm();
         closeSolved();
+        // Auch die Gegner-Meldung: sie gehoert zum Spielbildschirm und haette
+        // auf jedem folgenden nichts mehr zu fragen.
+        closeOpponentDialog();
     });
 
     // iOS suspends timers when the tab is hidden; re-derive from timestamps on
