@@ -437,6 +437,10 @@ function announceOpponent({ displayName, elapsedMs }) {
         forfeitDuel(state.context.room.code, {
             playerId: state.context.player.id,
             memberToken: state.context.room.memberToken,
+            // Der eigene Stand als letzte Meldung: der Melder laeuft nur alle
+            // fuenf Sekunden, ohne das zeigte die Kachel drueben einen alten
+            // Wert - oder gar keinen, wenn man vor dem ersten Tick aussteigt.
+            filled: state.marks.size,
         }).catch(() => {});
 
         showScreen('screen-start');

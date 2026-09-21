@@ -204,6 +204,9 @@
 .duel-result-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
 .duel-result-card { border: var(--hairline) solid var(--line); border-radius: var(--radius); background: var(--surface); padding: var(--space-5); text-align: center; }
 .duel-result-card.is-current { border-color: var(--teal); box-shadow: 0 0 0 1px var(--teal); }
+/* Der Aufgebende: gleiche Form, leiser gezeichnet - er hat kein Ergebnis. */
+.duel-result-card.is-forfeit { background: var(--surface-sunken); }
+.duel-result-card.is-forfeit .duel-result-card__outcome { color: var(--muted); font-size: var(--text-body); }
 .duel-result-card__name { color: var(--muted); font-size: var(--text-sm); }
 .duel-result-card__outcome { display: block; margin: var(--space-2) 0; font-size: var(--text-title); }
 .duel-result-card__score { margin: 0; font-variant-numeric: tabular-nums; }

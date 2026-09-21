@@ -121,13 +121,17 @@ test('duell-aufgabe', async ({ browser }) => {
   await solve(host);
   await expect(host.locator('#screen-duel-result')).toHaveClass(/is-active/, { timeout: 30_000 });
   await expect(guest.locator('#opponent-dialog')).toBeVisible({ timeout: 40_000 });
+  // Ein paar Felder, damit die Kachel drueben einen Stand zu zeigen hat.
+  await guest.locator('.play-pager .cell').evaluateAll(cells => {
+    for (const cell of cells.slice(0, 7)) (cell as HTMLButtonElement).click();
+  });
   await guest.locator('#opponent-later').click();
   await expect(guest.locator('#screen-start')).toHaveClass(/is-active/);
   await guest.waitForTimeout(400);
   await guest.screenshot({ path: 'shots/duell-06-aufgeber-start.png' });
 
   await expect(host.locator('#duel-result-hint'))
-    .toHaveText('Bea hat aufgegeben.', { timeout: 30_000 });
+    .toHaveText('Das Duell ist beendet.', { timeout: 30_000 });
   await host.waitForTimeout(600);
   await host.screenshot({ path: 'shots/duell-07-sieger-nach-aufgabe.png' });
 

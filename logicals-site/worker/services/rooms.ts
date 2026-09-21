@@ -356,6 +356,18 @@ export async function forfeitRoom(
     roomError(403, 'MEMBER_FORBIDDEN', 'Der Raumzugriff ist nicht gültig.');
   }
 
+  /*
+   * Den letzten Stand gleich mitnehmen, wenn er mitgeschickt wurde.
+   *
+   * Der Fortschrittsmelder läuft nur alle fünf Sekunden. Ohne diesen Schritt
+   * zeigte die Kachel des Aufgebenden einen bis zu fünf Sekunden alten Wert —
+   * oder gar keinen, wenn er vor dem ersten Tick aussteigt.
+   */
+  if (input.filled !== undefined && input.filled !== null) {
+    const filled = clampProgress(input.filled, cellCountFor(JSON.parse(aggregate.room.configurationJson)));
+    await repository.recordProgress(code, playerId, tokenHash, filled, new Date(now).toISOString());
+  }
+
   await repository.markComplete(aggregate.room.id);
   return publicSnapshot(await refreshed(repository, code, now), now);
 }

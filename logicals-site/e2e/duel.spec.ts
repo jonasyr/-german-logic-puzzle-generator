@@ -371,9 +371,21 @@ test('wer noch spielt, erfaehrt dass der andere fertig ist', async ({ browser })
    * und nach 24 Stunden verfiel der Raum. Aufgeben meldet das jetzt.
    */
   await expect(host.locator('#duel-result-hint'))
-    .toHaveText('Bea hat aufgegeben.', { timeout: 30_000 });
+    .toHaveText('Das Duell ist beendet.', { timeout: 30_000 });
   await expect(host.locator('#duel-result-waiting')).toBeHidden();
-  await expect(host.locator('.duel-result-card__outcome')).toHaveText('Gewonnen');
+  /*
+   * Zwei Kacheln, nicht eine: der Aufgebende bleibt stehen, nur ohne
+   * Ergebnis. Eine einzelne Kachel sähe aus wie ein Duell mit einem
+   * Teilnehmer - der Sieg haette kein Gegenueber.
+   *
+   * Sein Feldstand kommt mit dem Aufgeben selbst, nicht vom Melder: der
+   * laeuft alle fuenf Sekunden, und der Gast hat zwei Felder gesetzt und
+   * sofort aufgegeben.
+   */
+  await expect(host.locator('.duel-result-card')).toHaveCount(2);
+  await expect(host.locator('.duel-result-card__outcome')).toHaveText(['Gewonnen', 'Aufgegeben']);
+  await expect(host.locator('.duel-result-card.is-forfeit .duel-result-card__score'))
+    .toHaveText('2 Felder gesetzt');
   await expect(guest.locator('#resume-button')).toBeVisible();
 
   /*

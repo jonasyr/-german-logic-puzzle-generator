@@ -2,7 +2,7 @@ import { clear, el, make, setHint } from '../dom.js';
 import { entryAfter } from '../catalogue/catalogue.js';
 import { playCatalogueEntry } from './collectionScreen.js';
 import { formatTime } from '../play/playTimer.js';
-import { duelResultState } from '../duel/opponentState.js';
+import { duelResultState, forfeitScore } from '../duel/opponentState.js';
 
 const OUTCOME = { won: 'Gewonnen', lost: 'Verloren', tie: 'Unentschieden', waiting: 'Fertig' };
 
@@ -38,7 +38,24 @@ export function renderDuelResults(room, currentPlayerId) {
         ? () => playCatalogueEntry(folgend.chapter, folgend.entry)
         : null;
 
-    const { complete, hint } = duelResultState(room, currentPlayerId);
+    const { complete, hint, forfeitedBy } = duelResultState(room, currentPlayerId);
+    /*
+     * Der Aufgebende bekommt seine eigene Kachel — gleiche Form, nur ohne
+     * Ergebnis. Liesse man sie weg, staende da ein Duell mit einem einzigen
+     * Teilnehmer, und der Sieg haette kein Gegenueber.
+     */
+    if (forfeitedBy) {
+        const card = make('article', { className: 'duel-result-card is-forfeit' });
+        card.append(
+            make('div', { className: 'duel-result-card__name', text: forfeitedBy.displayName }),
+            make('strong', { className: 'duel-result-card__outcome', text: 'Aufgegeben' }),
+            make('p', {
+                className: 'duel-result-card__score',
+                text: forfeitScore(forfeitedBy.filled),
+            }),
+        );
+        list.append(card);
+    }
     setHint('duel-result-hint', hint);
     el('duel-result-waiting').hidden = complete;
     return complete;

@@ -174,6 +174,8 @@ export async function installDuelApi(page: Page, options: DuelApiOptions): Promi
       if (state.tokens[body.playerId] !== body.memberToken) {
         return json({ error: 'MEMBER_FORBIDDEN', message: 'Der Raumzugriff ist nicht gültig.' }, 403);
       }
+      const member = state.members.find(candidate => candidate.playerId === body.playerId);
+      if (member && body.filled !== undefined && body.filled !== null) member.filled = body.filled;
       state.room.state = 'complete';
       if (state.results.length === 1) state.results[0].outcome = 'won';
       state.room.results = state.results;

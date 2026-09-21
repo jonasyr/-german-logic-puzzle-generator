@@ -253,6 +253,30 @@ describe('reporting progress end to end', () => {
     expect(room.state).toBe('complete');
   });
 
+  /*
+   * Der Aufgebende bekommt drueben eine eigene Kachel - mit seinem Stand.
+   *
+   * Der Fortschrittsmelder laeuft nur alle fuenf Sekunden. Ohne den Wert aus
+   * dem Aufgeben selbst zeigte die Kachel einen bis zu fuenf Sekunden alten
+   * Stand, oder gar keinen, wenn jemand vor dem ersten Tick aussteigt.
+   */
+  it('nimmt den letzten Feldstand beim Aufgeben mit', async () => {
+    const { repository, guest } = await startedRoom();
+    const room = await forfeitRoom(
+      repository, 'ABC234', { playerId: 2, memberToken: guest.memberToken, filled: 12 }, 14_000,
+    );
+    expect(room.members.find(member => member.playerId === 2)?.filled).toBe(12);
+  });
+
+  it('kommt beim Aufgeben auch ohne Feldstand aus', async () => {
+    const { repository, guest } = await startedRoom();
+    const room = await forfeitRoom(
+      repository, 'ABC234', { playerId: 2, memberToken: guest.memberToken }, 14_000,
+    );
+    expect(room.state).toBe('complete');
+    expect(room.members.find(member => member.playerId === 2)?.filled).toBeNull();
+  });
+
   it('nimmt ein Aufgeben ohne gueltigen Raumzugriff nicht an', async () => {
     const { repository } = await startedRoom();
     await expect(forfeitRoom(

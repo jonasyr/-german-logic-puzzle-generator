@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { duelResultState, opponentFinish } from '../client/js/duel/opponentState.js';
+import { duelResultState, forfeitScore, opponentFinish } from '../client/js/duel/opponentState.js';
 import { soloContinuation } from '../client/js/play/playState.js';
 
 /*
@@ -102,18 +102,40 @@ describe('Auswertung fertig', () => {
         expect(stand.hint).toBe('Beide Ergebnisse sind gespeichert.');
     });
 
-    it('ist fertig, wenn der Gegner aufgegeben hat - und nennt ihn beim Namen', () => {
+    it('ist fertig, wenn der Gegner aufgegeben hat', () => {
         const stand = duelResultState({
             state: 'complete', results: [ada],
             members: [{ playerId: 1, displayName: 'Ada' }, { playerId: 2, displayName: 'Bea' }],
         }, 1);
         expect(stand.complete).toBe(true);
-        expect(stand.hint).toBe('Bea hat aufgegeben.');
+        expect(stand.hint).toBe('Das Duell ist beendet.');
+    });
+
+    /*
+     * Der Aufgebende bleibt sichtbar.
+     *
+     * Ohne seine Kachel stuende da ein Duell mit einem einzigen Teilnehmer -
+     * der Sieg haette kein Gegenueber.
+     */
+    it('reicht den Aufgebenden samt seinem letzten Feldstand durch', () => {
+        const stand = duelResultState({
+            state: 'complete', results: [ada],
+            members: [
+                { playerId: 1, displayName: 'Ada', filled: 20 },
+                { playerId: 2, displayName: 'Bea', filled: 12 },
+            ],
+        }, 1);
+        expect(stand.forfeitedBy).toEqual({ displayName: 'Bea', filled: 12 });
+    });
+
+    it('nennt keinen Aufgebenden, solange beide gespielt haben', () => {
+        expect(duelResultState({ state: 'complete', results: [ada, bea] }, 1).forfeitedBy).toBeNull();
     });
 
     it('kommt auch ohne Mitgliederliste aus', () => {
-        expect(duelResultState({ state: 'complete', results: [ada] }, 1).hint)
-            .toBe('Der Gegner hat aufgegeben.');
+        const stand = duelResultState({ state: 'complete', results: [ada] }, 1);
+        expect(stand.complete).toBe(true);
+        expect(stand.forfeitedBy).toBeNull();
     });
 
     it('wartet weiter, solange der Raum laeuft', () => {
@@ -128,5 +150,27 @@ describe('Auswertung fertig', () => {
         const stand = duelResultState({ state: 'complete', results: [] }, 1);
         expect(stand.complete).toBe(false);
         expect(stand.hint).toContain('wird übertragen');
+    });
+});
+
+/*
+ * Was auf der Kachel eines Aufgebenden steht.
+ *
+ * Kein Prozentsatz: gemeldet wird marks.size, automatische Kreuze zaehlen
+ * nicht mit, ein geloestes Gitter erreichte also nie 100 %. Ein Anteil an
+ * einer unerreichbaren Gesamtzahl waere erfundene Genauigkeit.
+ */
+describe('Feldstand des Aufgebenden', () => {
+    it('zaehlt Felder, im Singular wie im Plural', () => {
+        expect(forfeitScore(12)).toBe('12 Felder gesetzt');
+        expect(forfeitScore(1)).toBe('1 Feld gesetzt');
+    });
+
+    it('unterscheidet "nichts getan" von "nichts gemeldet"', () => {
+        // Der Melder schickt erst nach fuenf Sekunden. Wer vorher aussteigt,
+        // hat nichts gemeldet - das ist keine Null.
+        expect(forfeitScore(0)).toBe('Kein Feld gesetzt');
+        expect(forfeitScore(null)).toBe('Ohne Ergebnis');
+        expect(forfeitScore(undefined)).toBe('Ohne Ergebnis');
     });
 });
