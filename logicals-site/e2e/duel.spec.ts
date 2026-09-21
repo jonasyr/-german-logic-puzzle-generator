@@ -281,3 +281,78 @@ test('ein Raumlink wirkt einmal und kapert spaetere Starts nicht', async ({ brow
   await hostContext.close();
   await guestContext.close();
 });
+
+/*
+ * Wer noch spielt, erfaehrt dass der andere fertig ist.
+ *
+ * Vorher blieb der Bildschirm voellig unveraendert - an Aufnahmen belegt
+ * (shots/duell-04-gast-spielt-noch): Ada war fertig, und Beas Schirm zeigte
+ * keinerlei Hinweis. Sie spielte weiter, ohne zu wissen, dass das Rennen
+ * entschieden war.
+ *
+ * Eigener Test statt einer Erweiterung des schweren: der laeuft gemessen
+ * 28,8 s allein und war in diesem Projekt schon einmal der Flatterfall.
+ */
+test('wer noch spielt, erfaehrt dass der andere fertig ist', async ({ browser }) => {
+  test.setTimeout(180_000);
+  const state = createDuelState();
+  const hostContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const guestContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const host = await hostContext.newPage();
+  const guest = await guestContext.newPage();
+  await installDuelApi(host, { playerId: 1, displayName: 'Ada', state });
+  await installDuelApi(guest, { playerId: 2, displayName: 'Bea', state });
+
+  await host.goto('/');
+  await host.locator('#start-button').click();
+  await host.locator('#field-categoryCount').selectOption('3');
+  await host.locator('#field-valuesPerCategory').selectOption('4');
+  await host.locator('#field-difficulty').selectOption('leicht');
+  await host.locator('#duel-start-button').click();
+  await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 60_000 });
+
+  await guest.goto(`/?room=${ROOM_CODE}`);
+  await expect(guest.locator('#screen-duel-entry')).toHaveClass(/is-active/);
+  await guest.locator('#duel-entry-submit').click();
+  await expect(guest.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 60_000 });
+  await host.locator('#duel-ready').click();
+  await guest.locator('#duel-ready').click();
+  await expect(host.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 30_000 });
+  await expect(guest.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 30_000 });
+
+  // Der Gastgeber loest - der Gast spielt noch.
+  await host.locator('#play-solution-button').evaluate((b: HTMLButtonElement) => b.click());
+  await host.locator('#confirm-ok').click();
+  const labels = await host.locator('#play-solution-table').evaluate(container => {
+    const headers = [...container.querySelectorAll('th')].map(cell => cell.textContent || '');
+    return [...container.querySelectorAll('tbody tr')].flatMap(row => {
+      const values = [...row.querySelectorAll('td')].map(cell => cell.textContent || '');
+      return headers.flatMap((_, left) => headers.slice(left + 1).map((__, offset) =>
+        `${values[left]} / ${values[left + offset + 1]}`));
+    });
+  });
+  await host.locator('#overview-mark-yes').evaluate((b: HTMLButtonElement) => b.click());
+  await host.locator('.play-pager .cell').evaluateAll((cells, wanted) => {
+    for (const label of wanted as string[]) {
+      const cell = cells.find(c => (c as HTMLElement).dataset.label === label) as HTMLButtonElement;
+      cell.click();
+    }
+  }, labels);
+  await expect(host.locator('#screen-duel-result')).toHaveClass(/is-active/, { timeout: 30_000 });
+
+  // Der Melder pollt alle fuenf Sekunden - hier grosszuegig warten.
+  await expect(guest.locator('#opponent-dialog')).toBeVisible({ timeout: 40_000 });
+  await expect(guest.locator('#opponent-title')).toContainText('Ada ist fertig');
+
+  /*
+   * "Spaeter beenden" macht aus dem Duell ein Einzelspiel zum Weitermachen.
+   * rememberForResume steigt bei mode !== 'solo' aus, der Datensatz wird also
+   * ausdruecklich geschrieben - ohne das fuehrte der Knopf ins Nichts.
+   */
+  await guest.locator('#opponent-later').click();
+  await expect(guest.locator('#screen-start')).toHaveClass(/is-active/);
+  await expect(guest.locator('#resume-button')).toBeVisible();
+
+  await hostContext.close();
+  await guestContext.close();
+});

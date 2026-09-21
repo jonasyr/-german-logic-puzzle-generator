@@ -66,8 +66,12 @@ test('duell-abschluss', async ({ browser }) => {
   await expect(host.locator('#screen-duel-result')).toHaveClass(/is-active/, { timeout: 30_000 });
   await host.waitForTimeout(600);
   await host.screenshot({ path: 'shots/duell-03-fertig-wartet.png' });
-  // Und was der Gast in genau diesem Moment sieht - er spielt noch.
-  await guest.waitForTimeout(600);
+  /*
+   * Und was der Gast in genau diesem Moment sieht. Vorher: nichts. Jetzt
+   * meldet der Poller den fertigen Gegner - er laeuft alle fuenf Sekunden,
+   * deshalb hier ausdruecklich darauf warten statt blind zu pausieren.
+   */
+  await expect(guest.locator('#opponent-dialog')).toBeVisible({ timeout: 40_000 });
   await guest.screenshot({ path: 'shots/duell-04-gast-spielt-noch.png' });
 
   await solve(guest);

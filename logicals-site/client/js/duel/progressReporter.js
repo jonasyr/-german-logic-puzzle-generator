@@ -15,7 +15,7 @@ import { getDuelRoom, reportDuelProgress } from './roomApi.js';
 
 const INTERVAL_MS = 5000;
 
-export function createProgressReporter({ room, player, onOpponent }) {
+export function createProgressReporter({ room, player, onOpponent, onRoom }) {
     let lastReported = -1;
     let pending = 0;
     let timer = null;
@@ -33,6 +33,12 @@ export function createProgressReporter({ room, player, onOpponent }) {
             const response = await getDuelRoom(room.code);
             const opponent = response.room.members.find(member => member.playerId !== player.id);
             if (opponent && !stopped) onOpponent(opponent);
+            /*
+             * Und der ganze Raum obendrein: "fertig" steht nicht in den
+             * Mitgliedsangaben, sondern in response.room.results. Optional,
+             * damit bestehende Aufrufer unveraendert bleiben.
+             */
+            if (!stopped) onRoom?.(response.room);
         } catch {
             // A duel must not fall over because the room is briefly unreachable.
             // The next tick tries again, and the count it sends is the current

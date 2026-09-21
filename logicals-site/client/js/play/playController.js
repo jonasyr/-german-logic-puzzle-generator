@@ -17,6 +17,7 @@ import { closeSolved, showSolved, showSolvedExperience } from '../ui/solvedDialo
 import { cachedExperience, loadExperience } from '../stats/experience.js';
 import { levelAt } from '../stats/level.js';
 import { entryAfter } from '../catalogue/catalogue.js';
+import { opponentFinish } from '../duel/opponentState.js';
 import { playCatalogueEntry } from '../screens/collectionScreen.js';
 import { showFirstRunIfNeeded } from '../ui/firstRun.js';
 import { createAuthoritativeTimer, createTimer, formatTime } from './playTimer.js';
@@ -45,6 +46,8 @@ let timer = null;
 let puzzleFingerprint = null;
 /** The armed marking tool, shared by the pager and the overview. */
 let tool = null;
+/** Ob der fertige Gegner in diesem Spiel schon gemeldet wurde. */
+let opponentAnnounced = false;
 /** Duel only: reports this player's count and polls for the opponent's. */
 let progress = null;
 /** Recomputed after every change; 250 cells is nothing to scan. */
@@ -371,6 +374,37 @@ async function reportExperience(vorher, queued) {
     });
 }
 
+/**
+ * Meldet den fertigen Gegner und laesst den Spieler entscheiden.
+ *
+ * Weiterspielen schliesst nur - die eigene Zeit zaehlt weiter. "Spaeter
+ * beenden" schreibt einen Fortsetzungs-Datensatz und geht zur Startseite;
+ * dort steht das Raetsel dann unter "Weiterspielen" wie ein Einzelspiel.
+ *
+ * Der Datensatz muss hier ausdruecklich geschrieben werden: rememberForResume
+ * steigt bei mode !== 'solo' sofort aus, ein Duell schreibt also von sich aus
+ * nie eine Fortsetzung. Ohne das fuehrte "Spaeter beenden" ins Nichts.
+ */
+function announceOpponent({ displayName, elapsedMs }) {
+    el('opponent-title').textContent = `${displayName} ist fertig – in ${formatTime(elapsedMs)}`;
+    el('opponent-later').onclick = () => {
+        saveResume({
+            options: state.context.options,
+            puzzleIndex: state.context.puzzleIndex ?? 0,
+            fingerprint: puzzleFingerprint,
+            storageKey: state.storageKey,
+            playerId: state.context.player.id,
+            title: `${state.puzzle.number}. ${state.puzzle.title}`,
+            savedAt: new Date().toISOString(),
+            elapsedMs: timer ? timer.elapsedMs() : 0,
+            markCount: state.marks.size,
+        });
+        showScreen('screen-start');
+    };
+    const dialog = el('opponent-dialog');
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+}
+
 /** Der Griff zum naechsten Katalogeintrag - oder null. */
 function naechsterEintrag() {
     const folgend = entryAfter(state.context?.options?.seed);
@@ -583,6 +617,9 @@ export function openPlay(puzzle, context) {
     paused = false;
 
     progress?.stop();
+    // Jedes Spiel meldet seinen Gegner neu. Ohne das Zuruecksetzen bliebe die
+    // Meldung ab dem zweiten Duell aus.
+    opponentAnnounced = false;
     progress = context.mode === 'duel'
         ? createProgressReporter({
             room: context.room,
@@ -593,6 +630,18 @@ export function openPlay(puzzle, context) {
                 // Only the text changes. The line itself is already in flow, so
                 // the first report cannot resize the grid mid-game.
                 el('duel-progress').textContent = `Gegner: ${filled} Felder gesetzt`;
+            },
+            onRoom: room => {
+                /*
+                 * Einmalig. Der Raum meldet den Abschluss bei jedem Poll
+                 * weiter; ein Dialog, der alle fuenf Sekunden wiederkommt,
+                 * waere schlimmer als gar keiner.
+                 */
+                if (opponentAnnounced || state.solved) return;
+                const fertig = opponentFinish(room, context.player.id);
+                if (!fertig) return;
+                opponentAnnounced = true;
+                announceOpponent(fertig);
             },
         })
         : null;

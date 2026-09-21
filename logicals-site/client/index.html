@@ -560,6 +560,18 @@
 
     <!-- Einmalig, beim ersten geöffneten Rätsel. Ein Dialog und keine Leiste im
          Spielbildschirm: so kann die Erklärung das Gitter nicht verschieben. -->
+    <!-- Wer noch spielt, erfährt, dass der andere fertig ist - und entscheidet
+         selbst. Vorher blieb der Bildschirm völlig unverändert, und man spielte
+         weiter, ohne zu wissen, dass das Rennen entschieden war. -->
+    <dialog class="confirm" id="opponent-dialog" aria-labelledby="opponent-title">
+        <h3 class="confirm__title" id="opponent-title"></h3>
+        <p class="confirm__text">Du kannst weiterspielen – deine Zeit zählt trotzdem.</p>
+        <form method="dialog" class="confirm__actions">
+            <button class="btn btn--ghost" type="submit" value="later" id="opponent-later">Später beenden</button>
+            <button class="btn btn--primary" type="submit" value="stay" id="opponent-stay" autofocus>Weiterspielen</button>
+        </form>
+    </dialog>
+
     <dialog class="confirm" id="intro-dialog" aria-labelledby="intro-title">
         <h3 class="confirm__title" id="intro-title">So wird markiert</h3>
         <p class="confirm__text">
