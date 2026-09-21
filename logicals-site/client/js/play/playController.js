@@ -26,7 +26,7 @@ import { flushOutbox, queueResult } from '../results/outbox.js';
 import { openDuelResult } from '../duel/duelResultController.js';
 import { createProgressReporter } from '../duel/progressReporter.js';
 import {
-    MARK_SYMBOLS, createPlayState, storageKeyFor,
+    MARK_SYMBOLS, createPlayState, soloContinuation, storageKeyFor,
     setMarkWith, undoMark, clearMarks, save, load, recordFailedCheck,
     resetForNewAttempt, firstWrongMark, knowsMarkOrder,
 } from './playState.js';
@@ -388,11 +388,36 @@ async function reportExperience(vorher, queued) {
 function announceOpponent({ displayName, elapsedMs }) {
     el('opponent-title').textContent = `${displayName} ist fertig – in ${formatTime(elapsedMs)}`;
     el('opponent-later').onclick = () => {
+        /*
+         * Den Zwischenstand mitnehmen.
+         *
+         * Der Speicherschluessel traegt Modus und Raumnummer, ein Duell
+         * speichert also unter "duel:<raum>" und das fortgesetzte Einzelspiel
+         * sucht unter "solo:none". Ohne diesen Schritt faende man beim
+         * Weiterspielen ein leeres Gitter - die Markierungen laegen noch da,
+         * nur unter einem Schluessel, den niemand mehr liest.
+         */
+        const soloKey = storageKeyFor(state.puzzle, {
+            mode: 'solo', player: state.context.player,
+        });
+        try {
+            const roh = localStorage.getItem(state.storageKey);
+            if (roh) {
+                localStorage.setItem(soloKey,
+                    JSON.stringify(soloContinuation(JSON.parse(roh))));
+            }
+        } catch {
+            // Privater Modus oder voller Speicher: dann faengt man eben neu
+            // an. Besser als gar kein Weg zurueck.
+        }
+
         saveResume({
             options: state.context.options,
             puzzleIndex: state.context.puzzleIndex ?? 0,
             fingerprint: puzzleFingerprint,
-            storageKey: state.storageKey,
+            // Der Schluessel des Einzelspiels, nicht der des Duells - sonst
+            // zeigte der Datensatz auf einen Stand, den openPlay nie laedt.
+            storageKey: soloKey,
             playerId: state.context.player.id,
             title: `${state.puzzle.number}. ${state.puzzle.title}`,
             savedAt: new Date().toISOString(),

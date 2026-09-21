@@ -233,6 +233,24 @@ export function resetForNewAttempt(state) {
     state.resultQueued = false;
 }
 
+/**
+ * Der gespeicherte Stand eines Duells, wie er als Einzelspiel weitergeht.
+ *
+ * Der Speicherschlüssel trägt Modus und Raumnummer
+ * (`logicals:play:${mode}:${room}:…`), ein Duell speichert also unter
+ * `duel:<raum>` und ein fortgesetztes Einzelspiel sucht unter `solo:none`.
+ * Ohne Umkopieren fände man beim Weiterspielen ein leeres Gitter — die
+ * Markierungen lägen noch da, nur unter einem Schlüssel, den niemand mehr
+ * liest.
+ *
+ * Der Versuchsschlüssel fällt dabei weg: er dient der Entdoppelung beim
+ * Absenden, und behielte ihn das Einzelspiel, könnte sein Ergebnis mit dem
+ * Duell-Ergebnis kollidieren, das denselben trägt.
+ */
+export function soloContinuation(payload) {
+    return { ...payload, attemptKey: null, resultQueued: false };
+}
+
 export function save(state, elapsedMs) {
     if (!state.storageKey) return;
     try {

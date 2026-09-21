@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { opponentFinish } from '../client/js/duel/opponentState.js';
+import { soloContinuation } from '../client/js/play/playState.js';
 
 /*
  * Wer noch spielt, erfuhr nicht, dass der andere fertig ist - der Bildschirm
@@ -42,5 +43,43 @@ describe('Gegner fertig', () => {
         expect(opponentFinish(raum([]), 1)).toBeNull();
         expect(opponentFinish({}, 1)).toBeNull();
         expect(opponentFinish(undefined, 1)).toBeNull();
+    });
+});
+
+/*
+ * Beim Aufgeben muss der Zwischenstand mitkommen.
+ *
+ * Der Speicherschluessel traegt Modus UND Raumnummer:
+ *   logicals:play:${mode}:${room}:${player}:...
+ * Ein Duell speichert also unter "duel:<raum>", ein fortgesetztes Einzelspiel
+ * sucht unter "solo:none". Ohne Umkopieren faende der Spieler beim
+ * Weiterspielen ein leeres Gitter - die Markierungen laegen noch da, nur unter
+ * einem Schluessel, den niemand mehr liest.
+ */
+describe('Stand vom Duell ins Einzelspiel', () => {
+    it('behaelt Markierungen, Zeit und Fehlpruefungen', () => {
+        const duell = {
+            marks: [['0.1.0.0', 'yes']], auto: [], usedClues: [],
+            elapsedMs: 61_000, solved: false, attemptKey: 'duell-abc',
+            failedChecks: 2, resultQueued: false,
+        };
+        const solo = soloContinuation(duell);
+        expect(solo.marks).toEqual(duell.marks);
+        expect(solo.elapsedMs).toBe(61_000);
+        expect(solo.failedChecks).toBe(2);
+    });
+
+    it('wirft den Versuchsschluessel des Duells weg', () => {
+        /*
+         * Er dient der Entdoppelung beim Absenden. Behielte ihn das
+         * Einzelspiel, koennte sein Ergebnis mit dem Duell-Ergebnis
+         * kollidieren, das denselben Schluessel traegt.
+         */
+        const solo = soloContinuation({
+            marks: [], auto: [], usedClues: [], elapsedMs: 0, solved: false,
+            attemptKey: 'duell-abc', failedChecks: 0, resultQueued: true,
+        });
+        expect(solo.attemptKey).toBeNull();
+        expect(solo.resultQueued).toBe(false);
     });
 });

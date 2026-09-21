@@ -349,9 +349,36 @@ test('wer noch spielt, erfaehrt dass der andere fertig ist', async ({ browser })
    * rememberForResume steigt bei mode !== 'solo' aus, der Datensatz wird also
    * ausdruecklich geschrieben - ohne das fuehrte der Knopf ins Nichts.
    */
+  /*
+   * Vorher ein paar Markierungen setzen - genau die muessen wiederkommen.
+   * Ueber evaluateAll wie in solve(): der Gast steht in der Gesamtansicht,
+   * die Pager-Zellen sind dort nicht sichtbar und ein echter Klick liefe ins
+   * Leere.
+   */
+  await guest.locator('.play-pager .cell').evaluateAll(cells => {
+    for (const cell of cells.slice(0, 2)) (cell as HTMLButtonElement).click();
+  });
+  await guest.waitForTimeout(300);
+
   await guest.locator('#opponent-later').click();
   await expect(guest.locator('#screen-start')).toHaveClass(/is-active/);
   await expect(guest.locator('#resume-button')).toBeVisible();
+
+  /*
+   * Und der Zwischenstand ist wirklich da.
+   *
+   * Der Speicherschluessel traegt Modus und Raumnummer, ein Duell speichert
+   * also unter "duel:<raum>" und das fortgesetzte Einzelspiel sucht unter
+   * "solo:none". Ohne Umkopieren faende man hier ein leeres Gitter - die
+   * Markierungen laegen noch da, nur unter einem Schluessel, den niemand mehr
+   * liest. Genau das ist einmal passiert.
+   */
+  await expect(guest.locator('#resume-detail')).toContainText('Markierungen');
+  await guest.locator('#resume-button').click();
+  await expect(guest.locator('#overview-canvas')).toBeVisible({ timeout: 60_000 });
+  const gesetzt = await guest.locator('.overview-mirror__cell')
+    .evaluateAll(cells => cells.filter(c => !(c.getAttribute('aria-label') ?? '').includes('leer')).length);
+  expect(gesetzt, 'die Markierungen aus dem Duell sind verloren gegangen').toBeGreaterThan(0);
 
   await hostContext.close();
   await guestContext.close();
