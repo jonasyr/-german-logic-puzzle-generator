@@ -19,3 +19,35 @@ export function opponentFinish(room, playerId) {
     if (!treffer) return null;
     return { displayName: treffer.displayName, elapsedMs: treffer.elapsedMs };
 }
+
+/**
+ * Ob die Auswertung fertig ist — und was darunter steht.
+ *
+ * Zwei Ergebnisse sind der Normalfall. Es gibt aber einen zweiten: der
+ * Gegner gibt auf, der Worker schließt den Raum, und es bleibt genau ein
+ * Ergebnis übrig. Rechnete man weiter nur Länge gegen zwei, drehte sich
+ * beim Sieger ewig „Warte auf das andere Gerät …" — er hätte gewonnen und
+ * sähe bis in alle Ewigkeit einen Wartehinweis.
+ *
+ * Getrennt vom Zeichnen, damit die Entscheidung ohne DOM prüfbar bleibt.
+ *
+ * @param {{ state?: string, results?: Array<{ playerId: number }> }} room
+ * @param {number} playerId
+ * @returns {{ complete: boolean, hint: string }}
+ */
+export function duelResultState(room, playerId) {
+    const results = room?.results ?? [];
+    const mineStored = results.some(result => result.playerId === playerId);
+    if (results.length === 2) {
+        return { complete: true, hint: 'Beide Ergebnisse sind gespeichert.' };
+    }
+    if (mineStored && room?.state === 'complete') {
+        return { complete: true, hint: 'Das andere Gerät hat aufgegeben.' };
+    }
+    return {
+        complete: false,
+        hint: mineStored
+            ? 'Dein Ergebnis ist gespeichert. Warte auf das andere Gerät …'
+            : 'Dein Ergebnis wird übertragen. Die Auswertung erscheint danach automatisch …',
+    };
+}

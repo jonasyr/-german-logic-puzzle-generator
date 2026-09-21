@@ -25,6 +25,7 @@ import { createCompletionSubmission } from '../results/completion.js';
 import { flushOutbox, queueResult } from '../results/outbox.js';
 import { openDuelResult } from '../duel/duelResultController.js';
 import { createProgressReporter } from '../duel/progressReporter.js';
+import { forfeitDuel } from '../duel/roomApi.js';
 import {
     MARK_SYMBOLS, createPlayState, soloContinuation, storageKeyFor,
     setMarkWith, undoMark, clearMarks, save, load, recordFailedCheck,
@@ -424,6 +425,20 @@ function announceOpponent({ displayName, elapsedMs }) {
             elapsedMs: timer ? timer.elapsedMs() : 0,
             markCount: state.marks.size,
         });
+
+        /*
+         * Dem Gegner Bescheid geben, dass hier niemand mehr kommt.
+         *
+         * Ohne das bliebe er in „Warte auf ..." stehen, bis der Raum nach
+         * 24 Stunden verfaellt. Absichtlich ohne await und ohne Fehlerpfad:
+         * der Weg zurueck ins Einzelspiel darf nicht am Netz haengen, und
+         * der eigene Stand liegt schon im Speicher.
+         */
+        forfeitDuel(state.context.room.code, {
+            playerId: state.context.player.id,
+            memberToken: state.context.room.memberToken,
+        }).catch(() => {});
+
         showScreen('screen-start');
     };
     const dialog = el('opponent-dialog');

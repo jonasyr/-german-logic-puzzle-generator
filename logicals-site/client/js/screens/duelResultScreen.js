@@ -2,6 +2,7 @@ import { clear, el, make, setHint } from '../dom.js';
 import { entryAfter } from '../catalogue/catalogue.js';
 import { playCatalogueEntry } from './collectionScreen.js';
 import { formatTime } from '../play/playTimer.js';
+import { duelResultState } from '../duel/opponentState.js';
 
 const OUTCOME = { won: 'Gewonnen', lost: 'Verloren', tie: 'Unentschieden', waiting: 'Fertig' };
 
@@ -37,13 +38,8 @@ export function renderDuelResults(room, currentPlayerId) {
         ? () => playCatalogueEntry(folgend.chapter, folgend.entry)
         : null;
 
-    const complete = (room.results || []).length === 2;
-    const mineStored = (room.results || []).some(result => result.playerId === currentPlayerId);
-    setHint('duel-result-hint', complete
-        ? 'Beide Ergebnisse sind gespeichert.'
-        : mineStored
-            ? 'Dein Ergebnis ist gespeichert. Warte auf das andere Gerät …'
-            : 'Dein Ergebnis wird übertragen. Die Auswertung erscheint danach automatisch …');
+    const { complete, hint } = duelResultState(room, currentPlayerId);
+    setHint('duel-result-hint', hint);
     el('duel-result-waiting').hidden = complete;
     return complete;
 }

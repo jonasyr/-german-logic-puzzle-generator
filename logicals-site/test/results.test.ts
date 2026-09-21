@@ -113,6 +113,24 @@ describe('duel ranking', () => {
       { playerId: 1, displayName: 'Ada' }, { playerId: 2, displayName: 'Bea' },
     ], results).map(result => result.outcome)).toEqual(['won', 'lost']);
   });
+
+  /*
+   * Wer allein uebrig bleibt, hat gewonnen.
+   *
+   * Der Gegner kann aufgeben; dann schliesst forfeitRoom den Raum, waehrend
+   * nur ein Ergebnis vorliegt. Frueher las sich das wie "wartet noch" - der
+   * Sieger sah seinen Sieg nie. Entstehen kann "abgeschlossen mit einem
+   * Ergebnis" auf keinem anderen Weg: markComplete laeuft sonst
+   * ausschliesslich bei zwei Ergebnissen.
+   */
+  it('reads a lone result in a closed room as a win', () => {
+    const results = [
+      { ...submission, id: 1, roomId: 7, configurationJson: '{}', completedAt: 'a' },
+    ];
+    const members = [{ playerId: 1, displayName: 'Ada' }, { playerId: 2, displayName: 'Bea' }];
+    expect(publicDuelResults(members, results, true)[0].outcome).toBe('won');
+    expect(publicDuelResults(members, results, false)[0].outcome).toBe('waiting');
+  });
 });
 
 describe('result persistence', () => {

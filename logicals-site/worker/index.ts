@@ -19,6 +19,7 @@ import {
   joinRoom,
   markRoomLoaded,
   markRoomReady,
+  forfeitRoom,
   recordRoomProgress,
   resolveDuelResultContext,
 } from './services/rooms';
@@ -163,7 +164,7 @@ export function createApp(overrides: AppOverrides = {}) {
           return json(result, 201);
         }
 
-        const roomMatch = url.pathname.match(/^\/api\/rooms\/([^/]+)(?:\/(join|loaded|ready|progress))?$/);
+        const roomMatch = url.pathname.match(/^\/api\/rooms\/([^/]+)(?:\/(join|loaded|ready|progress|forfeit))?$/);
         if (roomMatch && request.method === 'GET' && !roomMatch[2]) {
           const room = await getRoomSnapshot(
             roomsFor(env, overrides), roomMatch[1], (overrides.nowMs ?? Date.now)(),
@@ -171,7 +172,7 @@ export function createApp(overrides: AppOverrides = {}) {
           const results = await resultsFor(env, overrides).listByRoom(room.id);
           return json({ room: {
             ...room,
-            results: publicDuelResults(room.members, results),
+            results: publicDuelResults(room.members, results, room.state === 'complete'),
           } });
         }
         if (roomMatch && request.method === 'POST') {
@@ -192,6 +193,9 @@ export function createApp(overrides: AppOverrides = {}) {
           }
           if (roomMatch[2] === 'progress') {
             return json({ room: await recordRoomProgress(repository, roomMatch[1], body, now) });
+          }
+          if (roomMatch[2] === 'forfeit') {
+            return json({ room: await forfeitRoom(repository, roomMatch[1], body, now) });
           }
         }
 

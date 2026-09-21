@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { opponentFinish } from '../client/js/duel/opponentState.js';
+import { duelResultState, opponentFinish } from '../client/js/duel/opponentState.js';
 import { soloContinuation } from '../client/js/play/playState.js';
 
 /*
@@ -81,5 +81,44 @@ describe('Stand vom Duell ins Einzelspiel', () => {
         });
         expect(solo.attemptKey).toBeNull();
         expect(solo.resultQueued).toBe(false);
+    });
+});
+
+/*
+ * Der Sieger blieb im Wartehinweis stehen.
+ *
+ * Gibt der Gegner auf, schliesst der Worker den Raum mit genau einem
+ * Ergebnis. Die Auswertung rechnete aber Laenge gegen zwei, sah "nicht
+ * fertig" - und der Sieger las auf Dauer "Warte auf das andere Geraet ...",
+ * waehrend der Poll laengst gestoppt hatte.
+ */
+describe('Auswertung fertig', () => {
+    const ada = { playerId: 1 };
+    const bea = { playerId: 2 };
+
+    it('ist fertig, sobald beide Ergebnisse da sind', () => {
+        const stand = duelResultState({ state: 'complete', results: [ada, bea] }, 1);
+        expect(stand.complete).toBe(true);
+        expect(stand.hint).toBe('Beide Ergebnisse sind gespeichert.');
+    });
+
+    it('ist fertig, wenn der Gegner aufgegeben hat', () => {
+        const stand = duelResultState({ state: 'complete', results: [ada] }, 1);
+        expect(stand.complete).toBe(true);
+        expect(stand.hint).toBe('Das andere Ger\u00e4t hat aufgegeben.');
+    });
+
+    it('wartet weiter, solange der Raum laeuft', () => {
+        expect(duelResultState({ state: 'active', results: [ada] }, 1).complete).toBe(false);
+    });
+
+    it('wartet auf das eigene Ergebnis, auch wenn der Raum schon zu ist', () => {
+        /*
+         * Der Gegner kann aufgeben, bevor die eigene Uebertragung durch ist.
+         * "Fertig" ohne eigenes Ergebnis zeigte eine leere Auswertung.
+         */
+        const stand = duelResultState({ state: 'complete', results: [] }, 1);
+        expect(stand.complete).toBe(false);
+        expect(stand.hint).toContain('wird übertragen');
     });
 });

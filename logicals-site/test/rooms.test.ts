@@ -10,6 +10,7 @@ import {
   createRoom,
   joinRoom,
   markRoomReady,
+  forfeitRoom,
   recordRoomProgress,
   validateJoin,
 } from '../worker/services/rooms';
@@ -230,6 +231,35 @@ describe('reporting progress end to end', () => {
     expect(JSON.stringify(room)).not.toContain('0.1.');
     // The other player has reported nothing yet, and that reads as null.
     expect(filledFor(2)).toBeNull();
+  });
+
+  /*
+   * Aufgeben, statt den anderen haengen zu lassen.
+   *
+   * Wer aufhoert, weil der Gegner schon fertig ist, verschwand bisher
+   * stillschweigend: der andere sah einen Spinner, bis der Raum nach 24
+   * Stunden ablief. Er sass da und wusste nicht, ob noch gespielt wird.
+   *
+   * Ohne Migration: 'complete' ist in der CHECK-Bedingung erlaubt, und
+   * "abgeschlossen mit nur EINEM Ergebnis" kann es sonst nicht geben -
+   * markComplete wird im Worker ausschliesslich bei zwei Ergebnissen
+   * gerufen. Der Fall ist damit eindeutig unterscheidbar.
+   */
+  it('schliesst den Raum, wenn ein Mitglied aufgibt', async () => {
+    const { repository, guest } = await startedRoom();
+    const room = await forfeitRoom(
+      repository, 'ABC234', { playerId: 2, memberToken: guest.memberToken }, 14_000,
+    );
+    expect(room.state).toBe('complete');
+  });
+
+  it('nimmt ein Aufgeben ohne gueltigen Raumzugriff nicht an', async () => {
+    const { repository } = await startedRoom();
+    await expect(forfeitRoom(
+      repository, 'ABC234', { playerId: 2, memberToken: 'geraten' }, 14_000,
+    )).rejects.toThrow();
+    // Und der Raum laeuft weiter, statt auf einen fremden Zuruf zu schliessen.
+    expect(repository.aggregate?.room.state).not.toBe('complete');
   });
 
   it('clamps a count the grid could not possibly hold', async () => {

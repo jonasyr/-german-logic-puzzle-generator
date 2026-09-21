@@ -45,3 +45,19 @@ export async function getDuelRoom(code, signal) {
     const data = await request(`/api/rooms/${code}`, { signal });
     return { ...data, sentAt, receivedAt: Date.now() };
 }
+
+/**
+ * Aufgeben melden.
+ *
+ * Ohne diesen Ruf bliebe der Gegner nach seinem Sieg in „Warte auf …"
+ * stehen, bis der Raum nach 24 Stunden verfällt — er hätte gewonnen und
+ * erführe es nie. Der Raum wird abgeschlossen; da `markComplete` sonst
+ * ausschließlich bei zwei Ergebnissen läuft, heißt „abgeschlossen mit
+ * einem Ergebnis" eindeutig: der andere ist ausgestiegen.
+ *
+ * Der Aufruf darf scheitern, ohne dass der Aufgebende etwas merkt — sein
+ * Weg zurück ins Einzelspiel hängt nicht am Netz.
+ */
+export function forfeitDuel(code, payload) {
+    return request(`/api/rooms/${code}/forfeit`, jsonPost(payload));
+}

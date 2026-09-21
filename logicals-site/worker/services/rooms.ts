@@ -321,6 +321,45 @@ export async function recordRoomProgress(
   return publicSnapshot(await refreshed(repository, code, now), now);
 }
 
+/**
+ * Schließt den Raum, weil ein Mitglied aufgibt.
+ *
+ * Wer aufhört, weil der Gegner längst fertig ist, verschwand bisher
+ * stillschweigend: der andere sah einen Spinner, bis der Raum nach 24 Stunden
+ * ablief, und wusste nicht, ob noch gespielt wird.
+ *
+ * Bewusst der Zustand 'complete' und kein eigener: die CHECK-Bedingung auf
+ * `rooms.state` erlaubt nur ('waiting','countdown','active','complete',
+ * 'expired'), und ein neuer Wert wäre in SQLite eine Migration mitsamt
+ * Tabellenneubau. Zu unterscheiden ist der Fall trotzdem — „abgeschlossen mit
+ * nur EINEM Ergebnis" kann es sonst nicht geben, weil markComplete
+ * ausschließlich bei zwei Ergebnissen gerufen wird.
+ *
+ * Wie bei recordRoomProgress absichtlich NICHT über authorizeUpdate: das
+ * treibt die Zustandsmaschine voran und versucht, das Spiel zu starten.
+ */
+export async function forfeitRoom(
+  repository: RoomRepository,
+  rawCode: string,
+  rawInput: unknown,
+  now = Date.now(),
+) {
+  const code = codeFrom(rawCode);
+  const input = objectBody(rawInput);
+  const playerId = positiveInteger(input.playerId, 'Spieler');
+  const memberToken = text(input.memberToken, 'Raumzugriff', 200);
+  const tokenHash = await hashMemberToken(memberToken);
+
+  const aggregate = await refreshed(repository, code, now);
+  const member = aggregate.members.find(candidate => candidate.playerId === playerId);
+  if (!member || member.memberTokenHash !== tokenHash) {
+    roomError(403, 'MEMBER_FORBIDDEN', 'Der Raumzugriff ist nicht gültig.');
+  }
+
+  await repository.markComplete(aggregate.room.id);
+  return publicSnapshot(await refreshed(repository, code, now), now);
+}
+
 export async function getRoomSnapshot(repository: RoomRepository, rawCode: string, now = Date.now()) {
   const code = codeFrom(rawCode);
   return publicSnapshot(await refreshed(repository, code, now), now);

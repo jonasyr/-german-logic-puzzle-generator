@@ -44,18 +44,31 @@ export function rankDuelResults(a: Score, b: Score): 'a' | 'b' | 'tie' {
   return 'tie';
 }
 
+/**
+ * Die Ergebnisse eines Raums mit ihrem Ausgang.
+ *
+ * `roomComplete` unterscheidet „wartet noch" von „der andere hat aufgegeben".
+ * Ein abgeschlossener Raum mit nur EINEM Ergebnis kann sonst nicht entstehen:
+ * markComplete wird ausschließlich bei zwei Ergebnissen gerufen, und der
+ * einzige andere Weg dorthin ist forfeitRoom. Wer allein übrig bleibt, hat
+ * also gewonnen — „Fertig" wäre dort eine Auskunft, die den Ausgang
+ * verschweigt.
+ */
 export function publicDuelResults(
   members: Array<{ playerId: number; displayName: string }>,
   results: ResultRecord[],
+  roomComplete = false,
 ) {
   const ranked = results.length === 2 ? rankDuelResults(results[0], results[1]) : null;
+  const aloneAndDone = ranked === null && roomComplete && results.length === 1;
   return results.map((result, index) => ({
     playerId: result.playerId,
     displayName: members.find(member => member.playerId === result.playerId)?.displayName ?? 'Spieler',
     elapsedMs: result.elapsedMs,
     failedChecks: result.failedChecks,
     completedAt: result.completedAt,
-    outcome: ranked === null ? 'waiting'
+    outcome: aloneAndDone ? 'won'
+      : ranked === null ? 'waiting'
       : ranked === 'tie' ? 'tie'
         : ranked === (index === 0 ? 'a' : 'b') ? 'won' : 'lost',
   }));
