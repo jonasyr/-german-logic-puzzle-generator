@@ -30,6 +30,43 @@ async function returningPlayer(page: Page) {
   }));
 }
 
+/*
+ * Nach dem Anlegen des ersten Spielers muss der Startbildschirm vollstaendig
+ * sein.
+ *
+ * updateStart() schaltete Start-, Duell- und Ergebnis-Knopf frei, aber nicht
+ * den Tagesraetsel-Knopf und keine der Unterzeilen - die macht
+ * refreshStartScreen(), und die lief nur beim Laden und beim Verlassen des
+ * Spiels. Der erste Bildschirm nach der Anmeldung zeigte deshalb eine
+ * ausgegraute Hauptaktion ohne Erklaerung, bis man neu lud. Eine Durchsicht
+ * konnte das nicht von "kaputt" unterscheiden.
+ */
+test('nach dem ersten Spieler ist der Startbildschirm vollstaendig', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  // Noch kein Spieler: der Dialog steht offen.
+  await page.route('**/api/players', route => route.fulfill({
+    status: route.request().method() === 'POST' ? 201 : 200,
+    contentType: 'application/json',
+    body: route.request().method() === 'POST'
+      ? JSON.stringify({ player: { id: 7, displayName: 'Neu', createdAt: '2026-09-21T00:00:00Z' } })
+      : JSON.stringify({ players: [] }),
+  }));
+  await page.route('**/api/players/*/results**', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ results: [] }),
+  }));
+
+  await page.goto('/');
+  await page.locator('#player-name').fill('Neu');
+  await page.locator('#player-dialog button[type="submit"]').click();
+
+  // Die Hauptaktion ist bedienbar und sagt, was sie anbietet.
+  const daily = page.locator('#daily-button');
+  await expect(daily).toBeEnabled();
+  await expect(page.locator('#daily-detail')).not.toBeEmpty();
+  await expect(page.locator('#start-button')).toBeEnabled();
+});
+
 test('die Einfuehrung erscheint einmal und dann nie wieder', async ({ page }) => {
   test.setTimeout(180_000);
   await page.setViewportSize({ width: 390, height: 844 });

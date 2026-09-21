@@ -290,7 +290,7 @@ function registerServiceWorker() {
 wire();
 registerServiceWorker();
 initResultOutbox();
-initPlayerController().then(() => {
+initPlayerController(refreshStartScreen).then(() => {
     openRoomFromUrl();
     refreshStartScreen();
 });

@@ -4,12 +4,29 @@ import { initHistoryTabs, loadHistoryScreen } from '../screens/historyScreen.js'
 import { createPlayer, listPlayers } from './playerApi.js';
 import { cachePlayers, getSelectedPlayer, loadPlayerState, selectPlayer, snapshot } from './playerStore.js';
 
+/*
+ * Wer der Spieler ist, entscheidet ueber den halben Startbildschirm.
+ *
+ * Diese Funktion schaltete drei Knoepfe frei - aber nicht den
+ * Tagesraetsel-Knopf und keine der Unterzeilen. Die haengen an
+ * refreshStartScreen() in main.js, und die lief nur beim Laden und beim
+ * Verlassen des Spiels. Nach dem Anlegen des ersten Spielers stand deshalb
+ * eine ausgegraute Hauptaktion ohne Erklaerung da, bis man neu lud - fuer
+ * einen Erstbesucher nicht von "kaputt" zu unterscheiden.
+ *
+ * Statt die Liste hier zu verlaengern (und beim naechsten Knopf wieder zu
+ * vergessen) sagt der Aufrufer Bescheid, was danach zu tun ist. main.js
+ * kennt den Startbildschirm; dieser Baustein kennt nur den Spieler.
+ */
+let afterChange = () => {};
+
 function updateStart() {
     const player = getSelectedPlayer();
     el('player-button').textContent = player ? `Spielen als ${player.displayName}` : 'Spieler auswählen';
     el('start-button').disabled = !player;
     el('duel-join-button').disabled = !player;
     el('history-button').disabled = !player;
+    afterChange();
 }
 
 function choose(playerId) {
@@ -42,7 +59,12 @@ function openDialog() {
     if (!snapshot().players.length) requestAnimationFrame(() => el('player-name').focus());
 }
 
-export async function initPlayerController() {
+/**
+ * @param {() => void} [onPlayerChange]  laeuft nach jedem Spielerwechsel,
+ *   damit der Startbildschirm nicht auf ein Neuladen warten muss
+ */
+export async function initPlayerController(onPlayerChange) {
+    if (onPlayerChange) afterChange = onPlayerChange;
     loadPlayerState();
     updateStart();
     initHistoryTabs();
