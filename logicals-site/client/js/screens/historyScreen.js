@@ -1,6 +1,6 @@
 import { clear, el, make, setHint } from '../dom.js';
 import { listPlayerHistory, listPlayerResults } from '../players/playerApi.js';
-import { renderStatsInto } from './statsScreen.js';
+import { renderDuelsInto, renderStatsInto } from './statsScreen.js';
 import { loadExperience } from '../stats/experience.js';
 import { levelAt } from '../stats/level.js';
 import { berlinDate } from '../play/dailyPuzzle.js';
@@ -99,6 +99,7 @@ export async function loadHistoryScreen(player) {
         const alle = await listPlayerHistory(player.id);
         const vollstaendig = alle.length > 0;
         renderStatsInto(el('stats-body'), vollstaendig ? alle : results, berlinDate());
+        renderDuelsInto(el('duels-body'), vollstaendig ? alle : results);
         renderProfile(await loadExperience(player.id));
         // Sagen, womit gerechnet wurde - nicht behaupten, was gewollt war.
         el('stats-scope').textContent = results.length
@@ -117,6 +118,7 @@ export function initHistoryTabs() {
     const tabs = [
         { tab: el('history-tab-list'), panel: el('history-panel-list') },
         { tab: el('history-tab-stats'), panel: el('history-panel-stats') },
+        { tab: el('history-tab-duels'), panel: el('history-panel-duels') },
     ];
     for (const { tab } of tabs) {
         tab.addEventListener('click', () => {

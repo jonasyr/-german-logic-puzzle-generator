@@ -133,5 +133,31 @@ export function renderStatsInto(node, results, today) {
     const body = clear(node);
     if (!results.length) return;
     body.append(personalSection(personalStats(results, today)));
-    for (const entry of headToHead(results)) body.append(duelSection(entry));
+}
+
+/**
+ * Rendert die Duell-Bilanzen in einen bereitgestellten Knoten.
+ *
+ * Eigener Reiter, nicht mehr angehängt an die Einzelspieler-Zahlen: „Gegen
+ * Bo" stand unter derselben Überschrift wie „Gesamtzeit", also musste man
+ * erst durch die eigene Statistik scrollen, um zu sehen, wie ein Duell
+ * ausgegangen ist.
+ *
+ * Ohne Duelle bleibt der Reiter nicht leer: eine leere Fläche liest sich wie
+ * ein Fehler, ein Satz sagt, dass es nichts zu zeigen gibt und warum.
+ *
+ * @param {HTMLElement} node
+ * @param {Array<object>} results  neueste zuerst
+ */
+export function renderDuelsInto(node, results) {
+    const body = clear(node);
+    const eintraege = headToHead(results);
+    if (!eintraege.length) {
+        body.append(make('p', {
+            className: 'stats-scope',
+            text: 'Noch keine Duelle. Sobald du eines gespielt hast, steht hier die Bilanz gegen jede Person.',
+        }));
+        return;
+    }
+    for (const entry of eintraege) body.append(duelSection(entry));
 }

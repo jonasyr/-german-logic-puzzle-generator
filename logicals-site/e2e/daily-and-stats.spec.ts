@@ -235,10 +235,12 @@ test('the statistics screen reports development and the head-to-head', async ({ 
   await expect(body).toContainText('Fehlprüfungen');
   await expect(body).toContainText('Serie');
 
-  await expect(body).toContainText('Gegen Bo');
-  await expect(body).toContainText('1 – 0 – 0');
-  await expect(body).toContainText('0:15');            // 15s ahead
-  await expect(body).toContainText('du bist schneller');
+  /*
+   * Head-to-head steht NICHT mehr hier: es lag unter derselben Ueberschrift
+   * wie die eigenen Zahlen, also musste man erst durch die eigene Statistik
+   * scrollen, um zu sehen, wie ein Duell ausgegangen ist.
+   */
+  await expect(body).not.toContainText('Gegen Bo');
 
   /*
    * Und die Zeile sagt, WOMIT gerechnet wurde.
@@ -364,4 +366,55 @@ test('Ergebnisse und Statistik teilen einen Bildschirm und eine Abfrage', async 
   await expect(page.locator('#history-panel-list')).toBeHidden();
   await expect(page.locator('#stats-body')).toContainText('Deine Entwicklung');
   expect(calls, 'der Reiterwechsel darf nicht neu laden').toBe(before);
+});
+
+/*
+ * Duelle sind ein eigener Ort, keine Fussnote unter der eigenen Statistik.
+ *
+ * Geprueft bei 320px, dem engsten Geraet: drei Reiter teilen sich dort die
+ * Breite gleichmaessig (segmented--even), und "Statistik" ist das laengste
+ * Wort. Bricht es um, waere die Leiste zweizeilig und die Gleichverteilung
+ * das Erste, was jemand opfern wuerde - deshalb hier festgehalten.
+ */
+test('Duelle haben einen eigenen Reiter', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 320, height: 568 });
+  await withPlayer(page, STATS_HISTORY);
+  await page.goto('/');
+  await page.locator('#history-button').click();
+  await page.locator('#history-tab-duels').click();
+
+  const duels = page.locator('#duels-body');
+  await expect(duels).toContainText('Gegen Bo');
+  await expect(duels).toContainText('1 – 0 – 0');
+  await expect(duels).toContainText('0:15');            // 15s Vorsprung
+  await expect(duels).toContainText('du bist schneller');
+
+  // Die Reiterleiste bleibt einzeilig, und kein Reiter faellt unter die
+  // Tapgroesse.
+  const leiste = page.locator('#screen-history .segmented[role="tablist"]');
+  const hoehen = await page.locator('#screen-history .segmented__item').evaluateAll(nodes =>
+    nodes.map(node => node.getBoundingClientRect().height));
+  const leisteHoehe = (await leiste.boundingBox())!.height;
+  expect(Math.max(...hoehen), 'ein Reiter ist hoeher als die Leiste - er bricht um')
+    .toBeLessThanOrEqual(leisteHoehe + 1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth))
+    .toBe(false);
+
+  // Und die drei Reiter teilen sich die Breite wirklich zu gleichen Teilen.
+  const breiten = await page.locator('#screen-history .segmented__item').evaluateAll(nodes =>
+    nodes.map(node => node.getBoundingClientRect().width));
+  expect(breiten).toHaveLength(3);
+  expect(Math.max(...breiten) - Math.min(...breiten)).toBeLessThan(1.5);
+});
+
+test('ohne Duelle bleibt der Reiter nicht leer', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 320, height: 568 });
+  // Nur Einzelspiel-Ergebnisse: ein leerer Bereich laese sich wie ein Fehler.
+  await withPlayer(page, STATS_HISTORY.filter(result => !result.opponentName));
+  await page.goto('/');
+  await page.locator('#history-button').click();
+  await page.locator('#history-tab-duels').click();
+  await expect(page.locator('#duels-body')).toContainText('Noch keine Duelle');
 });

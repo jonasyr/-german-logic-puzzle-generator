@@ -58,16 +58,29 @@ async function seed(page: Page, opts: { intro?: boolean; player?: boolean } = {}
     status: 200, contentType: 'application/json',
     body: JSON.stringify({
       results: [
+        /*
+         * Die Feldnamen spiegeln publicResult im Worker - flach, nicht
+         * verschachtelt, und `configuration` bereits geparst.
+         *
+         * Vorher stand hier `duel: { opponent: ... }` und `configurationJson`.
+         * Beides liest die App nirgends: sie fragt `roomId` und
+         * `opponentName`. Die Folge war still - JEDE Aufnahme der Ergebnisse
+         * zeigte seit Monaten ein Duell, das keines war, und der Duell-Reiter
+         * behauptete "noch keine Duelle", obwohl die Attrappe eines lieferte.
+         * Drei Scheinfehler sind in diesem Projekt schon aus falschen
+         * Feldnamen entstanden; dieser war der vierte.
+         */
         {
           id: 2, seed: 4711, difficulty: 'mittel', elapsedMs: 250_000, failedChecks: 1,
           completedAt: '2026-09-19T20:00:00Z', puzzleTitle: 'Beobachtungsnacht in der Sternwarte',
-          configurationJson: JSON.stringify({ categoryCount: 4, valuesPerCategory: 4 }),
-          duel: { outcome: 'won', opponent: 'Bo', opponentElapsedMs: 265_000, opponentFailedChecks: 2 },
+          configuration: { categoryCount: 4, valuesPerCategory: 4 },
+          roomId: 7, opponentName: 'Bo', opponentElapsedMs: 265_000, opponentFailedChecks: 2,
         },
         {
           id: 1, seed: 42, difficulty: 'leicht', elapsedMs: 180_000, failedChecks: 0,
           completedAt: '2026-09-18T19:00:00Z', puzzleTitle: 'Finale beim Street-Food-Festival',
-          configurationJson: JSON.stringify({ categoryCount: 3, valuesPerCategory: 4 }),
+          configuration: { categoryCount: 3, valuesPerCategory: 4 },
+          roomId: null, opponentName: null, opponentElapsedMs: null, opponentFailedChecks: null,
         },
       ],
     }),
@@ -125,6 +138,9 @@ for (const v of VARIANTEN) {
     await page.locator('#history-tab-stats').click();
     await page.waitForTimeout(400);
     await shot('05-statistik');
+    await page.locator('#history-tab-duels').click();
+    await page.waitForTimeout(400);
+    await shot('05b-duelle');
 
     await toStart(page);
     await page.locator('#settings-button').click();

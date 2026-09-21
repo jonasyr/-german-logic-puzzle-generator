@@ -321,6 +321,11 @@
                     role="tab" aria-selected="true" aria-controls="history-panel-list">Rätsel</button>
             <button class="segmented__item" type="button" id="history-tab-stats"
                     role="tab" aria-selected="false" aria-controls="history-panel-stats">Statistik</button>
+            <!-- Head-to-head lag zwei Ebenen tief und unter derselben
+                 Ueberschrift wie die Einzelspieler-Zahlen. Ein eigener Reiter
+                 macht daraus einen Ort statt einer Fussnote. -->
+            <button class="segmented__item" type="button" id="history-tab-duels"
+                    role="tab" aria-selected="false" aria-controls="history-panel-duels">Duelle</button>
         </div>
         <div id="history-panel-list" role="tabpanel" aria-labelledby="history-tab-list">
             <div class="history-list" id="history-list"></div>
@@ -332,6 +337,9 @@
                  zurueck, wenn die ungedeckelte Abfrage ausfaellt. Eine feste
                  Zeile waere dann gelogen. Siehe historyScreen.js. -->
             <p class="stats-scope" id="stats-scope"></p>
+        </div>
+        <div id="history-panel-duels" role="tabpanel" aria-labelledby="history-tab-duels" hidden>
+            <div id="duels-body"></div>
         </div>
         <p class="hint" id="history-hint" role="status"></p>
     </section>
