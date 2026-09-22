@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-    listSavedGames, newestSavedGame, pruneSavedGames, readSavedGame,
+    listSavedGames, newestSavedGame, parseSavedKey, pruneSavedGames, readSavedGame,
 } from '../client/js/play/savedGames.js';
 
 /**
@@ -204,5 +204,82 @@ describe('die Obergrenze', () => {
         const speicher = storageWith({ [a]: aw });
         expect(pruneSavedGames(1, 200, speicher)).toBe(0);
         expect(listSavedGames(1, speicher)).toHaveLength(1);
+    });
+});
+
+/*
+ * Was eine gegnerische Durchsicht gefunden hat.
+ *
+ * Alles hier stammt aus einem Bericht, nicht aus einem Einfall: jeder Fall
+ * war ein Weg, auf dem entweder etwas geworfen haette oder der Filter mehr
+ * Strenge versprach, als er leistete.
+ */
+describe('die Raender', () => {
+    it('wirft nicht, wenn marks keine Paarliste ist', () => {
+        /*
+         * `marks.filter(([, mark]) => ...)` zerlegte jedes Element. Ein Wert
+         * wie {"marks":[null]} warf damit einen TypeError - und weder das
+         * Suchen des juengsten Standes noch das Aufraeumen haben ein try,
+         * also riss ein einziger verfaelschter Eintrag das Oeffnen mit.
+         */
+        for (const kaputt of ['{"marks":[1,2]}', '{"marks":[null]}', '{"marks":"nein"}']) {
+            const stand = readSavedGame(KEY, storageWith({ [KEY]: kaputt }));
+            expect(stand?.sure).toBe(0);
+        }
+    });
+
+    it('laesst einen verfaelschten Eintrag das Aufraeumen nicht mitreissen', () => {
+        const [a, aw] = standFuer(1, '2026-09-20T10:00:00.000Z');
+        const kaputt = 'logicals:play:solo:none:1:museum:2:3x4:h2';
+        const [c, cw] = standFuer(3, '2026-09-22T10:00:00.000Z');
+        const speicher = storageWith({ [a]: aw, [kaputt]: '{"marks":[null]}', [c]: cw });
+
+        expect(() => pruneSavedGames(1, 2, speicher)).not.toThrow();
+        expect(() => newestSavedGame(1, speicher)).not.toThrow();
+    });
+
+    it('laesst Staende ohne Spielernummer liegen', () => {
+        // storageKeyFor faellt auf 'anonymous' zurueck, wenn kein Spieler
+        // ausgewaehlt ist. Solche Staende gehoeren niemandem.
+        const speicher = storageWith({
+            'logicals:play:solo:none:anonymous:museum:1000003:3x4:a1b2': WERT,
+        });
+        expect(listSavedGames(1, speicher)).toEqual([]);
+    });
+
+    it('nimmt nur Ziffern als Seed und Spieler', () => {
+        // Number() naehme auch '1e3', '0x10' und den leeren String.
+        for (const key of [
+            'logicals:play:solo:none:1:museum::3x4:a1b2',
+            'logicals:play:solo:none:1:museum:1e3:3x4:a1b2',
+            'logicals:play:solo:none:1:museum:0x10:3x4:a1b2',
+            'logicals:play:solo:none:1:museum:1000003:3x4x9:a1b2',
+        ]) {
+            expect(parseSavedKey(key), key).toBeNull();
+        }
+    });
+
+    it('nimmt keinen Schluessel mit zu vielen Teilen', () => {
+        expect(parseSavedKey('logicals:play:solo:none:1:museum:7:3x4:a1b2:zuviel')).toBeNull();
+    });
+
+    it('vertraegt ein null mitten in der Schluesselliste', () => {
+        // Die echte Storage-Schnittstelle darf das; die Attrappe tat es nie.
+        const loechrig = {
+            length: 2,
+            key: (index: number) => (index === 0
+                ? null
+                : 'logicals:play:solo:none:1:museum:1000003:3x4:a1b2'),
+            getItem: () => WERT, setItem: () => {}, removeItem: () => {},
+        } as unknown as Storage;
+        expect(listSavedGames(1, loechrig)).toHaveLength(1);
+    });
+
+    it('raeumt bei limit 0 alles weg', () => {
+        // Festgehalten, weil es vertretbar, aber nicht offensichtlich ist.
+        const [a, aw] = standFuer(1, '2026-09-20T10:00:00.000Z');
+        const speicher = storageWith({ [a]: aw });
+        expect(pruneSavedGames(1, 0, speicher)).toBe(1);
+        expect(listSavedGames(1, speicher)).toEqual([]);
     });
 });

@@ -29,10 +29,24 @@ export function parseSavedKey(key) {
     const parts = key.split(':');
     if (parts.length !== 9) return null;
     const [, , mode, room, player, themeId, seed, dimensions] = parts;
-    const [categoryCount, valuesPerCategory] = dimensions.split('x').map(Number);
+    /*
+     * Ziffern, nichts sonst.
+     *
+     * `Number()` nimmt auch '1e3', '0x10' und den leeren String; ein Filter,
+     * der mehr Strenge verspricht als er leistet, ist schlimmer als keiner.
+     *
+     * Der Spielerteil kann laut `storageKeyFor` auch 'anonymous' lauten, wenn
+     * ohne ausgewaehlten Spieler gespielt wird. Solche Staende gehoeren
+     * niemandem und bleiben hier aussen vor — erreichbar ist dieser Fall
+     * heute nicht, weil jeder Einzelspiel-Weg an einem Knopf haengt, der
+     * ohne Spieler deaktiviert ist.
+     */
+    if (!/^\d+$/.test(player) || !/^\d+$/.test(seed)) return null;
+    const masze = dimensions.match(/^(\d+)x(\d+)$/);
+    if (!masze) return null;
     const playerId = Number(player);
-    if (!Number.isInteger(playerId) || !Number.isFinite(Number(seed))) return null;
-    if (!Number.isInteger(categoryCount) || !Number.isInteger(valuesPerCategory)) return null;
+    const categoryCount = Number(masze[1]);
+    const valuesPerCategory = Number(masze[2]);
     return {
         key, mode, room, playerId, themeId,
         seed: Number(seed), categoryCount, valuesPerCategory,
@@ -71,8 +85,13 @@ export function listSavedGames(playerId, storage = localStorage) {
  *
  * Je Kategorienpaar genau `Werte` Stück, und es gibt C(Kategorien, 2) Paare.
  * Ein 3×4 hat 12, ein 5×5 deren 50 — ein gelöstes Rätsel steht damit genau
- * auf 100 %. Jede andere Bezugsgröße erreicht die Marke nie: automatische
- * Kreuze liegen in `auto` und zählen gar nicht als Markierung.
+ * auf 100 %, denn `evaluate` verlangt für „gelöst" jede dieser Zuordnungen
+ * als `yes`.
+ *
+ * Gezählt wird deshalb `yes`, nicht die Zahl der Markierungen: abgeleitete
+ * Kreuze stehen sehr wohl in `marks` (siehe `setMarkWith`, das sie in
+ * `marks` UND `auto` einträgt), ein Anteil an allen Markierungen liefe also
+ * je nach Hilfseinstellung anders — und erreichte die 100 % nie.
  */
 function sureTotal(categoryCount, valuesPerCategory) {
     return valuesPerCategory * categoryCount * (categoryCount - 1) / 2;
@@ -97,7 +116,16 @@ export function readSavedGame(key, storage = localStorage) {
     try { wert = JSON.parse(roh); } catch { return null; }
     const marks = Array.isArray(wert?.marks) ? wert.marks : [];
     return {
-        sure: marks.filter(([, mark]) => mark === 'yes').length,
+        /*
+         * Jeder Eintrag einzeln geprüft, nicht zerlegt.
+         *
+         * `marks.filter(([, mark]) => …)` setzt voraus, dass jedes Element
+         * iterierbar ist; ein Wert wie `{"marks":[null]}` warf damit einen
+         * TypeError — und weil weder das Suchen des jüngsten Standes noch das
+         * Aufräumen ein `try` haben, riss ein einziger verfälschter Eintrag
+         * das Öffnen eines Rätsels mit.
+         */
+        sure: marks.filter(eintrag => Array.isArray(eintrag) && eintrag[1] === 'yes').length,
         total: sureTotal(zerlegt.categoryCount, zerlegt.valuesPerCategory),
         marks: marks.length,
         solved: Boolean(wert?.solved),
@@ -157,7 +185,18 @@ export function newestSavedGame(playerId, storage = localStorage) {
  * @returns {number} wie viele entfernt wurden
  */
 export function pruneSavedGames(playerId, limit = 200, storage = localStorage) {
-    const alle = listSavedGames(playerId, storage)
+    /*
+     * Erst zählen, dann lesen.
+     *
+     * Das Zählen geht über die Schlüssel und kostet nichts; die Werte werden
+     * nur angefasst, wenn wirklich etwas wegfällt. Sonst parste dieser Weg
+     * bei JEDEM Öffnen eines Rätsels alle 200 Stände — und widerlegte damit
+     * genau das Argument, mit dem der mitgeschriebene Index verworfen wurde.
+     */
+    const schluessel = listSavedGames(playerId, storage);
+    if (schluessel.length <= limit) return 0;
+
+    const alle = schluessel
         .map(eintrag => ({ key: eintrag.key, at: zeit(readSavedGame(eintrag.key, storage)?.savedAt) }))
         .sort((a, b) => a.at - b.at);
     const zuviel = alle.length - limit;
