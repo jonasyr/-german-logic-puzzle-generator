@@ -2,7 +2,9 @@
 
 **Datum:** 2026-09-21
 **Zweig:** `redesign/mobile-canvas-overview`
-**Zustand:** offen — noch nicht geplant, noch nicht gebaut
+**Zustand:** abgelöst am 22.09.2026 durch
+`2026-09-22-angefangene-raetsel-design.md`. Die vier Fragen unten sind dort
+beantwortet; dieser Text bleibt als Herleitung stehen.
 
 ## Worum es geht
 
