@@ -251,8 +251,35 @@ export function soloContinuation(payload) {
     return { ...payload, attemptKey: null, resultQueued: false };
 }
 
-export function save(state, elapsedMs) {
+/**
+ * @param {object} state
+ * @param {number} elapsedMs
+ * @param {{ fingerprint?: string|null, title?: string|null }} [meta]
+ *   Was der Stand über sich selbst weiß. Der Fingerabdruck entsteht
+ *   asynchron und fehlt beim allerersten Speichern, wird aber bei jedem
+ *   weiteren nachgetragen; ohne ihn gilt der Stand als lesbar, aber nicht
+ *   fortsetzbar.
+ */
+export function save(state, elapsedMs, meta = {}) {
     if (!state.storageKey) return;
+    /*
+     * Ein leeres Gitter hinterlässt keinen Stand.
+     *
+     * `persist()` läuft auch bei `visibilitychange` und `pagehide`. Ohne
+     * diese Zeile hinterließe ein bloß geöffnetes und sofort verlassenes
+     * Rätsel einen Schlüssel mit leeren Markierungen — und die Sammlung
+     * zählte es als angefangen, obwohl niemand es angefasst hat. Genau das
+     * hätte „es gibt einen Schlüssel" als Antwort auf „ist es angefangen?"
+     * wertlos gemacht.
+     *
+     * Dieselbe Schwelle galt schon für den alten Fortsetzungs-Platz, der
+     * sich bei `marks.size === 0` selbst löschte. Gelöst ist etwas anderes
+     * als leer: das ist ein Ergebnis und bleibt.
+     */
+    if (!state.solved && state.marks.size === 0) {
+        try { localStorage.removeItem(state.storageKey); } catch { /* egal */ }
+        return;
+    }
     try {
         localStorage.setItem(state.storageKey, JSON.stringify({
             marks: [...state.marks],
@@ -265,6 +292,19 @@ export function save(state, elapsedMs) {
             attemptKey: state.attemptKey,
             failedChecks: state.failedChecks,
             resultQueued: state.resultQueued,
+            /*
+             * Damit ein Stand sich selbst trägt.
+             *
+             * Vorher lagen diese Angaben allein im globalen Datensatz
+             * `logicals.resume.v1`, und der zeigte auf genau ein Rätsel. Wer
+             * ein zweites anfing, verlor nicht seinen Stand, aber den Weg
+             * dorthin.
+             */
+            options: state.context?.options ?? null,
+            puzzleIndex: state.context?.puzzleIndex ?? 0,
+            fingerprint: meta.fingerprint ?? null,
+            title: meta.title ?? null,
+            savedAt: new Date().toISOString(),
         }));
     } catch { /* private mode or storage full - playing still works */ }
 }

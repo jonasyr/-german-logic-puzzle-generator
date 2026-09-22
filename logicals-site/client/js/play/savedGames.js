@@ -103,8 +103,9 @@ function sureTotal(categoryCount, valuesPerCategory) {
  * @param {string} key
  * @param {Storage} [storage]
  * @returns {{ sure: number, total: number, marks: number, solved: boolean,
- *             elapsedMs: number, options: object|null, fingerprint: string|null,
- *             title: string|null, savedAt: string|null } | null}
+ *             elapsedMs: number, options: object|null, puzzleIndex: number,
+ *             fingerprint: string|null, title: string|null,
+ *             savedAt: string|null } | null}
  */
 export function readSavedGame(key, storage = localStorage) {
     const zerlegt = parseSavedKey(key);
@@ -133,6 +134,8 @@ export function readSavedGame(key, storage = localStorage) {
         // Die vier Felder, mit denen ein Stand sich selbst trägt. Ältere
         // Stände haben sie nicht; das ist kein Fehler, nur eine Grenze.
         options: wert?.options ?? null,
+        // Im Einzelspiel heute immer 0 — aber eine stille Annahme ist keine.
+        puzzleIndex: Number.isInteger(wert?.puzzleIndex) ? wert.puzzleIndex : 0,
         fingerprint: wert?.fingerprint ?? null,
         title: wert?.title ?? null,
         savedAt: wert?.savedAt ?? null,
@@ -154,8 +157,9 @@ function zeit(savedAt) {
  *
  * @param {number} playerId
  * @param {Storage} [storage]
- * @returns {{ key: string, seed: number, options: object, fingerprint: string,
- *             title: string|null, elapsedMs: number, marks: number } | null}
+ * @returns {{ key: string, seed: number, options: object, puzzleIndex: number,
+ *             fingerprint: string, title: string|null, elapsedMs: number,
+ *             marks: number } | null}
  */
 export function newestSavedGame(playerId, storage = localStorage) {
     let bester = null;
@@ -166,7 +170,8 @@ export function newestSavedGame(playerId, storage = localStorage) {
         if (bester && zeit(stand.savedAt) <= zeit(bester.savedAt)) continue;
         bester = {
             key: eintrag.key, seed: eintrag.seed, savedAt: stand.savedAt,
-            options: stand.options, fingerprint: stand.fingerprint,
+            options: stand.options, puzzleIndex: stand.puzzleIndex,
+            fingerprint: stand.fingerprint,
             title: stand.title, elapsedMs: stand.elapsedMs, marks: stand.marks,
         };
     }

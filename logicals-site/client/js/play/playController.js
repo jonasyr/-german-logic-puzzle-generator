@@ -241,7 +241,10 @@ function renderPairProgress() {
 
 function persist() {
     const elapsedMs = timer ? timer.elapsedMs() : 0;
-    save(state, elapsedMs);
+    save(state, elapsedMs, {
+        fingerprint: puzzleFingerprint,
+        title: state.puzzle ? `${state.puzzle.number}. ${state.puzzle.title}` : null,
+    });
     rememberForResume(elapsedMs);
 }
 

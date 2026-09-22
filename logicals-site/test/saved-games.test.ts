@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     listSavedGames, newestSavedGame, parseSavedKey, pruneSavedGames, readSavedGame,
 } from '../client/js/play/savedGames.js';
+import { save } from '../client/js/play/playState.js';
 
 /**
  * Ein Speicher, wie ihn Node nicht hat.
@@ -281,5 +282,83 @@ describe('die Raender', () => {
         const speicher = storageWith({ [a]: aw });
         expect(pruneSavedGames(1, 0, speicher)).toBe(1);
         expect(listSavedGames(1, speicher)).toEqual([]);
+    });
+});
+
+/** Ein Speicher, in den auch geschrieben werden kann. */
+function schreibbarerSpeicher(entries: Record<string, string> = {}) {
+    return {
+        get length() { return Object.keys(entries).length; },
+        key: (index: number) => Object.keys(entries)[index] ?? null,
+        getItem: (key: string) => entries[key] ?? null,
+        setItem: (key: string, value: string) => { entries[key] = value; },
+        removeItem: (key: string) => { delete entries[key]; },
+    } as unknown as Storage;
+}
+
+function zustand(marks: Array<[string, string]>, extra: object = {}) {
+    return {
+        storageKey: KEY,
+        marks: new Map(marks), auto: new Map(), usedClues: new Set<number>(),
+        solved: false, attemptKey: null, failedChecks: 0, resultQueued: false,
+        context: {
+            options: { seed: 1_000_003, categoryCount: 3, valuesPerCategory: 4 },
+            puzzleIndex: 0,
+        },
+        ...extra,
+    };
+}
+
+describe('was beim Speichern mitgeschrieben wird', () => {
+    it('traegt Einstellungen, Fingerabdruck, Titel, Nummer und Zeitmarke', () => {
+        /*
+         * Ohne diese Felder ist ein Stand nur wiederfindbar, solange der eine
+         * Fortsetzungs-Platz auf ihn zeigt - und der wird vom naechsten
+         * Raetsel ueberschrieben. Mit ihnen traegt er sich selbst.
+         */
+        const speicher = schreibbarerSpeicher();
+        (globalThis as any).localStorage = speicher;
+        save(zustand([['0.1.0.0', 'yes']]) as never, 61_000,
+            { fingerprint: 'abc123', title: '3. Museum bei Nacht' });
+
+        const stand = readSavedGame(KEY, speicher);
+        expect(stand?.options).toEqual({ seed: 1_000_003, categoryCount: 3, valuesPerCategory: 4 });
+        expect(stand?.fingerprint).toBe('abc123');
+        expect(stand?.title).toBe('3. Museum bei Nacht');
+        expect(stand?.puzzleIndex).toBe(0);
+        expect(stand?.savedAt).not.toBeNull();
+        expect(stand?.sure).toBe(1);
+    });
+
+    it('kommt ohne meta aus', () => {
+        // Der Fingerabdruck entsteht asynchron und fehlt beim ersten Speichern.
+        (globalThis as any).localStorage = schreibbarerSpeicher();
+        expect(() => save(zustand([['0.1.0.0', 'yes']]) as never, 0)).not.toThrow();
+    });
+
+    it('hinterlaesst fuer ein leeres Gitter keinen Schluessel', () => {
+        /*
+         * Sonst hiesse "es gibt einen Schluessel" nicht mehr "hier wurde
+         * angefangen": persist() laeuft auch bei visibilitychange, ein bloss
+         * geoeffnetes und sofort verlassenes Raetsel hinterliesse also einen
+         * Stand mit leeren Markierungen - und die Sammlung zaehlte es als
+         * angefangen. Dieselbe Regel galt schon fuer den alten
+         * Fortsetzungs-Platz, der sich bei marks.size === 0 selbst loeschte.
+         */
+        const speicher = schreibbarerSpeicher();
+        (globalThis as any).localStorage = speicher;
+        save(zustand([['0.1.0.0', 'yes']]) as never, 1000, { fingerprint: 'f', title: 't' });
+        expect(listSavedGames(1, speicher)).toHaveLength(1);
+
+        save(zustand([]) as never, 2000, { fingerprint: 'f', title: 't' });
+        expect(listSavedGames(1, speicher)).toEqual([]);
+    });
+
+    it('behaelt ein geloestes Raetsel auch ohne Markierungen', () => {
+        // Geloest ist kein leerer Stand, sondern ein Ergebnis.
+        const speicher = schreibbarerSpeicher();
+        (globalThis as any).localStorage = speicher;
+        save(zustand([], { solved: true }) as never, 1000, { fingerprint: 'f', title: 't' });
+        expect(listSavedGames(1, speicher)).toHaveLength(1);
     });
 });
