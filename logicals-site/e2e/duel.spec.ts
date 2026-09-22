@@ -500,3 +500,43 @@ test('ein Sammlungsraetsel wird auf beiden Geraeten dasselbe', async ({ browser 
   await gastKontext.close();
   await context.close();
 });
+
+/*
+ * Wer die Lobby verlaesst, landet beim naechsten Laden nicht wieder darin.
+ *
+ * Die gespeicherte Sitzung ueberlebte das Verlassen: der Zurueck-Knopf fuehrte
+ * zwar auf den Start, aber jedes Neuladen zog einen wieder in denselben
+ * Warteraum - ohne Weg hinaus, weil auch der naechste Versuch dort endete.
+ * Am Geraet gemeldet, mit einem frischen Raum, in dem niemand beigetreten war.
+ */
+test('eine verlassene Lobby holt einen nicht beim Neuladen zurueck', async ({ browser }) => {
+  test.setTimeout(180_000);
+  const state = createDuelState();
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const host = await context.newPage();
+  await installDuelApi(host, { playerId: 1, displayName: 'Ada', state });
+
+  await host.goto('/');
+  await host.locator('#duel-join-button').click();
+  await host.locator('#duel-source-custom').click();
+  await host.locator('#field-categoryCount').selectOption('3');
+  await host.locator('#field-valuesPerCategory').selectOption('4');
+  await host.locator('#field-difficulty').selectOption('leicht');
+  await host.locator('#generate-button').click();
+  await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 120_000 });
+
+  // Ein Neuladen, SOLANGE man drin ist, gehoert weiter in die Lobby: der Code
+  // steht dort, und man wartet ja gerade.
+  await host.reload();
+  await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 60_000 });
+
+  // Verlassen heisst verlassen.
+  await host.locator('#screen-duel-lobby .btn--back').click();
+  await expect(host.locator('#screen-start')).toHaveClass(/is-active/);
+
+  await host.reload();
+  await expect(host.locator('#screen-start')).toHaveClass(/is-active/, { timeout: 60_000 });
+  await expect(host.locator('#screen-duel-lobby')).not.toHaveClass(/is-active/);
+
+  await context.close();
+});

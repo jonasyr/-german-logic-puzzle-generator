@@ -248,7 +248,27 @@ export function initDuelController({
             setHint('duel-lobby-hint', 'Link kopiert.');
         } catch { setHint('duel-lobby-hint', 'Link konnte nicht kopiert werden.', true); }
     });
-    onLeave(from => { if (from === 'screen-duel-lobby') stopLobby(); });
+    onLeave(from => {
+        if (from !== 'screen-duel-lobby') return;
+        stopLobby();
+        /*
+         * Verlassen heißt verlassen.
+         *
+         * Die gespeicherte Sitzung überlebte den Zurück-Knopf: jedes
+         * Neuladen zog einen wieder in denselben Warteraum, und weil auch
+         * der nächste Versuch dort endete, gab es keinen Weg hinaus. Am
+         * Gerät gemeldet, mit einem frischen Raum, in dem niemand
+         * beigetreten war.
+         *
+         * Nur wenn das Spiel noch nicht läuft: `startGame` setzt
+         * `gameStarted`, bevor es den Spielbildschirm zeigt, und dieser
+         * Wechsel darf die Sitzung nicht wegräumen - mitten im Duell muss
+         * ein Neuladen zurück ins Spiel führen.
+         */
+        if (gameStarted || !activeSession) return;
+        clearDuelSession(activeSession.code, activeSession.player.id);
+        activeSession = null;
+    });
 }
 
 /**
