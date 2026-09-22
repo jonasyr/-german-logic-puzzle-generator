@@ -18,7 +18,7 @@ import { initPlay, openPlay } from './play/playController.js';
 import { createDuelForPuzzle, initDuelController, openRoomFromUrl } from './duel/lobbyController.js';
 import { setDuelPlayer } from './screens/duelEntryScreen.js';
 import { initDuelResultController } from './duel/duelResultController.js';
-import { clearResume, loadResume } from './play/resumeStore.js';
+import { newestSavedGame } from './play/savedGames.js';
 import {
     berlinDate, dailyDifficulty, dailyOptions, dailySeed, dailyStreak, isDailyResult,
 } from './play/dailyPuzzle.js';
@@ -122,12 +122,19 @@ async function generate(intent) {
     }
 }
 
-function describeResume(record) {
-    const minutes = Math.floor(record.elapsedMs / 60_000);
-    const seconds = Math.floor((record.elapsedMs % 60_000) / 1000);
+/**
+ * Die Zeile unter „Weiterspielen": Titel, Uhr, Markierungen.
+ *
+ * Markierungen statt Prozent — der Prozentsatz gehört in die Sammlung, und
+ * zwei Maße für dieselbe Sache auf einem Weg wären genau die Unordnung, die
+ * dieser Umbau vermeiden soll.
+ */
+function describeResume(stand) {
+    const minutes = Math.floor(stand.elapsedMs / 60_000);
+    const seconds = Math.floor((stand.elapsedMs % 60_000) / 1000);
     const clock = `${minutes}:${String(seconds).padStart(2, '0')}`;
-    const marks = record.markCount === 1 ? '1 Markierung' : `${record.markCount} Markierungen`;
-    return `${record.title} · ${clock} · ${marks}`;
+    const marks = stand.marks === 1 ? '1 Markierung' : `${stand.marks} Markierungen`;
+    return `${stand.title ?? 'Rätsel'} · ${clock} · ${marks}`;
 }
 
 const WEEKDAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
@@ -213,7 +220,7 @@ async function refreshDailyButton() {
 function refreshStartScreen() {
     const button = el('resume-button');
     const player = getSelectedPlayer();
-    const record = player ? loadResume(player.id) : null;
+    const record = player ? newestSavedGame(player.id) : null;
     const detail = el('resume-detail');
     button.hidden = !record;
     detail.hidden = !record;
@@ -246,7 +253,7 @@ function refreshStartScreen() {
  */
 async function resumeSavedGame() {
     const player = getSelectedPlayer();
-    const record = player ? loadResume(player.id) : null;
+    const record = player ? newestSavedGame(player.id) : null;
     if (!record) { refreshStartScreen(); return; }
 
     setBusy('Gespeichertes Rätsel wird wiederhergestellt …');
@@ -265,17 +272,57 @@ async function resumeSavedGame() {
             puzzleIndex: record.puzzleIndex,
         });
     } catch (error) {
-        // A button that leads nowhere is worse than no button.
-        clearResume();
-        refreshStartScreen();
+        /*
+         * Den Stand NICHT wegwerfen.
+         *
+         * Früher löschte dieser Zweig den Fortsetzungs-Datensatz — ein
+         * Zeiger, dessen Verlust nichts kostete. Jetzt IST der Datensatz der
+         * Stand selbst; ihn zu löschen hieße, die Markierungen wegzuwerfen,
+         * weil sich der Generator geändert hat. Der Knopf bleibt stehen und
+         * sagt, was los ist.
+         */
         setHint('start-hint', error.message, true);
     } finally {
         clearBusy();
     }
 }
 
+/**
+ * Einmaliger Umzug vom alten Fortsetzungs-Platz.
+ *
+ * `logicals.resume.v1` trug Einstellungen, Fingerabdruck und Titel für genau
+ * ein Rätsel. Diese Angaben wandern in den Stand, auf den er zeigt; danach
+ * wird er gelöscht. Stände, auf die er nie zeigte, bleiben lesbar und zeigen
+ * ihren Balken in der Sammlung — fortsetzbar werden sie, sobald man sie
+ * einmal anfasst. Das ist die ehrliche Grenze des Umzugs, und sie kostet
+ * niemanden einen Stand.
+ */
+function migrateResumeRecord() {
+    try {
+        const roh = localStorage.getItem('logicals.resume.v1');
+        if (!roh) return;
+        const record = JSON.parse(roh);
+        const stand = record?.storageKey ? localStorage.getItem(record.storageKey) : null;
+        if (stand) {
+            const wert = JSON.parse(stand);
+            if (!wert.options) {
+                localStorage.setItem(record.storageKey, JSON.stringify({
+                    ...wert,
+                    options: record.options ?? null,
+                    puzzleIndex: record.puzzleIndex ?? 0,
+                    fingerprint: record.fingerprint ?? null,
+                    title: record.title ?? null,
+                    savedAt: record.savedAt ?? new Date().toISOString(),
+                }));
+            }
+        }
+        localStorage.removeItem('logicals.resume.v1');
+    } catch { /* kaputt oder gesperrt: dann bleibt es, wie es ist */ }
+}
+
 function wire() {
     wireBackButtons();
+    migrateResumeRecord();
     el('start-button').addEventListener('click', () => openConfig('play'));
     el('resume-button').addEventListener('click', resumeSavedGame);
     el('daily-button').addEventListener('click', playDaily);

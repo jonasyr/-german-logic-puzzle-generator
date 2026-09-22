@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import {
   clearMarks, createPlayState, load, save, setMarkWith, storageKeyFor,
 } from '../client/js/play/playState';
-import { clearResume, loadResume, saveResume } from '../client/js/play/resumeStore';
+import { newestSavedGame } from '../client/js/play/savedGames';
 
 /**
  * Duel invariants that live in the client rather than in the Worker.
@@ -75,22 +75,43 @@ describe('a duel keeps the two players apart', () => {
 });
 
 describe('a duel never becomes a resume offer', () => {
-  it('is not what the start screen picks up', () => {
-    storage();
-    // Only solo games are ever written, but if a duel record did appear it must
-    // not be handed to a player: the room may be gone, and a duel result belongs
-    // to the room it was played in.
-    clearResume();
-    expect(loadResume(1)).toBeNull();
+  /*
+   * Seit es den einen Fortsetzungs-Platz nicht mehr gibt, sucht der
+   * Startbildschirm selbst: er geht die Schluessel durch und nimmt den
+   * juengsten. Die Zusage ist dieselbe geblieben - ein Duell darf dabei nie
+   * herauskommen, weil sein Raum laengst weg sein kann und sein Ergebnis in
+   * den Raum gehoert, in dem es gespielt wurde.
+   */
+  const stand = (marks: number) => JSON.stringify({
+    marks: Array.from({ length: marks }, (_, index) => [`0.1.${index}.0`, 'yes']),
+    auto: [], usedClues: [], elapsedMs: 0, solved: false,
+    options: {}, puzzleIndex: 0, fingerprint: 'f', title: 'T',
+    savedAt: '2026-09-22T10:00:00.000Z',
+  });
 
-    saveResume({
-      options: {}, puzzleIndex: 0, fingerprint: 'f',
-      storageKey: 'logicals:play:solo:none:1:p:41:5x5:z',
-      playerId: 1, title: 'T', savedAt: 'now', elapsedMs: 0, markCount: 1,
+  function speicherMit(entries: Record<string, string>) {
+    const keys = Object.keys(entries);
+    return {
+      get length() { return keys.length; },
+      key: (index: number) => keys[index] ?? null,
+      getItem: (key: string) => entries[key] ?? null,
+      setItem: () => {}, removeItem: () => {},
+    } as unknown as Storage;
+  }
+
+  it('is not what the start screen picks up', () => {
+    const nurDuell = speicherMit({
+      'logicals:play:duel:7:1:p:41:5x5:z': stand(1),
     });
-    // A different player must not be offered it either.
-    expect(loadResume(2)).toBeNull();
-    expect(loadResume(1)).not.toBeNull();
+    expect(newestSavedGame(1, nurDuell)).toBeNull();
+  });
+
+  it('is not handed to a different player either', () => {
+    const solo = speicherMit({
+      'logicals:play:solo:none:1:p:41:5x5:z': stand(1),
+    });
+    expect(newestSavedGame(2, solo)).toBeNull();
+    expect(newestSavedGame(1, solo)).not.toBeNull();
   });
 });
 

@@ -248,3 +248,42 @@ test('das Duell hat einen eigenen Einstieg mit Quellenauswahl', async ({ page })
   await page.locator('#start-button').click();
   await expect(page.locator('#generate-button')).toHaveText('Spielen');
 });
+
+/*
+ * "Weiterspielen" meint das zuletzt begonnene Raetsel.
+ *
+ * Vorher lag dahinter ein einziger, globaler Platz: wer ein zweites Raetsel
+ * anfing, ueberschrieb ihn. Der Stand des ersten lag weiter im Speicher, nur
+ * fuehrte kein Weg mehr hin.
+ */
+test('Weiterspielen fuehrt auf das zuletzt begonnene Raetsel', async ({ page }) => {
+  test.setTimeout(240_000);
+  await withPlayer(page);
+  await page.goto('/');
+  await expect(page.locator('#collection-button')).toBeEnabled({ timeout: 60_000 });
+
+  const anfangen = async (nth: number) => {
+    await page.locator('#collection-button').click();
+    await page.locator('.chapter-row').first().click();
+    await page.locator('.entry-row').nth(nth).click();
+    await expect(page.locator('#overview-canvas')).toBeVisible({ timeout: 120_000 });
+    const titel = (await page.locator('#play-title').textContent())!.trim();
+    await page.locator('#overview-mark-yes').evaluate((b: HTMLButtonElement) => b.click());
+    await page.locator('.play-pager .cell').evaluateAll(cells => {
+      (cells[0] as HTMLButtonElement).click();
+    });
+    await page.waitForTimeout(300);
+    await page.locator('#play-back').click();
+    await page.goto('/');
+    return titel;
+  };
+
+  const erster = await anfangen(0);
+  const zweiter = await anfangen(1);
+  expect(erster).not.toBe(zweiter);
+
+  // Der Knopf meint das zweite - und das erste ist nicht verloren, es liegt
+  // weiter unter seinem eigenen Schluessel in der Sammlung.
+  await expect(page.locator('#resume-button')).toBeVisible();
+  await expect(page.locator('#resume-detail')).toContainText(zweiter);
+});

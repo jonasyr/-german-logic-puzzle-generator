@@ -92,7 +92,7 @@ test('an empty grid offers nothing to resume', async ({ page }) => {
   await expect(page.locator('#resume-button')).toBeHidden();
 });
 
-test('a record that cannot be rebuilt is refused and cleared', async ({ page }) => {
+test('a save that cannot be rebuilt is refused but kept', async ({ page }) => {
   test.setTimeout(180_000);
   await page.setViewportSize({ width: 375, height: 812 });
   await withPlayer(page);
@@ -104,19 +104,34 @@ test('a record that cannot be rebuilt is refused and cleared', async ({ page }) 
   await page.reload();
   await expect(page.locator('#resume-button')).toBeVisible();
 
-  // Corrupt the fingerprint AFTER the reload. Doing it before is pointless: the
-  // page's own pagehide handler persists the live game on the way out and would
-  // simply write the correct fingerprint back over it.
+  /*
+   * Den Fingerabdruck NACH dem Neuladen verfaelschen. Davor waere es
+   * zwecklos: der pagehide-Handler der Seite speichert das laufende Spiel
+   * beim Verlassen und schriebe den richtigen einfach zurueck.
+   *
+   * Verfaelscht wird jetzt der Stand selbst - den einen Fortsetzungs-Platz
+   * gibt es nicht mehr, jeder Stand traegt seine Angaben bei sich.
+   */
   await page.evaluate(() => {
-    const record = JSON.parse(localStorage.getItem('logicals.resume.v1')!);
-    record.fingerprint = 'not-the-right-fingerprint';
-    localStorage.setItem('logicals.resume.v1', JSON.stringify(record));
+    const key = Object.keys(localStorage).find(name => name.startsWith('logicals:play:solo:'));
+    const stand = JSON.parse(localStorage.getItem(key!)!);
+    stand.fingerprint = 'not-the-right-fingerprint';
+    localStorage.setItem(key!, JSON.stringify(stand));
   });
 
   await page.locator('#resume-button').click();
   await expect(page.locator('#start-hint')).toContainText('identisch erzeugen', { timeout: 60_000 });
-  // And it does not stay around to fail again.
-  await expect(page.locator('#resume-button')).toBeHidden();
+
+  /*
+   * Und der Stand bleibt.
+   *
+   * Frueher loeschte dieser Zweig den Fortsetzungs-Datensatz - einen Zeiger,
+   * dessen Verlust nichts kostete. Jetzt IST der Datensatz der Stand selbst;
+   * ihn wegzuwerfen hiesse, die Markierungen zu verlieren, weil sich der
+   * Generator geaendert hat. Der Knopf bleibt stehen und sagt, was los ist.
+   */
+  await expect(page.locator('#resume-button')).toBeVisible();
+  await expect(page.locator('#start-hint')).toContainText('identisch erzeugen');
 });
 
 test('a solved puzzle is not offered for resuming', async ({ page }) => {

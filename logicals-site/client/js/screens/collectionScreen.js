@@ -156,6 +156,16 @@ export async function playCatalogueEntry(chapter, entry) {
         if (!puzzle) throw new Error('Dieses Rätsel konnte nicht erzeugt werden.');
         openPlayFn(puzzle, {
             mode: 'solo', player: activePlayer, options, puzzleIndex: 0,
+            /*
+             * Die Nummer aus dem Katalog, nicht die aus dem Heft.
+             *
+             * `puzzle.number` ist der Index im erzeugten Heft und damit bei
+             * jedem Sammlungseintrag 1 — die Sammlung nennt denselben
+             * Eintrag aber „3.". Zwei Bildschirme einen Tap auseinander
+             * sagten Verschiedenes, und „Weiterspielen" konnte zwei Rätsel
+             * desselben Kapitels nicht auseinanderhalten.
+             */
+            title: `${entry.number}. ${chapter.title}`,
         });
     } catch (error) {
         // Ein Eintrag, der nicht aufgeht, darf das Kapitel nicht blockieren.

@@ -9,7 +9,7 @@ import { buildPager, categoryPairs } from './matrixView.js';
 import { createOverviewCanvas } from './overview/overviewCanvas.js';
 import { loadPrefs } from './playPrefs.js';
 import { fingerprintPuzzle } from '../generation/canonicalPuzzle.ts';
-import { clearResume, saveResume } from './resumeStore.js';
+import { pruneSavedGames } from './savedGames.js';
 import { createMarkTool, nextMark } from './markTool.js';
 import { createCluesSheet } from './cluesSheet.js';
 import { askConfirm, closeConfirm } from '../ui/confirmDialog.js';
@@ -243,37 +243,22 @@ function persist() {
     const elapsedMs = timer ? timer.elapsedMs() : 0;
     save(state, elapsedMs, {
         fingerprint: puzzleFingerprint,
-        title: state.puzzle ? `${state.puzzle.number}. ${state.puzzle.title}` : null,
+        title: state.context?.title
+            ?? (state.puzzle ? `${state.puzzle.number}. ${state.puzzle.title}` : null),
     });
-    rememberForResume(elapsedMs);
 }
 
-/**
- * Keeps the resume record in step with the live game.
+/*
+ * Kein Fortsetzungs-Datensatz mehr.
  *
- * Solo only: a duel has its own session store, its own expiry, and a room that
- * may be gone by the time anyone comes back. And a solved or empty grid is not
- * something to come back TO, so both clear the record rather than leaving a
- * button that leads nowhere interesting.
+ * `rememberForResume` hielt `logicals.resume.v1` im Gleichschritt mit dem
+ * Spiel - einen globalen Platz für genau ein Rätsel, den das nächste
+ * überschrieb. Ein Stand trägt seine Angaben jetzt selbst (siehe `save`),
+ * und der Startbildschirm sucht sich den jüngsten. Die Regeln, die hier
+ * standen, gelten weiter, nur an anderer Stelle: ein leeres Gitter
+ * hinterlässt keinen Stand (`save`), und ein gelöstes oder eines ohne
+ * Fingerabdruck taucht unter "Weiterspielen" nicht auf (`newestSavedGame`).
  */
-function rememberForResume(elapsedMs) {
-    if (state.context?.mode !== 'solo' || !state.context?.player) return;
-    if (state.solved || state.marks.size === 0 || !puzzleFingerprint) {
-        clearResume();
-        return;
-    }
-    saveResume({
-        options: state.context.options,
-        puzzleIndex: state.context.puzzleIndex ?? 0,
-        fingerprint: puzzleFingerprint,
-        storageKey: state.storageKey,
-        playerId: state.context.player.id,
-        title: `${state.puzzle.number}. ${state.puzzle.title}`,
-        savedAt: new Date().toISOString(),
-        elapsedMs,
-        markCount: state.marks.size,
-    });
-}
 
 /* --- Interaction ---------------------------------------------------------- */
 
@@ -399,9 +384,10 @@ async function reportExperience(vorher, queued) {
  * beenden" schreibt einen Fortsetzungs-Datensatz und geht zur Startseite;
  * dort steht das Raetsel dann unter "Weiterspielen" wie ein Einzelspiel.
  *
- * Der Datensatz muss hier ausdruecklich geschrieben werden: rememberForResume
- * steigt bei mode !== 'solo' sofort aus, ein Duell schreibt also von sich aus
- * nie eine Fortsetzung. Ohne das fuehrte "Spaeter beenden" ins Nichts.
+ * Der kopierte Stand muss die vier Felder mitbekommen, mit denen ein Stand
+ * sich selbst traegt: ein Duell speichert sie nicht, weil ein Duell nicht
+ * fortgesetzt wird. Ohne sie fuehrte "Spaeter beenden" ins Nichts - der
+ * Startbildschirm uebergeht jeden Stand ohne Einstellungen und Fingerabdruck.
  */
 function announceOpponent({ displayName, elapsedMs }) {
     el('opponent-title').textContent = `${displayName} ist fertig – in ${formatTime(elapsedMs)}`;
@@ -421,27 +407,20 @@ function announceOpponent({ displayName, elapsedMs }) {
         try {
             const roh = localStorage.getItem(state.storageKey);
             if (roh) {
-                localStorage.setItem(soloKey,
-                    JSON.stringify(soloContinuation(JSON.parse(roh))));
+                localStorage.setItem(soloKey, JSON.stringify({
+                    ...soloContinuation(JSON.parse(roh)),
+                    options: state.context.options,
+                    puzzleIndex: state.context.puzzleIndex ?? 0,
+                    fingerprint: puzzleFingerprint,
+                    title: state.context.title
+                        ?? `${state.puzzle.number}. ${state.puzzle.title}`,
+                    savedAt: new Date().toISOString(),
+                }));
             }
         } catch {
             // Privater Modus oder voller Speicher: dann faengt man eben neu
             // an. Besser als gar kein Weg zurueck.
         }
-
-        saveResume({
-            options: state.context.options,
-            puzzleIndex: state.context.puzzleIndex ?? 0,
-            fingerprint: puzzleFingerprint,
-            // Der Schluessel des Einzelspiels, nicht der des Duells - sonst
-            // zeigte der Datensatz auf einen Stand, den openPlay nie laedt.
-            storageKey: soloKey,
-            playerId: state.context.player.id,
-            title: `${state.puzzle.number}. ${state.puzzle.title}`,
-            savedAt: new Date().toISOString(),
-            elapsedMs: timer ? timer.elapsedMs() : 0,
-            markCount: state.marks.size,
-        });
 
         /*
          * Dem Gegner Bescheid geben, dass hier niemand mehr kommt.
@@ -681,6 +660,13 @@ export function openPlay(puzzle, context) {
     // Jedes Spiel meldet seinen Gegner neu. Ohne das Zuruecksetzen bliebe die
     // Meldung ab dem zweiten Duell aus.
     opponentAnnounced = false;
+    /*
+     * Einmal je Spiel, nicht bei jedem Speichern: beim Markieren ist
+     * Rechenzeit teuer, beim Oeffnen nicht. Ueber der Grenze faellt der
+     * aelteste Stand - die Sammlung braucht hoechstens 120, gedeckelt werden
+     * also nur die gewuerfelten Einmal-Raetsel.
+     */
+    if (context.mode === 'solo' && context.player) pruneSavedGames(context.player.id);
     progress = context.mode === 'duel'
         ? createProgressReporter({
             room: context.room,
@@ -732,7 +718,9 @@ export function openPlay(puzzle, context) {
     // The timer keeps running and the result still records the time; this only
     // removes the sight of it.
     el('play-timer').hidden = loadPrefs().hideClock;
-    el('play-title').textContent = `${puzzle.number}. ${puzzle.title}`;
+    // Der Aufrufer darf die Beschriftung setzen; der Katalog tut das, weil
+    // seine Nummer die richtige ist (siehe playCatalogueEntry).
+    el('play-title').textContent = context.title ?? `${puzzle.number}. ${puzzle.title}`;
     el('play-story').textContent = puzzle.story;
     /*
      * Die Zielfrage an beiden Orten.
