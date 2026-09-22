@@ -18,8 +18,17 @@ import {
     chapterFor, chapters, newClueTypeAt, nextOpen, optionsFor, progressOf, totalProgress,
 } from '../catalogue/catalogue.js';
 import { cachedSolvedSeeds, loadSolvedSeeds } from '../catalogue/solvedSeeds.js';
+import { listSavedGames, readSavedGame } from '../play/savedGames.js';
 
 let solved = new Set();
+/**
+ * Was angefangen ist, je Seed: `{ sure, total }` — oder `null`, wenn nur die
+ * Schlüssel gelesen wurden.
+ *
+ * Gelöste Einträge stehen hier nicht: ihr Haken sagt bereits alles, und 100 %
+ * zu zeichnen sagt nichts darüber hinaus.
+ */
+let started = new Map();
 /** Wurde für diesen Spieler schon einmal ein Stand ermittelt? */
 let known = false;
 let openPlayFn = null;
@@ -62,9 +71,34 @@ export async function renderCollectionNote(player) {
     show();
 }
 
+/**
+ * Liest die Stände dieses Spielers.
+ *
+ * Zwei Stufen, weil das Lesen der Werte das Teure ist: die Schlüssel allein
+ * genügen für „angefangen ja/nein" und damit für die Zahl in der
+ * Kapitelübersicht. `withProgress` parst zusätzlich die Werte — das lohnt in
+ * der Kapitelansicht, wo es zwölf sind, nicht in der Übersicht, wo es 120
+ * wären.
+ *
+ * Dass ein Schlüssel überhaupt da liegt, heißt „hier wurde angefangen": ein
+ * leeres Gitter hinterlässt keinen Stand (siehe `save`).
+ */
+function readStarted(playerId, withProgress) {
+    const map = new Map();
+    for (const eintrag of listSavedGames(playerId)) {
+        if (solved.has(eintrag.seed)) continue;
+        if (!withProgress) { map.set(eintrag.seed, null); continue; }
+        const stand = readSavedGame(eintrag.key);
+        if (!stand || stand.solved || stand.marks === 0) continue;
+        map.set(eintrag.seed, { sure: stand.sure, total: stand.total });
+    }
+    return map;
+}
+
 function chapterRow(chapter) {
     const part = progressOf(chapter, solved);
     const done = part.solved === part.total;
+    const offen = chapter.entries.filter(entry => started.has(entry.seed)).length;
     const row = make('button', {
         className: `list-row chapter-row${done ? ' is-solved' : ''}`,
         attrs: { type: 'button' },
@@ -83,7 +117,15 @@ function chapterRow(chapter) {
          * Verschiedenes bedeuteten. Die Nummer heisst jetzt "Nr. 3", der
          * Fortschritt ueberall "x von y".
          */
-        text: done ? `${part.solved} von ${part.total} ✓` : `${part.solved} von ${part.total}`,
+        /*
+         * Angefangene kommen als Angabe auf dieselbe Zeile, nicht als zweite.
+         * Sie faellt weg, wenn es keine gibt - "0 angefangen" waere Laerm.
+         */
+        text: done
+            ? `${part.solved} von ${part.total} ✓`
+            : offen > 0
+                ? `${part.solved} von ${part.total} · ${offen} angefangen`
+                : `${part.solved} von ${part.total}`,
     }));
 
     /*
@@ -127,9 +169,31 @@ function entryRow(chapter, entry, index, next) {
     row.append(make('h3', {
         text: `${entry.number}. ${entry.categoryCount}×${entry.valuesPerCategory} · ${entry.difficulty}`,
     }));
-    const fresh = newClueTypeAt(chapter, index);
-    if (fresh) row.append(make('p', { className: 'list-row__meta', text: `Neu: „${fresh}“` }));
-    if (isSolved) row.append(make('p', { className: 'list-row__score', text: '✓ gelöst' }));
+    /*
+     * Höchstens EINE Statuszeile, Rangfolge gelöst → angefangen → Neu-Hinweis.
+     *
+     * Kein Eintrag soll um eine dritte Zeile wachsen. Wer angefangen hat,
+     * kennt die neue Hinweisart bereits — die Zeile tritt zurück, statt sich
+     * danebenzudrängen.
+     */
+    const stand = started.get(entry.seed) ?? null;
+    if (isSolved) {
+        row.append(make('p', { className: 'list-row__score', text: '✓ gelöst' }));
+    } else if (stand) {
+        row.append(make('p', {
+            className: 'list-row__score',
+            text: `${stand.sure} von ${stand.total} sicher`,
+        }));
+        // Dieselbe Sprache wie die Kapitelkarte eine Ebene höher.
+        const meter = make('span', { className: 'chapter-meter', attrs: { 'aria-hidden': 'true' } });
+        const fill = make('span', { className: 'chapter-meter__fill' });
+        fill.style.width = `${Math.round((stand.sure / stand.total) * 100)}%`;
+        meter.append(fill);
+        row.append(meter);
+    } else {
+        const fresh = newClueTypeAt(chapter, index);
+        if (fresh) row.append(make('p', { className: 'list-row__meta', text: `Neu: „${fresh}“` }));
+    }
     row.addEventListener('click', () => playCatalogueEntry(chapter, entry));
     return row;
 }
@@ -188,6 +252,7 @@ function drawChapter() {
     el('chapter-title').textContent = chapter.title;
     const part = progressOf(chapter, solved);
     el('chapter-progress').textContent = `${part.solved} von ${part.total} gelöst`;
+    started = activePlayer ? readStarted(activePlayer.id, true) : new Map();
     const list = clear(el('entry-list'));
     const next = nextOpen(chapter, solved);
     chapter.entries.forEach((entry, index) => list.append(entryRow(chapter, entry, index, next)));
@@ -244,6 +309,8 @@ function drawCollection() {
         done.textContent = 'Alle 120 gelöst. Die Sammlung ist vollständig.';
     }
 
+    // Nur die Schluessel: 120 Werte zu parsen waere hier verschwendet.
+    started = activePlayer ? readStarted(activePlayer.id, false) : new Map();
     const list = clear(el('chapter-list'));
     for (const chapter of chapters()) list.append(chapterRow(chapter));
 }

@@ -18,17 +18,37 @@ test.skip(!process.env.SHOTS, 'Aufnahmestrecke - mit SHOTS=1 starten');
 
 const SOLVED = [1000001, 1000002, 1010001];
 
+/*
+ * Ein angefangener Stand, damit die Aufnahmen zeigen, was die Sammlung kann.
+ *
+ * Der Schluessel muss `storageKeyFor` spiegeln, sonst liest ihn niemand:
+ * logicals:play:<modus>:<raum>:<spieler>:<thema>:<seed>:<masze>:<hinweise>.
+ * Seed 1000003 ist Eintrag 3 des ersten Kapitels, ein 4x4 - also
+ * 4 * C(4,2) = 24 sichere Zuordnungen, davon hier neun gesetzt.
+ */
+const STARTED_KEY = 'logicals:play:solo:none:1:streetfood:1000003:4x4:aufnahme';
+const STARTED_VALUE = JSON.stringify({
+  marks: Array.from({ length: 9 }, (_, index) => [`0.1.${index}.0`, 'yes']),
+  auto: [], usedClues: [], elapsedMs: 184_000, solved: false,
+  attemptKey: null, failedChecks: 0, resultQueued: false,
+  options: { puzzleCount: 1, categoryCount: 4, valuesPerCategory: 4, seed: 1000003 },
+  puzzleIndex: 0, fingerprint: 'aufnahme',
+  title: '3. Finale beim Street-Food-Festival',
+  savedAt: '2026-09-22T09:00:00.000Z',
+});
+
 async function seed(page: Page, opts: { intro?: boolean; player?: boolean } = {}) {
   const { intro = true, player = true } = opts;
-  await page.addInitScript(([seenIntro, hasPlayer, solved]) => {
+  await page.addInitScript(([seenIntro, hasPlayer, solved, startedKey, startedValue]) => {
     if (seenIntro) localStorage.setItem('logicals.seenIntro.v1', '1');
     if (hasPlayer) {
       localStorage.setItem('logicals.players.v1', JSON.stringify({
         players: [{ id: 1, displayName: 'Ada' }], selectedPlayerId: 1,
       }));
       localStorage.setItem('logicals.solvedSeeds.v1.1', JSON.stringify(solved));
+      localStorage.setItem(startedKey, startedValue);
     }
-  }, [intro, player, SOLVED] as const);
+  }, [intro, player, SOLVED, STARTED_KEY, STARTED_VALUE] as const);
 
   // GET liefert die Liste, POST einen einzelnen Spieler. Beides mit derselben
   // Form zu beantworten hat im Erstbesuch eine rohe TypeError-Meldung erzeugt,

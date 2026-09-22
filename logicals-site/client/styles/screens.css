@@ -505,6 +505,10 @@
     transition: width var(--dur-fast) var(--ease-out);
 }
 .chapter-row.is-solved .chapter-meter__fill { background: var(--teal); }
+/* Der Balken eines angefangenen Eintrags. Gleiche Sprache wie die
+   Kapitelkarte, nur eine Ebene tiefer - deshalb dieselbe Klasse und hier nur
+   der Abstand. */
+.entry-row .chapter-meter { margin-top: var(--space-2); }
 
 /*
  * Wo es weitergeht: ein Streifen am linken Rand, kein Text.

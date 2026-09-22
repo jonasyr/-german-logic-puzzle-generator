@@ -152,3 +152,44 @@ for (const phone of PHONES) {
     expect(await hasHorizontalScroll(page), 'Kapitelliste').toBe(false);
   });
 }
+
+/*
+ * Ein angefangener Eintrag sieht anders aus als ein unberuehrter.
+ *
+ * Vorher war jeder Eintrag entweder "geloest" oder leer: ein Kapitel mit drei
+ * angefangenen Raetseln sah aus wie ein unberuehrtes.
+ */
+test('die Sammlung zeigt angefangene Raetsel', async ({ page }) => {
+  test.setTimeout(240_000);
+  await ada(page);
+  await page.route('**/api/players/*/solved-seeds', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ seeds: [] }),
+  }));
+
+  await page.goto('/');
+  await page.locator('#collection-button').click();
+  await page.locator('.chapter-row').first().click();
+  // Unberuehrt: keine Statuszeile, kein Balken.
+  await expect(page.locator('.entry-row').first().locator('.chapter-meter')).toHaveCount(0);
+
+  await page.locator('.entry-row').first().click();
+  await expect(page.locator('#overview-canvas')).toBeVisible({ timeout: 120_000 });
+  // Drei sichere Zuordnungen setzen.
+  await page.locator('#overview-mark-yes').evaluate((b: HTMLButtonElement) => b.click());
+  await page.locator('.play-pager .cell').evaluateAll(cells => {
+    for (const cell of cells.slice(0, 3)) (cell as HTMLButtonElement).click();
+  });
+  await page.waitForTimeout(300);
+  await page.locator('#play-back').click();
+
+  // Jetzt traegt der Eintrag seine Zeile und seinen Balken.
+  const ersteZeile = page.locator('.entry-row').first();
+  await expect(ersteZeile).toContainText('3 von 12 sicher');
+  await expect(ersteZeile.locator('.chapter-meter')).toHaveCount(1);
+  // Und hoechstens EINE Statuszeile: der Neu-Hinweis tritt zurueck.
+  await expect(ersteZeile.locator('.list-row__meta')).toHaveCount(0);
+
+  // Die Kapiteluebersicht zaehlt es mit.
+  await page.locator('#screen-chapter .btn--back').click();
+  await expect(page.locator('.chapter-row').first()).toContainText('1 angefangen');
+});
