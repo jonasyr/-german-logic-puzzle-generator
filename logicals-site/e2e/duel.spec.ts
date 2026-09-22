@@ -441,21 +441,31 @@ test('ein Duell laesst sich aus der Sammlung heraus starten', async ({ browser }
   const host = await context.newPage();
   await installDuelApi(host, { playerId: 1, displayName: 'Ada', state });
 
+  await host.route('**/api/players/*/solved-seeds', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ seeds: [] }),
+  }));
+
   await host.goto('/');
   await host.locator('#duel-join-button').click();
-  // Der Knopf sagt, welches Raetsel er meint - sonst waere die Wahl geraten.
-  const ziel = await host.locator('#duel-source-collection-note').textContent();
-  expect(ziel).toMatch(/^\d+\. .+/);
-
   await host.locator('#duel-source-collection').click();
-  await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 120_000 });
 
   /*
-   * Und es ist wirklich DAS Raetsel aus der Sammlung, nicht irgendeines:
-   * die Lobby traegt seinen Titel, und der steht so auch auf dem Knopf.
+   * Die Sammlung waehlt man in der Sammlung - und sie sagt, wozu man hier ist.
+   * Vorher nahm der Knopf stillschweigend das naechste offene Raetsel.
    */
-  await expect(host.locator('#duel-puzzle-title'))
-    .toHaveText(ziel!.replace(/^\d+\.\s*/, ''), { timeout: 10_000 });
+  await expect(host.locator('#screen-collection')).toHaveClass(/is-active/);
+  await expect(host.locator('#collection-title')).toHaveText('Rätsel fürs Duell');
+  // "Weiterspielen" meint ein Einzelspiel und hat hier nichts zu suchen.
+  await expect(host.locator('#collection-continue')).toBeHidden();
+
+  await host.locator('.chapter-row').first().click();
+  const titel = (await host.locator('#chapter-title').textContent())!.trim();
+  // Der dritte Eintrag, ausdruecklich nicht der erste offene.
+  await host.locator('.entry-row').nth(2).click();
+
+  await expect(host.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 120_000 });
+  // Und es ist wirklich DAS gewaehlte Raetsel: die Lobby traegt seinen Titel.
+  await expect(host.locator('#duel-puzzle-title')).toHaveText(titel, { timeout: 10_000 });
 
   await context.close();
 });

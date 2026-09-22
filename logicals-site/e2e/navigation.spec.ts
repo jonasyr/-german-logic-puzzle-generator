@@ -223,9 +223,14 @@ test('das Duell hat einen eigenen Einstieg mit Quellenauswahl', async ({ page })
   await expect(page.locator('#duel-source-custom')).toBeVisible();
   await expect(page.locator('#duel-entry-submit')).toBeVisible();
 
-  // Jede Quelle sagt, was sie meint - sonst waere die Wahl geraten.
-  await expect(page.locator('#duel-source-collection-note')).not.toBeEmpty();
+  /*
+   * Jede Quelle sagt, was sie meint. Die Sammlung nennt kein bestimmtes
+   * Raetsel mehr - sie fuehrt in die Liste, in der man selbst waehlt, und
+   * der Knopf sagt genau das.
+   */
+  await expect(page.locator('#duel-source-collection')).toHaveText('Aus der Sammlung wählen');
   await expect(page.locator('#duel-source-daily-note')).not.toBeEmpty();
+  await expect(page.locator('#duel-source-custom-note')).not.toBeEmpty();
 
   /*
    * "Eigenes Raetsel" fuehrt in den Konfigurator, und der weiss, wofuer er

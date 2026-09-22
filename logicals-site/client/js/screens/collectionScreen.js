@@ -32,6 +32,15 @@ let started = new Map();
 /** Wurde für diesen Spieler schon einmal ein Stand ermittelt? */
 let known = false;
 let openPlayFn = null;
+/**
+ * Was ein Tipp auf einen Eintrag auslöst.
+ *
+ * Die Sammlung ist im Duell dieselbe Liste wie im Einzelspiel — mit Haken,
+ * Balken und allem, was man zum Wählen braucht. Ein zweiter Auswahlbildschirm
+ * wäre dieselbe Liste noch einmal, nur ärmer.
+ */
+let pickForDuel = null;
+let pickMode = false;
 let activePlayer = null;
 /** Welches Kapitel offen ist, damit das Betreten es neu zeichnen kann. */
 let openThemeId = null;
@@ -224,7 +233,16 @@ function entryRow(chapter, entry, index, next) {
         const fresh = newClueTypeAt(chapter, index);
         if (fresh) row.append(make('p', { className: 'list-row__meta', text: `Neu: „${fresh}“` }));
     }
-    row.addEventListener('click', () => playCatalogueEntry(chapter, entry));
+    /*
+     * Gelöste Einträge bleiben wählbar. Wer das Rätsel kennt, hat im Wettlauf
+     * einen Vorteil - aber der Haken steht sichtbar auf der Karte, und die
+     * Lobby nennt den Titel, bevor jemand auf „Bereit" geht. Die Gegenseite
+     * kann also selbst entscheiden; eine Sperre löste ein Problem, das die
+     * Lobby schon löst, und nähme das gemeinsame Wiederspielen mit.
+     */
+    row.addEventListener('click', () => (pickMode && pickForDuel
+        ? pickForDuel(chapter, entry)
+        : playCatalogueEntry(chapter, entry)));
     return row;
 }
 
@@ -306,7 +324,16 @@ function drawCollection() {
     const next = el('collection-next');
     const done = el('collection-done');
 
-    if (chapter) {
+    if (pickMode) {
+        /*
+         * „Weiterspielen" meint ein Einzelspiel. Wer hier ein Raetsel fuers
+         * Duell sucht, bekaeme sonst als erste und groesste Handlung eine
+         * angeboten, die den Duell-Weg verlaesst.
+         */
+        button.hidden = true;
+        next.hidden = true;
+        done.hidden = true;
+    } else if (chapter) {
         const entry = nextOpen(chapter, solved);
         button.hidden = false;
         button.onclick = () => playCatalogueEntry(chapter, entry);
@@ -345,9 +372,21 @@ function drawCollection() {
     for (const chapter of chapters()) list.append(chapterRow(chapter));
 }
 
-export async function openCollection(player) {
+/**
+ * @param {object} player
+ * @param {'play'|'duel'} [mode] Im Duell-Modus wählt ein Tipp das Rätsel für
+ *   einen Wettlauf, statt es allein zu öffnen.
+ */
+export async function openCollection(player, mode = 'play') {
     activePlayer = player;
     openThemeId = null;
+    pickMode = mode === 'duel';
+    /*
+     * Die Kopfzeile sagt, wozu man hier ist. „Weiterspielen" oben meint ein
+     * Einzelspiel und hätte im Duell-Modus nichts zu suchen - drawCollection
+     * blendet es aus.
+     */
+    el('collection-title').textContent = pickMode ? 'Rätsel fürs Duell' : 'Sammlung';
     showScreen('screen-collection');
     // Erst aus dem Zwischenspeicher, damit sofort etwas dasteht.
     solved = cachedSolvedSeeds(player.id);
@@ -358,8 +397,9 @@ export async function openCollection(player) {
     drawCollection();
 }
 
-export function initCollection({ onOpenPlay }) {
+export function initCollection({ onOpenPlay, onPickForDuel }) {
     openPlayFn = onOpenPlay;
+    pickForDuel = onPickForDuel;
 
     /*
      * Beim Betreten neu zeichnen.

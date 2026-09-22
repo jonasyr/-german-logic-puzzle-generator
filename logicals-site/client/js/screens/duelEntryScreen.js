@@ -13,50 +13,9 @@
 
 import { el, setHint } from '../dom.js';
 import { showScreen } from '../router.js';
-import { chapters, nextOpen, optionsFor } from '../catalogue/catalogue.js';
-import { cachedSolvedSeeds, loadSolvedSeeds } from '../catalogue/solvedSeeds.js';
 import { berlinDate, dailyDifficulty, dailyOptions } from '../play/dailyPuzzle.js';
 
-/** Wer gerade spielt - für den Stand der Sammlung. */
-let activePlayer = null;
-/** Was „Aus der Sammlung" gerade meint, oder null. */
-let collectionTarget = null;
-
 const WEEKDAY = new Intl.DateTimeFormat('de-DE', { weekday: 'long', timeZone: 'Europe/Berlin' });
-
-/**
- * Der nächste offene Eintrag über alle Kapitel - oder null.
- *
- * Dieselbe Regel wie der Weiter-Knopf der Sammlung: das erste Kapitel, das
- * noch etwas Offenes hat. Springen bleibt erlaubt, nur eben nicht von hier.
- */
-function nextCatalogueEntry(solved) {
-    for (const chapter of chapters()) {
-        const entry = nextOpen(chapter, solved);
-        if (entry) return { chapter, entry };
-    }
-    return null;
-}
-
-function drawCollectionSource(treffer) {
-    collectionTarget = treffer;
-    const button = el('duel-source-collection');
-    const note = el('duel-source-collection-note');
-    if (!treffer) {
-        /*
-         * Alles gelöst: der Knopf verspricht dann nichts mehr. Ausgegraut
-         * statt verborgen, damit die Auswahl nicht die Höhe wechselt,
-         * während der Stand nachgeladen wird.
-         */
-        button.disabled = true;
-        note.textContent = 'Alle Sammlungsrätsel sind gelöst.';
-        note.hidden = false;
-        return;
-    }
-    button.disabled = false;
-    note.textContent = `${treffer.entry.number}. ${treffer.chapter.title}`;
-    note.hidden = false;
-}
 
 function drawDailySource() {
     const date = berlinDate();
@@ -68,15 +27,20 @@ function drawDailySource() {
 /**
  * @param {{ onJoin: (code: string) => Promise<void>,
  *           onCreate: (options: object) => Promise<void>,
- *           onCustom: () => void }} handlers
+ *           onCustom: () => void,
+ *           onFromCollection: () => void }} handlers
  */
-export function initDuelEntry({ onJoin, onCreate, onCustom }) {
+export function initDuelEntry({ onJoin, onCreate, onCustom, onFromCollection }) {
     el('duel-join-button').addEventListener('click', () => showDuelEntry());
 
-    el('duel-source-collection').addEventListener('click', () => {
-        if (!collectionTarget) return;
-        onCreate(optionsFor(collectionTarget.chapter, collectionTarget.entry));
-    });
+    /*
+     * Die Sammlung waehlt man in der Sammlung.
+     *
+     * Vorher nahm dieser Knopf stillschweigend das naechste offene Raetsel -
+     * eine Wahl, die er traf, ohne sie anzubieten. Jetzt oeffnet er dieselbe
+     * Liste, die man ohnehin kennt, mit Haken, Balken und allem.
+     */
+    el('duel-source-collection').addEventListener('click', () => onFromCollection());
     el('duel-source-daily').addEventListener('click', () => onCreate(dailyOptions(berlinDate())));
     el('duel-source-custom').addEventListener('click', () => onCustom());
 
@@ -92,32 +56,10 @@ export function initDuelEntry({ onJoin, onCreate, onCustom }) {
     });
 }
 
-/** Wessen Sammlungsstand die Quellenauswahl meint. */
-export function setDuelPlayer(player) {
-    activePlayer = player;
-}
-
 export function showDuelEntry(code = '') {
     el('duel-code').value = code;
     setHint('duel-entry-hint', '');
     setHint('duel-create-hint', '');
     drawDailySource();
-
-    /*
-     * Erst der gemerkte Stand, dann der geholte. Ohne den gemerkten stünde
-     * der Knopf beim Öffnen ohne Ziel da und bekäme es eine Netzrunde
-     * später - genau das Flackern, das die Sammlung schon vermeidet.
-     */
-    if (activePlayer) {
-        drawCollectionSource(nextCatalogueEntry(cachedSolvedSeeds(activePlayer.id)));
-        const wer = activePlayer.id;
-        loadSolvedSeeds(wer).then(solved => {
-            // Der Spieler kann inzwischen gewechselt haben.
-            if (activePlayer?.id === wer) drawCollectionSource(nextCatalogueEntry(solved));
-        }).catch(() => { /* ohne Stand bleibt der gemerkte stehen */ });
-    } else {
-        drawCollectionSource(null);
-    }
-
     showScreen('screen-duel-entry');
 }

@@ -14,9 +14,9 @@ import { initSettingsScreen } from './screens/settingsScreen.js';
 import {
     initCollection, openCollection, renderCollectionNote,
 } from './screens/collectionScreen.js';
+import { optionsFor } from './catalogue/catalogue.js';
 import { initPlay, openPlay } from './play/playController.js';
 import { createDuelForPuzzle, initDuelController, openRoomFromUrl } from './duel/lobbyController.js';
-import { setDuelPlayer } from './screens/duelEntryScreen.js';
 import { initDuelResultController } from './duel/duelResultController.js';
 import { newestSavedGame } from './play/savedGames.js';
 import {
@@ -235,9 +235,6 @@ function refreshStartScreen() {
     // "Eigenes Rätsel" steht seit dem Umbau unter „Mehr" und ist dort
     // dauerhaft ruhig - es musste hier nicht mehr heruntergestuft werden.
 
-    // Der Duell-Bildschirm schlaegt ein Sammlungsraetsel vor und braucht dafuer
-    // denselben Spieler wie die Sammlung selbst.
-    setDuelPlayer(player);
     renderCollectionNote(player).catch(() => { /* best effort, wie die Serie */ });
     refreshDailyButton().catch(() => { /* best effort; see above */ });
 }
@@ -342,7 +339,16 @@ function wire() {
     // Zwei Wege hinein: vom Start, und aus dem laufenden Spiel. Der Weg aus dem
     // Spiel läuft nicht über die Duell-Rückfrage - man verlässt das Duell dabei
     // nicht, man schaut nur kurz weg, und onLeave hält Uhr und Fortschritt an.
-    initCollection({ onOpenPlay: openPlay });
+    initCollection({
+        onOpenPlay: openPlay,
+        /*
+         * Ein Tipp in der Sammlung erzeugt das Duell mit genau diesem Raetsel.
+         * Der Hinweis landet auf dem Kapitel-Bildschirm, weil man dort steht -
+         * auf dem Duell-Bildschirm laese ihn niemand.
+         */
+        onPickForDuel: (chapter, entry) =>
+            startDuelFrom(optionsFor(chapter, entry), 'chapter-hint'),
+    });
     el('collection-button').addEventListener('click', () => {
         const player = getSelectedPlayer();
         if (player) openCollection(player);
@@ -357,6 +363,10 @@ function wire() {
         onOpenPlay: openPlay,
         onCreateDuel: options => startDuelFrom(options, 'duel-create-hint'),
         onCustomDuel: () => openConfig('duel'),
+        onFromCollection: () => {
+            const player = getSelectedPlayer();
+            if (player) openCollection(player, 'duel');
+        },
     });
     initDuelResultController();
 }

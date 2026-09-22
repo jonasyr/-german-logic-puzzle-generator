@@ -178,6 +178,10 @@ for (const v of VARIANTEN) {
     await page.locator('#duel-join-button').click();
     await page.waitForTimeout(350);
     await shot('08-duell');
+    // Und die Sammlung als Auswahl: dieselbe Liste, anderer Zweck.
+    await page.locator('#duel-source-collection').click();
+    await page.waitForTimeout(500);
+    await shot('08b-duell-auswahl');
 
     await toStart(page);
     await openPuzzle(page);
