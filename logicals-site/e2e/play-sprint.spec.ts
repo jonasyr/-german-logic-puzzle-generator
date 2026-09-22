@@ -71,7 +71,7 @@ test('a game in progress can be resumed after a reload', async ({ page }) => {
   await page.reload();
   const resume = page.locator('#resume-button');
   await expect(resume).toBeVisible();
-  await expect(page.locator('#resume-detail')).toContainText('Markierungen');
+  await expect(page.locator('#resume-detail')).toContainText(/\d+ von \d+/);
 
   await resume.click();
   await expect(page.locator('#overview-canvas')).toBeVisible({ timeout: 60_000 });

@@ -415,7 +415,7 @@ test('wer noch spielt, erfaehrt dass der andere fertig ist', async ({ browser })
    * Markierungen laegen noch da, nur unter einem Schluessel, den niemand mehr
    * liest. Genau das ist einmal passiert.
    */
-  await expect(guest.locator('#resume-detail')).toContainText('Markierungen');
+  await expect(guest.locator('#resume-detail')).toContainText(/\d+ von \d+/);
   await guest.locator('#resume-button').click();
   await expect(guest.locator('#overview-canvas')).toBeVisible({ timeout: 60_000 });
   const gesetzt = await guest.locator('.overview-mirror__cell')

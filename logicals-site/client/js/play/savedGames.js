@@ -159,7 +159,7 @@ function zeit(savedAt) {
  * @param {Storage} [storage]
  * @returns {{ key: string, seed: number, options: object, puzzleIndex: number,
  *             fingerprint: string, title: string|null, elapsedMs: number,
- *             marks: number } | null}
+ *             marks: number, sure: number, total: number } | null}
  */
 export function newestSavedGame(playerId, storage = localStorage) {
     let bester = null;
@@ -171,8 +171,12 @@ export function newestSavedGame(playerId, storage = localStorage) {
         bester = {
             key: eintrag.key, seed: eintrag.seed, savedAt: stand.savedAt,
             options: stand.options, puzzleIndex: stand.puzzleIndex,
-            fingerprint: stand.fingerprint,
-            title: stand.title, elapsedMs: stand.elapsedMs, marks: stand.marks,
+            fingerprint: stand.fingerprint, title: stand.title,
+            elapsedMs: stand.elapsedMs, marks: stand.marks,
+            // Damit der Startbildschirm dasselbe Mass nennen kann wie die
+            // Sammlung: die Zahl der Markierungen springt beim Bestaetigen
+            // um neun, weil abgeleitete Kreuze mitzaehlen.
+            sure: stand.sure, total: stand.total,
         };
     }
     if (!bester) return null;

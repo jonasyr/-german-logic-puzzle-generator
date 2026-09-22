@@ -33,7 +33,9 @@ const STARTED_VALUE = JSON.stringify({
   attemptKey: null, failedChecks: 0, resultQueued: false,
   options: { puzzleCount: 1, categoryCount: 4, valuesPerCategory: 4, seed: 1000003 },
   puzzleIndex: 0, fingerprint: 'aufnahme',
-  title: '3. Finale beim Street-Food-Festival',
+  // Dieselbe Form, die playCatalogueEntry schreibt: die Nummer hinten, damit
+  // ein fuehrendes "3." nicht wie ein Fortschritt gelesen wird.
+  title: 'Finale beim Street-Food-Festival · Nr. 3',
   savedAt: '2026-09-22T09:00:00.000Z',
 });
 

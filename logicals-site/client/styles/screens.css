@@ -494,8 +494,10 @@
 .chapter-meter {
     height: 3px;
     border-radius: 999px;
-    background: var(--surface-sunken);
+    background: var(--meter-track);
     overflow: hidden;
+    /* Zwei Abschnitte nebeneinander: gelöst, dann angefangen. */
+    display: flex;
 }
 .chapter-meter__fill {
     display: block;
@@ -504,11 +506,27 @@
     background: var(--accent);
     transition: width var(--dur-fast) var(--ease-out);
 }
+/*
+ * Der angefangene Anteil, blasser und direkt im Anschluss.
+ *
+ * Ohne ihn nannte die Zeile „2 von 12 · 1 angefangen" eine Zahl, die im
+ * Balken gar nicht vorkam - die neue Auskunft hatte kein Gegenstueck.
+ */
+.chapter-meter__started {
+    display: block;
+    height: 100%;
+    background: color-mix(in srgb, var(--accent) 45%, transparent);
+    transition: width var(--dur-fast) var(--ease-out);
+}
 .chapter-row.is-solved .chapter-meter__fill { background: var(--teal); }
 /* Der Balken eines angefangenen Eintrags. Gleiche Sprache wie die
    Kapitelkarte, nur eine Ebene tiefer - deshalb dieselbe Klasse und hier nur
    der Abstand. */
-.entry-row .chapter-meter { margin-top: var(--space-2); }
+/*
+ * Gemessen: die Karte hatte oben 17px Innenabstand und unten 11px - der
+ * Balken sass sichtbar zu tief und die Karte wirkte unten angeschnitten.
+ */
+.entry-row .chapter-meter { margin: var(--space-2) 0 var(--space-1); }
 
 /*
  * Wo es weitergeht: ein Streifen am linken Rand, kein Text.
@@ -516,9 +534,18 @@
  * Still genug, um die Liste nicht zu zerreißen, und deutlich genug, dass das
  * Auge die Lücke findet, statt sie zu suchen.
  */
+/*
+ * Der Wegweiser, nicht der Fortschritt.
+ *
+ * Gemessen trugen beide dieselbe Farbe UND dieselbe Staerke: ein 3px-Streifen
+ * links und ein 3px-Balken unten, in derselben Karte, im rechten Winkel
+ * zueinander - das las sich als ein offenes Rahmenfragment statt als zwei
+ * Bedeutungen. Der Streifen ist jetzt kraeftiger; er markiert einen Ort, der
+ * Balken misst eine Menge.
+ */
 .entry-row.is-next {
-    border-left: 3px solid var(--accent);
-    padding-left: calc(var(--space-5) - 3px);
+    border-left: 5px solid var(--accent);
+    padding-left: calc(var(--space-5) - 5px);
 }
 
 /* --- Der Kopf der Ergebnisse: wer spielt, und wie weit --------------------- */

@@ -136,12 +136,29 @@ function chapterRow(chapter) {
      * sagen dasselbe als Form statt als Ziffer, ohne der Liste Gewicht zu
      * geben. Fuer Screenreader traegt die Zahl daneben die Auskunft bereits,
      * also bleibt der Strich dekorativ.
+     *
+     * Bei einem unberuehrten Kapitel bleibt er ganz weg. Eine leere Spur ueber
+     * die volle Breite traegt null Auskunft und sah wie eine verirrte
+     * Trennlinie aus - und in der Kapitelansicht bekommt ein unberuehrter
+     * Eintrag ohnehin keinen. Dieselbe Form soll sich nicht auf zwei
+     * Bildschirmen gegensaetzlich verhalten.
+     *
+     * Zwei Abschnitte: gelöst in voller Farbe, angefangen blasser direkt
+     * daneben. Sonst naennte die Zeile "2 von 12 · 1 angefangen" eine Zahl,
+     * die im Balken gar nicht vorkaeme.
      */
-    const meter = make('span', { className: 'chapter-meter', attrs: { 'aria-hidden': 'true' } });
-    const fill = make('span', { className: 'chapter-meter__fill' });
-    fill.style.width = `${Math.round((part.solved / part.total) * 100)}%`;
-    meter.append(fill);
-    row.append(meter);
+    if (part.solved > 0 || offen > 0) {
+        const meter = make('span', { className: 'chapter-meter', attrs: { 'aria-hidden': 'true' } });
+        const fill = make('span', { className: 'chapter-meter__fill' });
+        fill.style.width = `${Math.round((part.solved / part.total) * 100)}%`;
+        meter.append(fill);
+        if (offen > 0) {
+            const begonnen = make('span', { className: 'chapter-meter__started' });
+            begonnen.style.width = `${Math.round((offen / part.total) * 100)}%`;
+            meter.append(begonnen);
+        }
+        row.append(meter);
+    }
 
     row.addEventListener('click', () => openChapter(chapter.themeId));
     return row;
@@ -180,9 +197,22 @@ function entryRow(chapter, entry, index, next) {
     if (isSolved) {
         row.append(make('p', { className: 'list-row__score', text: '✓ gelöst' }));
     } else if (stand) {
+        /*
+         * Der Zustand wird benannt, nicht nur beziffert.
+         *
+         * "9 von 24 sicher" war das einzige Statuswort, das keines war:
+         * geloest hat "gelöst", neu hat "Neu:", angefangen hatte nur eine
+         * Zahlenzeile - und die Kapiteluebersicht verspricht ausdruecklich
+         * "1 angefangen". Wer das Wort sucht, soll es finden.
+         *
+         * "sicher" war ausserdem Fachjargon. Das Wort "Zuordnungen" stand
+         * hier kurz mit dabei und brach bei 320px auf eine zweite Zeile -
+         * damit waere der Eintrag um genau die Zeile gewachsen, die er nicht
+         * wachsen darf. Den Nenner erklaert der Balken darunter.
+         */
         row.append(make('p', {
             className: 'list-row__score',
-            text: `${stand.sure} von ${stand.total} sicher`,
+            text: `Angefangen · ${stand.sure} von ${stand.total}`,
         }));
         // Dieselbe Sprache wie die Kapitelkarte eine Ebene höher.
         const meter = make('span', { className: 'chapter-meter', attrs: { 'aria-hidden': 'true' } });
@@ -229,7 +259,7 @@ export async function playCatalogueEntry(chapter, entry) {
              * sagten Verschiedenes, und „Weiterspielen" konnte zwei Rätsel
              * desselben Kapitels nicht auseinanderhalten.
              */
-            title: `${entry.number}. ${chapter.title}`,
+            title: `${chapter.title} · Nr. ${entry.number}`,
         });
     } catch (error) {
         // Ein Eintrag, der nicht aufgeht, darf das Kapitel nicht blockieren.

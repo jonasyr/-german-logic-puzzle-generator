@@ -123,18 +123,18 @@ async function generate(intent) {
 }
 
 /**
- * Die Zeile unter „Weiterspielen": Titel, Uhr, Markierungen.
+ * Die Zeile unter „Weiterspielen": Titel, Uhr, Fortschritt.
  *
- * Markierungen statt Prozent — der Prozentsatz gehört in die Sammlung, und
- * zwei Maße für dieselbe Sache auf einem Weg wären genau die Unordnung, die
- * dieser Umbau vermeiden soll.
+ * Dasselbe Maß wie in der Sammlung, nicht ein zweites. „N Markierungen"
+ * stand hier vorher und war die schlechtere Zahl: abgeleitete Kreuze zählen
+ * mit, eine einzige Bestätigung ließ sie im 5×5 um neun springen. „9 von 24"
+ * nennt dagegen den Nenner und heißt an beiden Orten dasselbe.
  */
 function describeResume(stand) {
     const minutes = Math.floor(stand.elapsedMs / 60_000);
     const seconds = Math.floor((stand.elapsedMs % 60_000) / 1000);
     const clock = `${minutes}:${String(seconds).padStart(2, '0')}`;
-    const marks = stand.marks === 1 ? '1 Markierung' : `${stand.marks} Markierungen`;
-    return `${stand.title ?? 'Rätsel'} · ${clock} · ${marks}`;
+    return `${stand.title ?? 'Rätsel'} · ${clock} · ${stand.sure} von ${stand.total}`;
 }
 
 const WEEKDAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];

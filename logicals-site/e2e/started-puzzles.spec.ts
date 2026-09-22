@@ -44,7 +44,7 @@ test('vom ersten Tipp bis zum Haken', async ({ page }) => {
   await page.locator('#play-back').click();
 
   // 2. Die Kapitelansicht zeigt es.
-  await expect(page.locator('.entry-row').first()).toContainText('3 von 12 sicher');
+  await expect(page.locator('.entry-row').first()).toContainText('Angefangen · 3 von 12');
 
   // 3. Die Kapiteluebersicht zaehlt es.
   await page.locator('#screen-chapter .btn--back').click();
@@ -53,8 +53,9 @@ test('vom ersten Tipp bis zum Haken', async ({ page }) => {
   // 4. Der Startbildschirm bietet es an - mit der Nummer aus dem Katalog.
   await page.goto('/');
   await expect(page.locator('#resume-button')).toBeVisible();
-  await expect(page.locator('#resume-detail')).toContainText('1. Finale beim Street-Food-Festival');
-  await expect(page.locator('#resume-detail')).toContainText('Markierungen');
+  await expect(page.locator('#resume-detail')).toContainText('Finale beim Street-Food-Festival · Nr. 1');
+  // Dasselbe Mass wie in der Sammlung, nicht ein zweites.
+  await expect(page.locator('#resume-detail')).toContainText('3 von 12');
 
   // 5. Zurueck ueber den Knopf, zu Ende loesen.
   await page.locator('#resume-button').click();

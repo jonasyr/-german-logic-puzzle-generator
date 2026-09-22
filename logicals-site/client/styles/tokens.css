@@ -45,6 +45,21 @@
     --line: #d5d8de;
     /* Kante des aktiven Reiters: hell traegt der Schatten, dunkel nicht. */
     --segment-edge: transparent;
+    /*
+     * Die Spur eines Fortschrittsbalkens.
+     *
+     * Gemessen stand hier --surface-sunken: gegen eine Karte sind das 1,12:1
+     * im Hellen und 1,11:1 im Dunkeln - die Bezugslaenge war praktisch
+     * unsichtbar, und ein Balken ohne sichtbares Ende sagt nichts ueber den
+     * Rest.
+     *
+     * Jetzt 2,62:1 (hell) und 2,59:1 (dunkel). Bewusst nicht die 3:1 aus
+     * WCAG 1.4.11: die Spur ist aria-hidden und traegt keine Auskunft, die
+     * nicht danebensteht - "9 von 24 sicher" sagt alles. Ein Strich mit 3:1
+     * waere auf jeder Karte ein schwarzer Balken und naehme der Liste genau
+     * die Ruhe, fuer die sie 3px statt einer Fortschrittsanzeige bekam.
+     */
+    --meter-track: #9aa0ae;
     --line-strong: #172033;
 
     /* The timer chip needs its own surface: in dark mode --ink is almost the
@@ -167,6 +182,7 @@
 
         --line: #2c3444;
         --segment-edge: #4bb3ad;
+        --meter-track: #525c78;
         --line-strong: #7b879e;
 
         --timer-bg: #2f3a4f;

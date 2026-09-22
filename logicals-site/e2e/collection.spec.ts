@@ -56,7 +56,7 @@ test('die erste Handlung ist Weiterspielen, nicht Suchen', async ({ page }) => {
   // zwei Zeilen mit einem einsamen ", 1" am Ende.
   const jump = page.locator('#collection-continue');
   await expect(jump).toBeVisible();
-  await expect(jump).toHaveText('Weiter spielen');
+  await expect(jump).toHaveText('Weiterspielen');
   await expect(page.locator('#collection-next')).toContainText('Street-Food-Festival');
 
   await jump.click();
@@ -184,7 +184,7 @@ test('die Sammlung zeigt angefangene Raetsel', async ({ page }) => {
 
   // Jetzt traegt der Eintrag seine Zeile und seinen Balken.
   const ersteZeile = page.locator('.entry-row').first();
-  await expect(ersteZeile).toContainText('3 von 12 sicher');
+  await expect(ersteZeile).toContainText('Angefangen · 3 von 12');
   await expect(ersteZeile.locator('.chapter-meter')).toHaveCount(1);
   // Und hoechstens EINE Statuszeile: der Neu-Hinweis tritt zurueck.
   await expect(ersteZeile.locator('.list-row__meta')).toHaveCount(0);
