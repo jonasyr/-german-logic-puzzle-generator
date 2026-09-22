@@ -160,9 +160,17 @@ Speichern — beim Markieren ist Rechenzeit teuer, beim Öffnen nicht.
 
 ## Der Fortschritt
 
-`sicher` sind die Markierungen mit `yes`. Automatische Kreuze liegen in
-`state.auto` und zählen nicht mit; `maybe` und `no` ebenso wenig — sie sind
-Arbeit, aber keine Festlegung.
+`sicher` sind die Markierungen mit `yes`. `maybe` und `no` zählen nicht mit —
+sie sind Arbeit, aber keine Festlegung.
+
+**Korrektur.** Hier stand, automatische Kreuze lägen in `state.auto` und
+zählten deshalb nicht mit. Das ist falsch: `setMarkWith` trägt ein
+abgeleitetes Kreuz in `marks` **und** in `auto` ein, ein Test hält das sogar
+fest (`eine Bestätigung plus die acht Kreuze, die sie nach sich zieht` →
+`marks.size === 9`). Auf die Zahl der sicheren Zuordnungen wirkt sich das
+nicht aus, weil abgeleitete Kreuze `no` sind — die Begründung trug aber
+nicht, und sie hätte jeden in die Irre geführt, der später die Bezugsgröße
+ändern will.
 
 Die Bezugsgröße steht im Schlüssel. `dimensions` ist `Kategorien×Werte`, also
 
@@ -220,6 +228,32 @@ geschätzt.
 „Weiterspielen" führt auf `newestSavedGame`. Die Zeile darunter
 (`#resume-detail`) nennt weiter Titel, Zeit und Markierungen — sie liest ihre
 Angaben jetzt aus dem Stand statt aus dem Fortsetzungs-Datensatz.
+
+## Was sich beim Bauen geändert hat
+
+Drei Entscheidungen sind erst während der Umsetzung gefallen, jede aus einem
+belegten Grund:
+
+**Ein leeres Gitter hinterlässt keinen Stand.** `persist()` läuft auch bei
+`visibilitychange` und `pagehide`. Ohne diese Regel hinterließe ein bloß
+geöffnetes und sofort verlassenes Rätsel einen Schlüssel mit leeren
+Markierungen — die Sammlung zählte es als angefangen, und „es gibt einen
+Schlüssel" wäre als Antwort auf „ist es angefangen?" wertlos geworden. `save`
+entfernt den Schlüssel jetzt, wenn das Gitter leer und ungelöst ist. Dieselbe
+Schwelle galt schon für den alten Fortsetzungs-Platz.
+
+**Die Nummer des Katalogeintrags reist mit.** `puzzle.number` ist der Index im
+erzeugten Heft und bei jedem Sammlungseintrag `1`. Die Sammlung nannte
+denselben Eintrag „3.", der Spielbildschirm „1." — und „Weiterspielen" konnte
+zwei Rätsel desselben Kapitels nicht auseinanderhalten. `playCatalogueEntry`
+gibt die richtige Beschriftung jetzt im Kontext mit; `openPlay` und `save`
+bevorzugen sie.
+
+**Ein nicht wiederherstellbarer Stand wird nicht gelöscht.** Früher warf der
+Fehlerzweig den Fortsetzungs-Datensatz weg — einen Zeiger, dessen Verlust
+nichts kostete. Jetzt ist der Datensatz der Stand selbst; ihn zu löschen
+hieße, die Markierungen wegzuwerfen, weil sich der Generator geändert hat.
+Der Knopf bleibt stehen und sagt, was los ist.
 
 ## Fehlerfälle
 
