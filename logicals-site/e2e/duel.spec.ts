@@ -434,7 +434,7 @@ test('wer noch spielt, erfaehrt dass der andere fertig ist', async ({ browser })
  * Regler dreht - und zaehlt fuer beide Sammlungen, weil die Abfrage nach
  * Seed filtert und nicht nach Raum (siehe test/sqlite-repositories.test.ts).
  */
-test('ein Duell laesst sich aus der Sammlung heraus starten', async ({ browser }) => {
+test('ein Sammlungsraetsel wird auf beiden Geraeten dasselbe', async ({ browser }) => {
   test.setTimeout(180_000);
   const state = createDuelState();
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -467,5 +467,36 @@ test('ein Duell laesst sich aus der Sammlung heraus starten', async ({ browser }
   // Und es ist wirklich DAS gewaehlte Raetsel: die Lobby traegt seinen Titel.
   await expect(host.locator('#duel-puzzle-title')).toHaveText(titel, { timeout: 10_000 });
 
+  /*
+   * Und der Zweite bekommt dasselbe Raetsel.
+   *
+   * Das ist der Teil, den ein Ein-Geraet-Test nicht zeigt: der Gast hat den
+   * Katalog nie angefasst, er erzeugt das Raetsel allein aus der
+   * Konfiguration des Raums. Stimmte dort etwas nicht - ein fehlendes
+   * targetCategoryIndex, ein anderer Seed-Bereich -, saessen beide vor
+   * verschiedenen Gittern und merkten es erst beim Vergleich.
+   */
+  const gastKontext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const gast = await gastKontext.newPage();
+  await installDuelApi(gast, { playerId: 2, displayName: 'Bea', state });
+
+  await gast.goto(`/?room=${ROOM_CODE}`);
+  await expect(gast.locator('#screen-duel-entry')).toHaveClass(/is-active/);
+  await gast.locator('#duel-entry-submit').click();
+  await expect(gast.locator('#duel-room-code')).toHaveText(ROOM_CODE, { timeout: 60_000 });
+  await expect(gast.locator('#duel-puzzle-title')).toHaveText(titel, { timeout: 30_000 });
+
+  await host.locator('#duel-ready').click();
+  await gast.locator('#duel-ready').click();
+  await expect(host.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 30_000 });
+  await expect(gast.locator('#screen-play')).toHaveClass(/is-active/, { timeout: 30_000 });
+
+  // Dasselbe Gitter, Zelle fuer Zelle: die Ueberschrift und die Zahl der Felder.
+  expect(await gast.locator('#play-title').textContent())
+    .toBe(await host.locator('#play-title').textContent());
+  expect(await gast.locator('.overview-mirror__cell').count())
+    .toBe(await host.locator('.overview-mirror__cell').count());
+
+  await gastKontext.close();
   await context.close();
 });
