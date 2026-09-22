@@ -65,3 +65,48 @@ export function listSavedGames(playerId, storage = localStorage) {
     }
     return treffer;
 }
+
+/**
+ * Wie viele sichere Zuordnungen ein Rätsel dieser Maße überhaupt hat.
+ *
+ * Je Kategorienpaar genau `Werte` Stück, und es gibt C(Kategorien, 2) Paare.
+ * Ein 3×4 hat 12, ein 5×5 deren 50 — ein gelöstes Rätsel steht damit genau
+ * auf 100 %. Jede andere Bezugsgröße erreicht die Marke nie: automatische
+ * Kreuze liegen in `auto` und zählen gar nicht als Markierung.
+ */
+function sureTotal(categoryCount, valuesPerCategory) {
+    return valuesPerCategory * categoryCount * (categoryCount - 1) / 2;
+}
+
+/**
+ * Ein Stand, gelesen. Null, wenn der Schlüssel keiner ist oder der Wert fehlt.
+ *
+ * @param {string} key
+ * @param {Storage} [storage]
+ * @returns {{ sure: number, total: number, marks: number, solved: boolean,
+ *             elapsedMs: number, options: object|null, fingerprint: string|null,
+ *             title: string|null, savedAt: string|null } | null}
+ */
+export function readSavedGame(key, storage = localStorage) {
+    const zerlegt = parseSavedKey(key);
+    if (!zerlegt) return null;
+    let roh;
+    try { roh = storage.getItem(key); } catch { return null; }
+    if (!roh) return null;
+    let wert;
+    try { wert = JSON.parse(roh); } catch { return null; }
+    const marks = Array.isArray(wert?.marks) ? wert.marks : [];
+    return {
+        sure: marks.filter(([, mark]) => mark === 'yes').length,
+        total: sureTotal(zerlegt.categoryCount, zerlegt.valuesPerCategory),
+        marks: marks.length,
+        solved: Boolean(wert?.solved),
+        elapsedMs: Number(wert?.elapsedMs) || 0,
+        // Die vier Felder, mit denen ein Stand sich selbst trägt. Ältere
+        // Stände haben sie nicht; das ist kein Fehler, nur eine Grenze.
+        options: wert?.options ?? null,
+        fingerprint: wert?.fingerprint ?? null,
+        title: wert?.title ?? null,
+        savedAt: wert?.savedAt ?? null,
+    };
+}
