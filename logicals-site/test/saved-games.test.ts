@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { listSavedGames, readSavedGame } from '../client/js/play/savedGames.js';
+import {
+    listSavedGames, newestSavedGame, pruneSavedGames, readSavedGame,
+} from '../client/js/play/savedGames.js';
 
 /**
  * Ein Speicher, wie ihn Node nicht hat.
@@ -128,5 +130,79 @@ describe('ein gelesener Stand', () => {
         expect(readSavedGame(KEY, storageWith({ [KEY]: 'kein json' }))).toBeNull();
         expect(readSavedGame(KEY, storageWith({}))).toBeNull();
         expect(readSavedGame('logicals.prefs.v1', storageWith({ 'logicals.prefs.v1': '{}' }))).toBeNull();
+    });
+});
+
+function standFuer(seed: number, savedAt: string | null, extra: object = {}) {
+    return [
+        `logicals:play:solo:none:1:museum:${seed}:3x4:h${seed}`,
+        JSON.stringify({
+            marks: [['0.1.0.0', 'yes']], auto: [], usedClues: [],
+            elapsedMs: 1000, solved: false,
+            options: { seed, categoryCount: 3, valuesPerCategory: 4 },
+            fingerprint: `f${seed}`, title: `${seed}. Museum`,
+            ...(savedAt ? { savedAt } : {}), ...extra,
+        }),
+    ] as const;
+}
+
+describe('der juengste Stand', () => {
+    it('nimmt den mit der spaetesten Zeitmarke', () => {
+        const [a, aw] = standFuer(1, '2026-09-20T10:00:00.000Z');
+        const [b, bw] = standFuer(2, '2026-09-22T10:00:00.000Z');
+        expect(newestSavedGame(1, storageWith({ [a]: aw, [b]: bw }))?.seed).toBe(2);
+    });
+
+    it('uebergeht geloeste und leere Staende', () => {
+        /*
+         * Beides ist nichts, wozu man zurueckkommt: ein geloestes Raetsel ist
+         * fertig, ein leeres hat nichts zu zeigen.
+         */
+        const [a, aw] = standFuer(1, '2026-09-22T10:00:00.000Z', { solved: true });
+        const [b, bw] = standFuer(2, '2026-09-21T10:00:00.000Z', { marks: [] });
+        const [c, cw] = standFuer(3, '2026-09-20T10:00:00.000Z');
+        expect(newestSavedGame(1, storageWith({ [a]: aw, [b]: bw, [c]: cw }))?.seed).toBe(3);
+    });
+
+    it('uebergeht Staende, die sich nicht wiederherstellen lassen', () => {
+        // Ohne Einstellungen und Fingerabdruck fuehrt der Knopf ins Nichts -
+        // schlimmer als kein Knopf.
+        const [a, aw] = standFuer(1, '2026-09-22T10:00:00.000Z',
+            { options: null, fingerprint: null });
+        const [b, bw] = standFuer(2, '2026-09-21T10:00:00.000Z');
+        expect(newestSavedGame(1, storageWith({ [a]: aw, [b]: bw }))?.seed).toBe(2);
+    });
+
+    it('gibt null zurueck, wenn nichts in Frage kommt', () => {
+        expect(newestSavedGame(1, storageWith({}))).toBeNull();
+    });
+});
+
+describe('die Obergrenze', () => {
+    it('wirft den aeltesten weg und behaelt den juengsten', () => {
+        const [a, aw] = standFuer(1, '2026-09-20T10:00:00.000Z');
+        const [b, bw] = standFuer(2, '2026-09-21T10:00:00.000Z');
+        const [c, cw] = standFuer(3, '2026-09-22T10:00:00.000Z');
+        const speicher = storageWith({ [a]: aw, [b]: bw, [c]: cw });
+
+        expect(pruneSavedGames(1, 2, speicher)).toBe(1);
+        expect(listSavedGames(1, speicher).map(stand => stand.seed).sort()).toEqual([2, 3]);
+    });
+
+    it('haelt einen Stand ohne Zeitmarke fuer den aeltesten', () => {
+        // Er stammt aus einer Fassung, die noch keine schrieb.
+        const [a, aw] = standFuer(1, null);
+        const [b, bw] = standFuer(2, '2026-09-20T10:00:00.000Z');
+        const speicher = storageWith({ [a]: aw, [b]: bw });
+
+        pruneSavedGames(1, 1, speicher);
+        expect(listSavedGames(1, speicher).map(stand => stand.seed)).toEqual([2]);
+    });
+
+    it('raeumt nicht auf, solange Platz ist', () => {
+        const [a, aw] = standFuer(1, '2026-09-20T10:00:00.000Z');
+        const speicher = storageWith({ [a]: aw });
+        expect(pruneSavedGames(1, 200, speicher)).toBe(0);
+        expect(listSavedGames(1, speicher)).toHaveLength(1);
     });
 });

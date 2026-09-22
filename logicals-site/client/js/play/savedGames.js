@@ -110,3 +110,61 @@ export function readSavedGame(key, storage = localStorage) {
         savedAt: wert?.savedAt ?? null,
     };
 }
+
+/** Sortierschlüssel: ohne Zeitmarke gilt ein Stand als der älteste. */
+function zeit(savedAt) {
+    const wert = savedAt ? Date.parse(savedAt) : Number.NaN;
+    return Number.isFinite(wert) ? wert : 0;
+}
+
+/**
+ * Der jüngste Stand, zu dem zurückzukommen sich lohnt.
+ *
+ * Gelöst und leer fallen weg — beides ist nichts, wozu man zurückkommt. Und
+ * ohne `options` und `fingerprint` lässt sich das Rätsel nicht identisch neu
+ * erzeugen; ein Knopf, der ins Nichts führt, ist schlimmer als keiner.
+ *
+ * @param {number} playerId
+ * @param {Storage} [storage]
+ * @returns {{ key: string, seed: number, options: object, fingerprint: string,
+ *             title: string|null, elapsedMs: number, marks: number } | null}
+ */
+export function newestSavedGame(playerId, storage = localStorage) {
+    let bester = null;
+    for (const eintrag of listSavedGames(playerId, storage)) {
+        const stand = readSavedGame(eintrag.key, storage);
+        if (!stand || stand.solved || stand.marks === 0) continue;
+        if (!stand.options || !stand.fingerprint) continue;
+        if (bester && zeit(stand.savedAt) <= zeit(bester.savedAt)) continue;
+        bester = {
+            key: eintrag.key, seed: eintrag.seed, savedAt: stand.savedAt,
+            options: stand.options, fingerprint: stand.fingerprint,
+            title: stand.title, elapsedMs: stand.elapsedMs, marks: stand.marks,
+        };
+    }
+    if (!bester) return null;
+    const { savedAt, ...rest } = bester;
+    return rest;
+}
+
+/**
+ * Schneidet auf `limit` Stände zurück, ältester zuerst.
+ *
+ * Die Sammlung braucht höchstens 120 je Spieler, gedeckelt werden also nur
+ * gewürfelte Einmal-Rätsel. Läuft beim Öffnen eines Spiels, nicht bei jedem
+ * Speichern: beim Markieren ist Rechenzeit teuer, beim Öffnen nicht.
+ *
+ * @returns {number} wie viele entfernt wurden
+ */
+export function pruneSavedGames(playerId, limit = 200, storage = localStorage) {
+    const alle = listSavedGames(playerId, storage)
+        .map(eintrag => ({ key: eintrag.key, at: zeit(readSavedGame(eintrag.key, storage)?.savedAt) }))
+        .sort((a, b) => a.at - b.at);
+    const zuviel = alle.length - limit;
+    if (zuviel <= 0) return 0;
+    let entfernt = 0;
+    for (const eintrag of alle.slice(0, zuviel)) {
+        try { storage.removeItem(eintrag.key); entfernt++; } catch { /* dann eben nicht */ }
+    }
+    return entfernt;
+}
